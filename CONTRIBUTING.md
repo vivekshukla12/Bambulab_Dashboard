@@ -25,6 +25,16 @@ Tests passing does not imply merge approval.
 
 The repository is licensed under the Mozilla Public License 2.0. Unless explicitly agreed otherwise before submission, contributions are submitted under MPL-2.0 and contributors retain copyright in their original contributions. Contributors must only submit material they have the right to contribute.
 
+For new original source-code files created for this project, attach the MPL-2.0 notice to the file. Prefer a machine-readable SPDX identifier in the comment syntax appropriate to the language:
+
+```text
+SPDX-License-Identifier: MPL-2.0
+```
+
+The Exhibit A source-code notice from `LICENSE` is also acceptable. Where a file cannot practically contain a notice, follow MPL-2.0 Exhibit A and place the notice where a recipient would reasonably look for it. Do not apply the project MPL notice to third-party files in a way that obscures or replaces their actual upstream license/provenance.
+
+Accurate copyright notices may be added for original contributions. Do not claim copyright ownership of third-party or other contributors' work.
+
 Do not add third-party code, media, logos, fonts, documentation, generated assets, or datasets unless their licensing/provenance is compatible and documented.
 
 ## Bambu Lab / third-party IP
