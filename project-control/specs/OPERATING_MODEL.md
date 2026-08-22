@@ -177,6 +177,14 @@ Exact application framework, frontend framework, datastore, deployment packaging
 
 Repository/test data must be synthetic by default. Never commit customer/production-derived sensitive data, real credentials, private live-device dumps, private camera/media content, production logs, or identifying metadata.
 
+## Licensing and attribution guardrails
+
+- The repository source-code license is Mozilla Public License 2.0 (MPL-2.0); do not modify or replace it without explicit product-owner approval.
+- New original source-code files must carry an MPL-2.0 source-file notice, normally an appropriate-comment `SPDX-License-Identifier: MPL-2.0` identifier; the Exhibit A notice is also acceptable.
+- Preserve accurate copyright and contributor attribution.
+- Preserve third-party license/provenance; do not relabel third-party code, assets, generated material, or other content as project-owned MPL source.
+- Third-party dependencies/assets require compatible licensing and documented provenance before inclusion.
+
 ## Bambu Lab / third-party intellectual property posture
 
 This is an independent, unofficial third-party interoperability project. It must not claim Bambu Lab affiliation, sponsorship, authorization, certification, maintenance, or endorsement. Bambu Lab marks, product names, logos, software, firmware, services, and other intellectual property remain with their respective rights holders.
@@ -204,6 +212,7 @@ Unless a milestone explicitly states otherwise, Definition of Done requires:
 - security/privacy implications reviewed;
 - synthetic fixtures only by default;
 - documentation/specifications updated;
+- new original source files carry the required MPL-2.0 notice and third-party license/provenance is preserved;
 - no accidental scope expansion;
 - no secrets or sensitive data committed;
 - PR state verified;
