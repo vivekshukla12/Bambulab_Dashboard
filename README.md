@@ -2,7 +2,7 @@
 
 A local-first browser dashboard for monitoring and managing compatible Bambu Lab printers and related devices across a LAN.
 
-> **Project status:** M0 — repository and governance foundation. Product feature implementation is not yet authorized.
+> **Project status:** M0 — repository and governance foundation is complete. M1 — architecture foundation + synthetic dashboard prototype is in planning; product implementation is not yet authorized.
 
 ## Unofficial project / trademark notice
 
@@ -57,6 +57,8 @@ test-fixtures/synthetic/
 ## Licensing
 
 Source code is licensed under the **Mozilla Public License 2.0 (MPL-2.0)**. See [`LICENSE`](LICENSE).
+
+New original source files must use the project's MPL-2.0 source-file notice policy documented in [`CONTRIBUTING.md`](CONTRIBUTING.md). Third-party license and provenance notices must be preserved.
 
 The software license does not grant rights to Bambu Lab trademarks or to project-specific branding beyond what applicable law and the relevant rights holders permit. See [`TRADEMARKS.md`](TRADEMARKS.md).
 
