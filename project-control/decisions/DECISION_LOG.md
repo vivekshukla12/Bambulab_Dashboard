@@ -36,12 +36,12 @@
 ## DEC-004 — Technology stack remains undecided in M0
 
 - **Date:** 2026-08-22
-- **Status:** Pending M1
+- **Status:** Approved deferral / Pending M1 selection
 - **Decision:** No application framework, frontend framework, datastore, Bambu transport, camera stack, deployment packaging, or secret-recovery mechanism is selected during M0.
 - **Rationale:** The PRD identifies material feasibility/security questions that must be resolved before these choices are safe.
 - **Alternatives considered:** Pick a conventional stack during bootstrap — deferred to avoid accidental architecture authorization.
 - **Consequences:** M1 must produce explicit architecture decisions and prove them in a runnable synthetic prototype.
-- **Approved by:** Pending product-owner approval of M0/M1 plan.
+- **Approved by:** Product owner through approval of M0 on 2026-08-22; actual technology selections remain subject to M1 authorization/decision.
 - **Related milestone / PR:** M0 → M1.
 
 ## DEC-005 — Adopt MPL-2.0 and explicit third-party trademark posture
@@ -87,3 +87,14 @@
 - **Consequences:** Codex and contributors must follow the source-file notice policy in `CONTRIBUTING.md`; license/provenance checks become part of review.
 - **Approved by:** Product owner through selection of MPL-2.0; implementation detail finalized during M0 completeness review.
 - **Related milestone / PR:** M0 and all implementation milestones.
+
+## DEC-009 — Approve M0 repository and governance foundation
+
+- **Date:** 2026-08-22
+- **Status:** Approved
+- **Decision:** Approve M0 after final completeness review, including the MPL source-file notice clarification added during review. M0 is authorized for merge once the PR is in a mergeable state. This approval does not authorize M1 implementation.
+- **Rationale:** The M0 foundation satisfies the required bootstrap controls: authoritative PRD and operating model, governance anchors, architecture/security/privacy/legal guardrails, milestone/feedback model, decision/risk controls, Codex queue/resume controls, licensing/attribution, synthetic test policy, and explicit M1 decision boundaries.
+- **Alternatives considered:** Hold M0 for further information — rejected; no remaining M0 information gap was identified that warrants blocking approval.
+- **Consequences:** PR #1 may be merged. After merge, project-control state must be reconciled to M0 COMPLETE and M1 PLANNING/HOLD. A specific M1 task still requires separate product-owner authorization before Codex implementation.
+- **Approved by:** Product owner on 2026-08-22 after independent M0 completeness review.
+- **Related milestone / PR:** M0 / PR #1.
