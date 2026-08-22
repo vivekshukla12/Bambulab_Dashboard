@@ -76,3 +76,14 @@
 - **Consequences:** Milestone plans require prototype outcomes and feedback criteria; feedback can reshape later milestones only through explicit decisions; regression preservation becomes part of milestone validation.
 - **Approved by:** Product owner on 2026-08-22.
 - **Related milestone / PR:** M0 and all M1+ milestones.
+
+## DEC-008 — Apply MPL-2.0 notices to new original source files
+
+- **Date:** 2026-08-22
+- **Status:** Approved / baseline
+- **Decision:** New original source-code files created for this project must carry an MPL-2.0 source-file notice, normally using an appropriate-comment `SPDX-License-Identifier: MPL-2.0` identifier; the Exhibit A notice is also acceptable. Third-party files must retain their actual upstream license/provenance and must not be falsely relabeled as project-owned MPL code.
+- **Rationale:** Make the repository's MPL-2.0 licensing operational at file level and preserve correct attribution/provenance as implementation begins.
+- **Alternatives considered:** Rely only on the top-level `LICENSE` file — rejected as less explicit and more fragile when individual source files are redistributed.
+- **Consequences:** Codex and contributors must follow the source-file notice policy in `CONTRIBUTING.md`; license/provenance checks become part of review.
+- **Approved by:** Product owner through selection of MPL-2.0; implementation detail finalized during M0 completeness review.
+- **Related milestone / PR:** M0 and all implementation milestones.
