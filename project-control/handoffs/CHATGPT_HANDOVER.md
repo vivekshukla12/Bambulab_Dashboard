@@ -7,10 +7,10 @@ Local-first responsive browser/PWA dashboard for monitoring and managing compati
 Public repository: `vivekshukla12/Bambulab_Dashboard`. Source code license: MPL-2.0. New original source files use the MPL source-file notice policy in `CONTRIBUTING.md` (normally `SPDX-License-Identifier: MPL-2.0`). Preserve third-party license/provenance. `TRADEMARKS.md` and `NOTICE` define the independent/unofficial relationship and third-party trademark/IP posture.
 
 ## Delivery model
-M0 is the governance bootstrap. Every major product milestone from M1 onward must deliver a runnable/testable prototype. Automated tests and hands-on product-owner validation are required; feedback is captured under `project-control/feedback/`, triaged, and reconciled with the roadmap before the next milestone is authorized.
+M0 is complete. Every major product milestone from M1 onward must deliver a runnable/testable prototype. Automated tests and hands-on product-owner validation are required; feedback is captured under `project-control/feedback/`, triaged, and reconciled with the roadmap before the next milestone is authorized.
 
 ## Architecture
-M0 establishes principles only: local-first, capability-driven vendor adapters, server-owned freshness/live state, explicit API/event boundary, safe degradation, portable deployment, read-only offline PWA, auditable controls, and minimal dependency surface. Exact technology stack and vendor interface choices remain unresolved until M1, which must prove its choices in a synthetic working prototype.
+M0 established principles only: local-first, capability-driven vendor adapters, server-owned freshness/live state, explicit API/event boundary, safe degradation, portable deployment, read-only offline PWA, auditable controls, and minimal dependency surface. Exact technology stack and vendor interface choices remain unresolved for M1, which must prove approved choices in a synthetic working prototype.
 
 ## Security boundaries
 LAN-only V1 production access; HTTPS; authentication required; strong API authentication before write/control; explicit confirmation for destructive/high-impact actions; protect secrets at rest and in backups; never log/commit credentials; camera privacy + audit; stale/offline state is not live; dedicated threat model before production. Do not circumvent vendor/device security or access controls to obtain functionality.
@@ -22,37 +22,37 @@ Synthetic fixtures only by default. Never commit customer/production-derived sen
 Independent third-party interoperability project; no affiliation, sponsorship, authorization, certification, maintenance relationship, or endorsement by Bambu Lab is claimed. Bambu Lab names/marks and other IP remain with their rights holders. Material interface/auth/trademark/legal uncertainty is a feasibility stop condition, not an implementation shortcut. Working product name remains subject to final trademark/name review before V1 branding.
 
 ## Completed milestones
-None yet — M0 is approved but is not complete until PR #1 is merged and the resulting main-branch state/commit is verified.
+- M0 — Repository and governance foundation.
+  - Approved by product owner on 2026-08-22.
+  - PR #1 merged on 2026-08-22.
+  - Verified merge commit: `bad179a0f847f9a478e2c167e62dd94760baa105`.
 
 ## Current milestone
-M0 — Repository and governance foundation — **APPROVED / PENDING MERGE**.
+M1 — Architecture foundation + synthetic dashboard prototype — **PLANNING / HOLD**.
 
 ## Current PR / branch
-- Branch: `m0/repository-governance-foundation`
-- PR: #1 — `M0: establish repository governance foundation`
-- PR URL: `https://github.com/vivekshukla12/Bambulab_Dashboard/pull/1`
-- Product-owner M0 approval: 2026-08-22, recorded in DEC-009.
-
-Always verify the current PR head/merge state in GitHub because control-only reconciliation commits can advance the branch.
+- Branch: `main`
+- M1 PR: none yet.
+- M1 implementation is not authorized yet.
 
 ## Important decisions
 - GitHub is authoritative project state.
 - PRD v1.0 is the requirements baseline.
 - MPL-2.0 is the repository source-code license; new original source files carry an MPL-2.0 notice/SPDX identifier and third-party provenance is preserved.
-- Governance precedes substantive implementation.
+- M0 governance is complete.
 - M1+ uses iterative working prototypes with feedback gates.
-- Technology stack remains pending M1.
+- Technology stack remains a deliberate M1 decision.
 - Bambu Lab affiliation/trademark disclaimer is mandatory and technical interface availability does not equal implementation authorization.
-- M0 passed final completeness review and was approved by the product owner; M1 remains separately gated.
+- Each milestone is separately authorized; completion of M0 does not automatically authorize M1 implementation.
 
 ## Current risks
-See `project-control/risks/RISK_REGISTER.md`; highest concerns include Bambu legal/interface feasibility, local-vs-cloud capability coverage, naming/trademark posture, backup key recovery, audit tamper evidence, LAN TLS/PWA constraints, and safe automatic updates.
+See `project-control/risks/RISK_REGISTER.md`; highest concerns include Bambu legal/interface feasibility, local-vs-cloud capability coverage, naming/trademark posture, backup key recovery, audit tamper evidence, LAN TLS/PWA constraints, safe automatic updates, device capability variance, stale telemetry safety, and local API attack surface.
 
 ## Explicit V1 non-goals
 No slicer; no automatic printer/job assignment or print-farm scheduler; no firmware update management; no built-in general rules engine; no remote internet access; no native mobile app; no multi-user/RBAC; no full analytics suite; no NAS backup target.
 
 ## Next authorized action
-Merge approved PR #1 when GitHub reports it mergeable. Then reconcile project-control on `main` to M0 COMPLETE / M1 PLANNING-HOLD. Do not authorize or begin M1 implementation until the product owner separately approves a specific M1 task in `prompts/codex/NEXT_PROMPT.md`.
+Begin M1 planning in a fresh chat. Verify GitHub, read the M1 milestone definition and current risks, then define one specific M1 Codex task. Do not begin product implementation until the product owner explicitly approves that task and `prompts/codex/NEXT_PROMPT.md` is changed to `QUEUED`.
 
 ## Files to read first
 1. `project-control/status/CURRENT_STATUS.md`
