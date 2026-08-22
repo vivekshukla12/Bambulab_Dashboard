@@ -28,7 +28,12 @@ None.
 M0 — Repository and governance foundation.
 
 ## Current PR / branch
-Branch: `m0/repository-governance-foundation`. Draft PR is to be opened after the scaffold commit and then recorded here.
+- Branch: `m0/repository-governance-foundation`
+- Draft PR: #1 — `M0: establish repository governance foundation`
+- PR URL: `https://github.com/vivekshukla12/Bambulab_Dashboard/pull/1`
+- Governance scaffold commit: `5c06250b27861c1d4a89c216b43e2d0ed9b8ee61`
+
+Always verify the current PR head/merge state in GitHub because control-only reconciliation commits can advance the branch after the scaffold commit.
 
 ## Important decisions
 - GitHub is authoritative project state.
@@ -46,7 +51,7 @@ See `project-control/risks/RISK_REGISTER.md`; highest concerns include Bambu leg
 No slicer; no automatic printer/job assignment or print-farm scheduler; no firmware update management; no built-in general rules engine; no remote internet access; no native mobile app; no multi-user/RBAC; no full analytics suite; no NAS backup target.
 
 ## Next authorized action
-Complete and review the M0 draft PR. Do not authorize feature implementation until the product owner explicitly approves M0.
+Review Draft PR #1. Do not merge it or authorize M1 feature implementation until the product owner explicitly approves the M0 foundation. After approval, update `prompts/codex/NEXT_PROMPT.md` with one specific M1 task before Codex resumes.
 
 ## Files to read first
 1. `project-control/status/CURRENT_STATUS.md`

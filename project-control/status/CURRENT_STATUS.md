@@ -4,44 +4,47 @@
 M0 — Repository and governance foundation
 
 ## State
-PR PREPARATION — M0 scaffold assembled on a dedicated branch; draft PR and final GitHub reconciliation still required.
+REVIEW — M0 scaffold is committed on a dedicated branch and Draft PR #1 is open for product-owner review. Feature implementation remains on HOLD.
 
 ## Repository
 `vivekshukla12/Bambulab_Dashboard` — public
 
 ## License
-Mozilla Public License 2.0 (MPL-2.0), established in the repository initial commit.
+Mozilla Public License 2.0 (MPL-2.0), preserved from the repository initial commit.
 
 ## Current branch
 `m0/repository-governance-foundation`
 
 ## Current PR
-Pending creation after the M0 scaffold commit.
+Draft PR #1 — `M0: establish repository governance foundation`
 
-## Latest verified main commit
-`e5aa437b236975661dd08bc5d1aa7a9631299d9a` — initial repository commit containing MPL-2.0 license only.
+https://github.com/vivekshukla12/Bambulab_Dashboard/pull/1
+
+## Verified governance scaffold commit
+`5c06250b27861c1d4a89c216b43e2d0ed9b8ee61`
+
+This SHA is the scaffold commit under PR review. Subsequent control-only reconciliation commits may advance the branch head; verify the PR head in GitHub when making current-state claims.
 
 ## Completed
-- Reviewed the Bambu Printer Dashboard PRD v1.0 requirements baseline.
-- Customized the project operating model for this repository.
-- Verified the public GitHub repository and MPL-2.0 license.
-- Prepared repository/legal/governance scaffold, architecture/security/privacy guardrails, milestone plan, decision log, risk register, Codex resume/queue protocol, synthetic-fixture policy, contribution/security guidance, NOTICE, and Bambu Lab trademark/affiliation/compatibility disclaimer.
-- Adopted the iterative delivery model: M0 is governance; every M1+ major product milestone must end in a runnable/testable prototype with recorded product-owner feedback before the next milestone is authorized.
+- Reviewed and committed the Bambu Printer Dashboard PRD v1.0 requirements baseline.
+- Customized and committed the project operating model for this repository.
+- Verified and preserved the public repository's MPL-2.0 license.
+- Committed repository/legal/governance scaffold, architecture/security/privacy guardrails, milestone plan, decision log, risk register, Codex resume/queue protocol, synthetic-fixture policy, contribution/security guidance, NOTICE, and Bambu Lab trademark/affiliation/compatibility disclaimer.
+- Adopted iterative delivery: M0 is governance; every M1+ major product milestone must end in a runnable/testable prototype with automated + hands-on validation and recorded/triaged product-owner feedback.
 - Added milestone feedback capture and triage templates.
+- Opened Draft PR #1 against `main`.
 
 ## In progress
-- Commit M0 scaffold to `m0/repository-governance-foundation`.
-- Open draft PR against `main`.
-- Reconcile this status and handover with the created PR/head SHA.
+- Product-owner review of Draft PR #1.
+- Independent scope/security/governance validation of M0 before merge recommendation.
 
 ## Blockers
-- None for M0 repository scaffolding.
-- Feature implementation remains intentionally blocked until M0 product-owner approval.
+- Substantive product implementation is intentionally blocked until M0 is explicitly approved.
 
 ## Decisions required
-- Product-owner review/approval of M0 governance foundation.
-- M1 decisions on application stack, deployment packaging, Bambu interface/auth/legal feasibility, local TLS/PWA trust, secret/key recovery, audit tamper evidence, and update/rollback architecture, proven through the M1 synthetic prototype.
-- Final public product naming/trademark review before production branding.
+- Approve, amend, or reject M0 governance foundation.
+- After M0 approval, authorize a specific M1 prompt covering architecture decisions and the first runnable synthetic dashboard prototype.
+- Final public product naming/trademark review remains required before production branding.
 
 ## Next authorized action
-Complete the M0 draft PR and present it for product-owner review. Do not authorize substantive product feature implementation yet.
+Review Draft PR #1. Do not merge or start M1 until product-owner approval is explicit and `prompts/codex/NEXT_PROMPT.md` is deliberately updated.
