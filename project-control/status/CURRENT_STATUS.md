@@ -1,50 +1,54 @@
 # Current Status
 
 ## Current milestone
-M0 — Repository and governance foundation
+M1 — Architecture foundation + synthetic dashboard prototype
 
 ## State
-APPROVED / PENDING MERGE — M0 has passed final completeness review and was approved by the product owner on 2026-08-22. PR #1 remains the delivery vehicle. Product implementation remains on HOLD; M1 is not yet authorized.
+PLANNING / HOLD — M0 is complete and merged. M1 has not yet been authorized for implementation.
 
 ## Repository
 `vivekshukla12/Bambulab_Dashboard` — public
 
 ## License
-Mozilla Public License 2.0 (MPL-2.0), preserved from the repository initial commit. New original source files must carry the MPL-2.0 source-file notice policy defined in `CONTRIBUTING.md` and DEC-008.
+Mozilla Public License 2.0 (MPL-2.0). New original source files must carry the MPL-2.0 source-file notice policy defined in `CONTRIBUTING.md` and DEC-008.
 
 ## Current branch
-`m0/repository-governance-foundation`
+`main`
 
 ## Current PR
-PR #1 — `M0: establish repository governance foundation`
+None for M1.
 
-https://github.com/vivekshukla12/Bambulab_Dashboard/pull/1
+## Latest verified commit
+M0 merge commit: `bad179a0f847f9a478e2c167e62dd94760baa105`
 
-## Latest verified state
-M0 approval is recorded in DEC-009. Verify the current PR head SHA and mergeability directly in GitHub before merging because control-only reconciliation commits can advance the branch.
+Post-merge control-only commits may advance `main`; verify the current main SHA in GitHub before making current-state claims.
 
 ## Completed
-- Reviewed and committed the Bambu Printer Dashboard PRD v1.0 requirements baseline.
-- Customized and committed the project operating model for this repository.
-- Verified and preserved the public repository's MPL-2.0 license.
-- Defined MPL-2.0 source-file notice/provenance policy for future implementation.
-- Committed repository/legal/governance scaffold, architecture/security/privacy guardrails, milestone plan, decision log, risk register, Codex resume/queue protocol, synthetic-fixture policy, contribution/security guidance, NOTICE, and Bambu Lab trademark/affiliation/compatibility disclaimer.
-- Adopted iterative delivery: M0 is governance; every M1+ major product milestone must end in a runnable/testable prototype with automated + hands-on validation and recorded/triaged product-owner feedback.
-- Added milestone feedback capture and triage templates.
-- Completed independent M0 scope/security/privacy/licensing/governance completeness review.
-- Product owner approved M0 on 2026-08-22.
+- M0 — Repository and governance foundation.
+- PR #1 merged on 2026-08-22.
+- PRD v1.0 requirements baseline committed.
+- Project operating model and iterative prototype delivery model established.
+- Architecture, security, privacy, data, vendor-interface, and deployment guardrails established.
+- Decision log, risk register, handover, current-status, Codex resume/queue controls, feedback framework, synthetic-fixture policy, contribution/security guidance, PR template, NOTICE, and Bambu Lab trademark/affiliation disclaimer established.
+- MPL-2.0 license preserved and source-file notice/provenance policy defined.
+- M0 completeness review and product-owner approval recorded.
 
 ## In progress
-- Merge/reconciliation of approved PR #1.
+- M1 planning only.
+- Selection and authorization of one specific M1 Codex task covering architecture/feasibility decisions and the first runnable synthetic dashboard prototype.
 
 ## Blockers
-- No M0 content blocker remains.
-- M1 implementation remains intentionally blocked until M0 is merged, post-merge state is reconciled, and a specific M1 task is separately authorized/queued.
+- M1 implementation is intentionally blocked until the product owner explicitly authorizes a specific M1 task and `prompts/codex/NEXT_PROMPT.md` is changed from `HOLD` to `QUEUED`.
 
 ## Decisions required
-- No further M0 content decision is required.
-- M1 architecture/technology/interface choices remain pending M1.
-- Final public product naming/trademark review remains required before production branding.
+- M1 application/backend/frontend technology stack.
+- Datastore and migration approach.
+- Development/staging/production topology and packaging.
+- Bambu LAN/cloud/interface/auth feasibility matrix for near-term integration.
+- Initial authentication/session architecture.
+- Local TLS/certificate development and staging strategy.
+- Secret/key handling and backup-recovery direction.
+- Initial threat model and security boundaries for the M1 prototype.
 
 ## Next authorized action
-Merge approved PR #1 when GitHub reports it mergeable. After merge, reconcile `CURRENT_STATUS.md`, `CHATGPT_HANDOVER.md`, and `NEXT_PROMPT.md` to show M0 COMPLETE and M1 PLANNING/HOLD. Do not start M1 implementation until a separate product-owner authorization queues a specific M1 task.
+Start the M1 planning chat, verify this repository state, review M1 requirements/risks, and define the specific M1 Codex task. Do not begin implementation until the product owner explicitly authorizes that task and `prompts/codex/NEXT_PROMPT.md` is set to `QUEUED`.
