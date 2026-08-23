@@ -4,7 +4,7 @@
 M1 — Architecture foundation + synthetic prototype + real-read feasibility design
 
 ## State
-PLANNING / HOLD — M0 is complete and merged. M1 has not yet been authorized for implementation.
+PLANNING / HOLD — M1 architecture is approved, but implementation is not yet authorized.
 
 ## Repository
 `vivekshukla12/Bambulab_Dashboard` — public
@@ -19,48 +19,56 @@ Mozilla Public License 2.0 (MPL-2.0). New original source files must carry the M
 None for M1.
 
 ## Product direction
-The approved planning direction is now read-only-first for real Bambu printers. V1 is a local-first operational dashboard centered on real monitoring, historical intelligence, maintenance, notifications and secure integrations. Printer write/control, Developer Mode, Fleet Hub dependency, cloud-client impersonation and private Bambu partner authorization are not part of the current V1 path.
+V1 is read-only-first for real Bambu printers. The product is a local-first operational dashboard centered on real monitoring, historical intelligence, maintenance, notifications and secure integrations. Printer write/control, Developer Mode, Fleet Hub dependency, cloud-client impersonation and private Bambu partner authorization are not part of the current V1 path.
 
-See `project-control/specs/V1_FEATURE_SCOPE.md` for the current feature boundary and `project-control/specs/MILESTONE_PLAN.md` for the revised roadmap.
+See `project-control/specs/V1_FEATURE_SCOPE.md` for the current V1 feature boundary and `project-control/specs/MILESTONE_PLAN.md` for the roadmap.
 
-## Completed
-- M0 — Repository and governance foundation.
-- PR #1 merged on 2026-08-22.
-- PRD v1.0 requirements baseline committed and preserved.
-- Project operating model and iterative prototype delivery model established.
-- Architecture, security, privacy, data, vendor-interface, deployment and legal/IP guardrails established.
-- Documentation-first, modular, IDE-discoverable and token-efficient development requirement established by DEC-010.
-- Printer Developer Mode and current Fleet Hub/partner-dependent path excluded by Product Owner direction.
-- Publicly available read-only printer monitoring recognized as the viable real-device target under DEC-012.
-- Read-only-first V1 feature scope and revised milestone roadmap established.
-- Home Assistant designated as the preferred initial smart-home interoperability layer; Alexa/Google Home are potential downstream bridges after validation.
-- Daisy identified as a future first-party integration target through documented local API/events without creating a runtime dependency.
+## Approved M1 architecture
 
-## In progress
-- M1 planning only.
-- Selection and approval of the M1 technology architecture, documentation toolchain, module/repository structure, datastore, deployment, auth/TLS/security choices, and normalized adapter/capability contracts.
-- Definition of the first specific M1 Codex implementation task.
+The Product Owner approved the consolidated M1 architecture package on 2026-08-23. The authoritative specification is `project-control/specs/M1_ARCHITECTURE.md`.
+
+Approved baseline includes:
+
+- Node.js 24 LTS + TypeScript;
+- React + Vite frontend;
+- Fastify backend;
+- SQLite + `better-sqlite3` + Kysely;
+- npm-workspace monorepo with strict bounded packages and TypeScript project references;
+- Vitest + Playwright;
+- TypeDoc + structured source documentation for IDE/generated reference support;
+- REST + Server-Sent Events;
+- direct local development + Docker/Docker Compose production packaging;
+- open-source/commercial-use/MPL-compatible dependency policy and automated license inventory;
+- no dashboard login for the read-only V1 model;
+- LAN-accessible default with local/interface restriction option where feasible;
+- stable LAN-local dashboard discovery/name target via mDNS/equivalent;
+- HTTP permitted for initial read-only LAN operation, while HTTPS + strong authentication becomes mandatory before any future write/control capability;
+- future printer discovery plus LAN Access Code onboarding with optional encrypted persistence;
+- tiered retention: durable maintenance/analytics history plus 30-day default raw telemetry configurable from 1–365 days.
+
+See DEC-014, DEC-015 and DEC-016.
+
+## Completed planning work
+
+- M0 repository/governance foundation merged.
+- PRD v1.0 baseline preserved.
+- read-only-first V1 scope and revised milestone roadmap established.
+- documentation-first modular/token-efficient development requirement established.
+- M1 technology, module, persistence, deployment, network, credential, retention and testing architecture approved.
+- proposed M1 Codex execution contract created at `prompts/codex/M1_IMPLEMENTATION_PROPOSAL.md`.
 
 ## Critical project gate
+
 M2 is the real-device GO/NO-GO milestone. It must demonstrate useful, stable read-only monitoring on both an A1 Mini and X2D without Developer Mode or Fleet Hub. Synthetic evidence alone cannot satisfy M2.
 
 If M2 cannot prove enough real capability to make the dashboard genuinely useful, substantial downstream implementation must stop pending an explicit Product Owner continue/re-scope/stop decision.
 
-## Blockers
-- M1 implementation remains intentionally blocked until the Product Owner explicitly authorizes a specific M1 task and `prompts/codex/NEXT_PROMPT.md` is deliberately changed from `HOLD` to `QUEUED`.
+## Current blocker
 
-## Decisions still required before M1 implementation
-- application/backend/frontend technology stack;
-- datastore and migration approach;
-- development/staging/production topology and packaging;
-- selected stack documentation/IDE/generated-reference toolchain;
-- module/package/repository context boundaries for token-efficient development;
-- normalized capability/domain and printer-adapter contracts;
-- initial local application authentication/session architecture;
-- local TLS/certificate development and staging strategy;
-- secret/key handling and backup-recovery direction;
-- initial threat model/security boundaries;
-- exact M1 prototype acceptance tests and hands-on validation.
+M1 implementation is intentionally blocked until the Product Owner explicitly approves the concrete execution contract in `prompts/codex/M1_IMPLEMENTATION_PROPOSAL.md` and authorizes `prompts/codex/NEXT_PROMPT.md` to change from `HOLD` to `QUEUED`.
+
+Architecture approval alone does not authorize implementation.
 
 ## Next authorized action
-Continue Product Owner-led M1 architecture planning using the revised V1 scope and milestone plan. Do not begin product implementation, access real printers, create an M1 implementation branch/PR, or change `NEXT_PROMPT.md` to `QUEUED` until the Product Owner explicitly approves the concrete M1 task.
+
+Review the proposed M1 Codex execution contract. If the Product Owner approves it, copy/finalize the authorized contract into `prompts/codex/NEXT_PROMPT.md`, deliberately change status from `HOLD` to `QUEUED`, and only then permit Codex to create the M1 branch/draft PR and begin implementation.
