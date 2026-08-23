@@ -4,7 +4,7 @@
 M1 — Architecture foundation + synthetic prototype + real-read feasibility design
 
 ## State
-REMEDIATION COMPLETE / DRAFT PR REVIEW — M1 synthetic prototype implementation is on Draft PR #2. The technical-lead reproducibility finding has been remediated, fresh-checkout validation passes, and Docker/Compose validation passes in GitHub Actions. Local Docker execution remains unavailable on this workstation because Docker is not installed.
+PRODUCT OWNER HANDS-ON VALIDATION COMPLETE / MERGE DECISION PENDING — M1 synthetic prototype implementation is on Draft PR #2. Technical-lead review is accepted, remediation is complete, automated fresh-checkout and Docker/Compose validation pass, and the Product Owner has completed hands-on testing. No merge is authorized yet.
 
 ## Repository
 `vivekshukla12/Bambulab_Dashboard` — public
@@ -66,6 +66,16 @@ Remediated on Draft PR #2:
 - verified fresh-checkout `npm ci`, `npm run validate` and `npm run test:e2e` from GitHub branch state;
 - added and ran `npm run docker:validate` in GitHub Actions, proving Docker/Compose build/startup, dashboard/API/health access and SQLite volume persistence across restart/recreation.
 
+## Product Owner hands-on feedback
+The Product Owner tested the M1 prototype on 2026-08-23.
+
+Feedback:
+- the prototype UI is functionally acceptable for M1 but visually basic and not sufficiently modern for the eventual product experience;
+- no frontend/UI redesign is requested for M1;
+- UI modernization is deferred as a non-blocking item for later planning, potentially as part of a later milestone or a small V1.1 UI/UX refresh.
+
+This feedback is recorded in `project-control/feedback/M1_IMPLEMENTATION_NOTES.md` and must not trigger unqueued frontend work.
+
 Codex may not:
 - access real printers or credentials;
 - implement Bambu protocols, Developer Mode, Fleet Hub, cloud impersonation, write/control features or later milestones;
@@ -78,4 +88,4 @@ M2 is the real-device GO/NO-GO milestone. It must demonstrate useful, stable rea
 If M2 cannot prove enough real capability to make the dashboard genuinely useful, substantial downstream implementation must stop pending an explicit Product Owner continue/re-scope/stop decision.
 
 ## Next authorized action
-Technical-lead/Product Owner review of remediated Draft PR #2. Docker/Compose validation evidence is now recorded from GitHub Actions. Do not merge without explicit Product Owner approval.
+Product Owner makes the explicit M1 acceptance/merge decision for Draft PR #2. Until that decision, keep `prompts/codex/NEXT_PROMPT.md` on HOLD, do not merge, and do not start M2.
