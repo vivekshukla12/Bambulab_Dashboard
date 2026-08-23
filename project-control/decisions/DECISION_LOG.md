@@ -131,3 +131,14 @@
 - **Consequences:** M1 feasibility work must distinguish `read` from `write` capabilities. A read-only real-device path can become the M2 target after explicit validation on the initial A1 Mini and X2D. Synthetic mode remains mandatory for testing. Unsupported or firmware/model-specific fields must degrade safely, and no write/control path may be inferred from read access.
 - **Approved by:** Product owner direction and repository feasibility reconciliation on 2026-08-23; concrete M2 implementation remains subject to a later explicit Product Owner authorization.
 - **Related milestone / PR:** M1 → M2.
+
+## DEC-013 — Adopt read-only-first V1 scope and real-device GO/NO-GO roadmap
+
+- **Date:** 2026-08-23
+- **Status:** Approved / planning baseline
+- **Decision:** Reframe V1 around a genuinely usable local-first read-only operational dashboard for real Bambu printers, while preserving the original PRD for traceability. Create `V1_FEATURE_SCOPE.md` as the authoritative current V1 feature-boundary overlay. Make M2 a mandatory real-device GO/NO-GO milestone on both A1 Mini and X2D before substantial downstream feature investment. Home Assistant becomes the preferred initial smart-home integration layer; Alexa and Google Home may be reached through Home Assistant after validation. Daisy is a future first-party integration target through documented local API/events but must not become an early runtime dependency.
+- **Rationale:** Current Bambu constraints allow useful read-only monitoring but do not support a credible promise of broad direct printer control without Developer Mode, Fleet Hub/partner authorization, or other currently excluded paths. Validating actual printer usefulness early prevents investment in a sophisticated platform that cannot satisfy its core purpose.
+- **Alternatives considered:** Continue the original roadmap unchanged; build the complete platform before real-printer validation; stop the project immediately because write/control is unavailable. These were rejected in favor of proving the viable monitoring product early and keeping privileged capabilities conditional.
+- **Consequences:** M1 remains architecture/synthetic-first but must explicitly prepare M2 real-read validation. M2 cannot pass on synthetic evidence and must test both initial printers. Later milestones expose only validated real capabilities plus fully local product features. Printer controls, camera/media privileges and vendor-dependent operations remain conditional/future unless separately validated and Product Owner approved.
+- **Approved by:** Product owner on 2026-08-23.
+- **Related milestone / PR:** M1 onward.
