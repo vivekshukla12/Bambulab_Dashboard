@@ -40,6 +40,23 @@ tests/
 test-fixtures/synthetic/
 ```
 
+## Documentation, modularity, and development-context efficiency
+
+The product must be engineered as a heavily documented, strongly modular system whose maintenance and extension do not require a developer or Codex to re-read the entire repository.
+
+- Define explicit module/package boundaries with narrow responsibilities, stable contracts, and minimal cross-module coupling. Vendor transports, domain models, persistence, API/event contracts, UI features, security concerns, and integrations must remain separable where practical.
+- Organize source and documentation so a change can normally be understood from the affected module, its local documentation, its public contracts, and a small set of linked architecture/decision records rather than global repository context.
+- Each significant module/package must have concise local documentation describing purpose, responsibilities, public interfaces, dependencies, invariants, failure semantics, extension points, relevant requirements/decisions, and focused test commands.
+- Public and extension-facing APIs, types, classes, functions, configuration objects, events, adapters, and other material contracts must use the approved language's structured source-documentation standard. The chosen documentation format must support IDE hover/help, signature and parameter information, discoverability/autocomplete where supported by the language/type system, and generated API/reference documentation. Examples include Javadoc, TSDoc/JSDoc, Python docstrings/type hints, Rustdoc, or equivalent native tooling; the exact mechanism follows the approved M1 technology stack.
+- Documentation must be generated from or tightly coupled to source contracts where practical so reference material cannot silently diverge from implementation. CI should eventually validate documentation generation and broken references as appropriate to the selected stack.
+- Architecture decisions and cross-cutting behavior belong in durable specifications/ADRs/decision records rather than being rediscovered from implementation. Module documentation should link to those records instead of duplicating large bodies of text.
+- Prefer explicit typed/schema contracts and machine-readable interface definitions where appropriate so IDEs, tests, generated documentation, validation, and future integrations can share the same source of truth.
+- Repository layout and Codex prompts must be token-efficient: provide focused entry points, indexes, module maps, and task-scoped reading instructions; avoid requiring agents to ingest unrelated implementation areas. Large files and monolithic modules should be avoided when cohesive smaller modules provide clearer ownership and lower context cost.
+- Every implementation milestone must update the relevant developer documentation in the same change. A feature is not complete when its behavior, contract, extension path, operational assumptions, or non-obvious constraints are undocumented.
+- Documentation quality is part of maintainability and acceptance, not optional cleanup. Public APIs and extension points without adequate structured documentation are incomplete.
+
+These requirements govern maintainability and development structure without pre-selecting a programming language, framework, documentation generator, or IDE.
+
 ## Iterative prototype delivery model
 
 M0 is the one-time governance/bootstrap milestone. **Every major product milestone from M1 onward must end with a runnable, testable prototype.** A milestone is not considered complete merely because code or documentation exists.
@@ -212,6 +229,8 @@ Unless a milestone explicitly states otherwise, Definition of Done requires:
 - security/privacy implications reviewed;
 - synthetic fixtures only by default;
 - documentation/specifications updated;
+- generated/source-level developer documentation remains current for changed public/module contracts;
+- affected modules retain focused local documentation and task-scoped maintenance guidance;
 - new original source files carry the required MPL-2.0 notice and third-party license/provenance is preserved;
 - no accidental scope expansion;
 - no secrets or sensitive data committed;
@@ -227,3 +246,4 @@ Unless a milestone explicitly states otherwise, Definition of Done requires:
 3. Never bypass vendor/device security, authentication, certificate validation, access restrictions, or legal/contractual boundaries merely to make an integration work.
 4. Never commit secrets, credentials, private live-device content, or customer/production-derived sensitive data; use deterministic synthetic fixtures by default.
 5. Technology, architecture, milestone scope, and merge decisions remain product-owner controlled; AI/Codex may recommend but cannot silently authorize expansion.
+6. Maintain heavy developer documentation, strong modular boundaries, IDE-discoverable source contracts, generated reference documentation where supported, and a token-efficient repository/context structure so routine changes do not require whole-repository re-reading.
