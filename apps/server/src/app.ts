@@ -1,0 +1,144 @@
+// SPDX-License-Identifier: MPL-2.0
+
+import { createSyntheticAdapter } from "@bpd/adapter-synthetic";
+import { envelope, toDeviceDetailDto, toDeviceSummaryDto, toSseDeviceEventDto, type HealthDto } from "@bpd/contracts";
+import { DeviceStateService } from "@bpd/device-core";
+import { getDashboardDiscoveryDescriptor } from "@bpd/discovery";
+import { createLogger, createRequestId } from "@bpd/observability";
+import { DashboardDatabase } from "@bpd/persistence";
+import Fastify, { type FastifyInstance } from "fastify";
+import type { ServerConfig } from "./config.js";
+import { registerStaticShell } from "./static.js";
+
+/**
+ * Runtime handles returned by the server factory for tests and process lifecycle.
+ */
+export interface DashboardServer {
+  server: FastifyInstance;
+  deviceService: DeviceStateService;
+  database: DashboardDatabase;
+  close(): Promise<void>;
+}
+
+/**
+ * Builds the M1 read-only dashboard server and starts synthetic observation.
+ */
+export async function buildDashboardServer(config: ServerConfig): Promise<DashboardServer> {
+  const logger = createLogger("server");
+  const database = await DashboardDatabase.open({
+    databasePath: config.databasePath,
+    logger: logger.child({ component: "database" })
+  });
+  const syntheticAdapter = createSyntheticAdapter({ intervalMs: config.syntheticIntervalMs });
+  const deviceService = new DeviceStateService([syntheticAdapter], database, logger.child({ component: "device-core" }));
+  await deviceService.start();
+
+  const server = Fastify({
+    logger: false,
+    genReqId: createRequestId
+  });
+
+  server.addHook("onRequest", async (request) => {
+    logger.info("request started", {
+      requestId: request.id,
+      method: request.method,
+      url: request.url
+    });
+  });
+
+  server.get("/api/v1/devices", async (request) =>
+    envelope({ devices: deviceService.listDevices().map(toDeviceSummaryDto) }, request.id)
+  );
+
+  server.get<{ Params: { id: string } }>("/api/v1/devices/:id", async (request, reply) => {
+    const device = deviceService.getDevice(request.params.id);
+    if (!device) {
+      return reply.code(404).send(envelope({ error: "Device not found" }, request.id));
+    }
+    return envelope({ device: toDeviceDetailDto(device) }, request.id);
+  });
+
+  server.get<{ Params: { id: string } }>("/api/v1/devices/:id/state", async (request, reply) => {
+    const device = deviceService.getDevice(request.params.id);
+    if (!device) {
+      return reply.code(404).send(envelope({ error: "Device not found" }, request.id));
+    }
+    return envelope({ state: device.state }, request.id);
+  });
+
+  server.get("/api/v1/health", async (request) => envelope(await buildHealthDto(config, database, deviceService), request.id));
+
+  server.get("/api/v1/events", async (_request, reply) => {
+    reply.hijack();
+    reply.raw.writeHead(200, {
+      "content-type": "text/event-stream; charset=utf-8",
+      "cache-control": "no-cache, no-transform",
+      connection: "keep-alive",
+      "x-accel-buffering": "no"
+    });
+
+    const writeEvent = (eventName: string, payload: unknown) => {
+      reply.raw.write(`event: ${eventName}\n`);
+      reply.raw.write(`data: ${JSON.stringify(payload)}\n\n`);
+    };
+
+    writeEvent("device.snapshot", {
+      type: "device.snapshot",
+      eventId: `snapshot-${Date.now()}`,
+      emittedAt: new Date().toISOString(),
+      devices: deviceService.listDevices().map(toDeviceSummaryDto)
+    });
+
+    const unsubscribe = deviceService.subscribe((event) => {
+      const dto = toSseDeviceEventDto(event);
+      writeEvent(dto.type, dto);
+    });
+
+    reply.raw.on("close", unsubscribe);
+  });
+
+  registerStaticShell(server, config.webDistPath);
+
+  return {
+    server,
+    deviceService,
+    database,
+    close: async () => {
+      await server.close();
+      await deviceService.stop();
+      await database.close();
+    }
+  };
+}
+
+async function buildHealthDto(
+  config: ServerConfig,
+  database: DashboardDatabase,
+  deviceService: DeviceStateService
+): Promise<HealthDto> {
+  const databaseHealth = await database.health();
+  const deviceHealth = deviceService.health();
+  const primaryAdapter = deviceHealth.adapters[0];
+  return {
+    server: {
+      status: "ok",
+      uptimeSeconds: Math.round(process.uptime()),
+      startedAt: config.startedAt
+    },
+    database: databaseHealth,
+    simulator: {
+      status: primaryAdapter?.status ?? "degraded",
+      adapterId: primaryAdapter?.adapterId ?? "none",
+      scenario: primaryAdapter?.scenario ?? "none",
+      devices: primaryAdapter?.devices ?? 0,
+      currentStep: primaryAdapter?.currentStep ?? 0
+    },
+    events: deviceHealth.events,
+    discovery: getDashboardDiscoveryDescriptor({
+      host: config.host,
+      port: config.port,
+      protocol: "http",
+      advertised: false
+    })
+  };
+}

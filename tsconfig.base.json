@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@bpd/domain": ["packages/domain/src/index.ts"],
+      "@bpd/contracts": ["packages/contracts/src/index.ts"],
+      "@bpd/adapter-api": ["packages/adapter-api/src/index.ts"],
+      "@bpd/adapter-synthetic": ["packages/adapter-synthetic/src/index.ts"],
+      "@bpd/device-core": ["packages/device-core/src/index.ts"],
+      "@bpd/persistence": ["packages/persistence/src/index.ts"],
+      "@bpd/telemetry": ["packages/telemetry/src/index.ts"],
+      "@bpd/discovery": ["packages/discovery/src/index.ts"],
+      "@bpd/secrets": ["packages/secrets/src/index.ts"],
+      "@bpd/observability": ["packages/observability/src/index.ts"],
+      "@bpd/test-support": ["packages/test-support/src/index.ts"]
+    }
+  }
+}

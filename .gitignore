@@ -33,6 +33,9 @@ dist/
 build/
 .next/
 coverage/
+test-results/
+playwright-report/
+*.tsbuildinfo
 
 # General build/runtime
 .tmp/
@@ -41,8 +44,10 @@ tmp/
 logs/
 *.log
 *.sqlite
+*.sqlite-*
 *.sqlite3
 *.db
+.data/
 
 # Media / device captures — never commit live-device output
 captures/

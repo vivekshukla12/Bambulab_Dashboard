@@ -1,0 +1,21 @@
+{
+  "name": "@bpd/test-support",
+  "version": "0.1.0-m1",
+  "type": "module",
+  "license": "MPL-2.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@bpd/persistence": "0.1.0-m1"
+  }
+}

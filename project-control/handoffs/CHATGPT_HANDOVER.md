@@ -97,22 +97,40 @@ Approved constraints/direction:
   - Verified merge commit: `bad179a0f847f9a478e2c167e62dd94760baa105`.
 
 ## Current milestone
-M1 — Architecture foundation + synthetic prototype + real-read feasibility design — **PLANNING / HOLD**.
+M1 — Architecture foundation + synthetic prototype + real-read feasibility design — **IMPLEMENTED / DRAFT PR REVIEW**.
 
-M1 architecture is approved. Implementation is not yet authorized.
+M1 architecture is approved and the queued implementation contract has been executed. Final milestone acceptance and merge remain Product Owner decisions.
 
 ## Current PR / branch
-- Branch: `main`
-- M1 PR: none yet.
-- M1 implementation is not authorized yet.
+- Branch: `m1/synthetic-dashboard-prototype`
+- Draft PR #2: `M1: synthetic dashboard architecture prototype`
+- PR URL: `https://github.com/vivekshukla12/Bambulab_Dashboard/pull/2`
+- Merge is not authorized.
 
 ## Current implementation gate
 
-A proposed complete M1 Codex execution contract exists at:
+The M1 implementation contract in:
 
-`prompts/codex/M1_IMPLEMENTATION_PROPOSAL.md`
+`prompts/codex/NEXT_PROMPT.md`
 
-It is a review artifact only. `prompts/codex/NEXT_PROMPT.md` remains `HOLD`. Product Owner must explicitly approve the execution contract before `NEXT_PROMPT.md` is changed to `QUEUED` and before Codex creates an M1 branch/PR or implements code.
+was queued by Product Owner authorization on 2026-08-23 and implemented on Draft PR #2. `prompts/codex/M1_IMPLEMENTATION_PROPOSAL.md` remains a proposal/review artifact.
+
+## M1 implementation summary
+
+- Added npm-workspace TypeScript monorepo structure under `apps/` and `packages/`.
+- Implemented normalized read-only domain, API DTOs, adapter contract and deterministic synthetic adapter.
+- Implemented Fastify REST/SSE backend, health diagnostics, structured redacting logs, dashboard discovery descriptor and static production serving.
+- Implemented SQLite/Kysely migrations, WAL/foreign-key configuration, current state, raw telemetry and durable operational event separation.
+- Implemented React/Vite PWA shell with fleet/device/diagnostics views, SSE updates, explicit stale/unavailable/reconnecting/recovered/offline presentation and localhost service-worker validation.
+- Added module READMEs, `docs/architecture/MODULE_MAP.md`, TypeDoc output, dependency license inventory/check and Docker/Compose packaging files.
+- No real printers, Bambu protocols, credentials, Developer Mode, Fleet Hub, cloud impersonation, write/control features, cameras/media, AMS integration or external integrations were implemented.
+
+## Validation status
+
+- `npm run validate` passed on 2026-08-23: build, 9 Vitest unit/integration tests, TypeDoc generation and dependency-license inventory.
+- `npm run test:e2e` passed on 2026-08-23: 9 Playwright tests across desktop/tablet/mobile, including live transitions, diagnostics and PWA/offline behavior on localhost.
+- Production-like local run via `npm run build` + `npm start` responded on `/`, `/api/v1/devices` and `/api/v1/health`; health reported SQLite WAL and foreign keys enabled.
+- `npm run docker:build` could not execute locally because `docker` is not installed/on PATH. Dockerfile, compose file and npm scripts are present; Docker/Compose validation remains to be run in a Docker-capable environment.
 
 ## Important decisions
 - GitHub is authoritative project state.
@@ -135,7 +153,7 @@ See `project-control/risks/RISK_REGISTER.md`; highest concerns include real read
 No slicer; no automatic printer/job assignment or print-farm scheduler; no firmware update management; no built-in general rules engine; no remote internet access; no native mobile app; no multi-user/RBAC; no full analytics suite; no NAS backup target. Direct printer write/control, Developer Mode, Fleet Hub, unvalidated camera/media and arbitrary printer-storage operations remain conditional/future unless explicitly promoted by Product Owner decision after supported-interface validation.
 
 ## Next authorized action
-Review `prompts/codex/M1_IMPLEMENTATION_PROPOSAL.md`. If the Product Owner explicitly approves that execution contract, replace/finalize `prompts/codex/NEXT_PROMPT.md` as `QUEUED`. Only then may Codex create the M1 feature branch/draft PR and implement the approved task.
+Review Draft PR #2 and run Docker/Compose validation in a Docker-capable environment or CI. Do not merge without explicit Product Owner approval.
 
 ## Files to read first
 1. `project-control/status/CURRENT_STATUS.md`

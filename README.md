@@ -2,7 +2,7 @@
 
 A local-first browser dashboard for monitoring and managing compatible Bambu Lab printers and related devices across a LAN.
 
-> **Project status:** M0 — repository and governance foundation is complete. M1 — architecture foundation + synthetic dashboard prototype is in planning; product implementation is not yet authorized.
+> **Project status:** M0 is complete. M1 — architecture foundation + synthetic dashboard prototype is implemented on draft PR #2 for review; merge is not authorized.
 
 ## Unofficial project / trademark notice
 
@@ -37,6 +37,48 @@ GitHub is the authoritative project state. Read these files first when continuin
 
 Authoritative requirements and guardrails live under `project-control/specs/`. Prototype feedback is captured under `project-control/feedback/`.
 
+## M1 Prototype Run Path
+
+Requirements:
+
+- Node.js 24 LTS
+- npm 11
+
+Local development:
+
+```bash
+npm install
+npm run dev:server
+npm run dev:web -- --host 127.0.0.1
+```
+
+Open `http://127.0.0.1:5173`. The Vite web app proxies read-only REST/SSE traffic to the Fastify server on `http://127.0.0.1:3001`.
+
+Production-like local run:
+
+```bash
+npm run build
+npm start
+```
+
+Open `http://127.0.0.1:3001`. SQLite data is stored under `.data/` by default and is intentionally ignored by Git.
+
+Docker packaging:
+
+```bash
+npm run docker:build
+npm run docker:up
+```
+
+The compose service mounts persistent application data outside the container in the `dashboard-data` volume.
+
+Validation:
+
+```bash
+npm run validate
+npm run test:e2e
+```
+
 ## Repository layout
 
 ```text
@@ -49,6 +91,14 @@ project-control/
   specs/
   status/
 prompts/codex/
+apps/
+  server/
+  web/
+packages/
+docs/
+  architecture/
+  development/
+  generated/
 src/
 tests/
 test-fixtures/synthetic/

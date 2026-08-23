@@ -1,13 +1,13 @@
 # Next Codex Task
 
 ## Status
-QUEUED — Product Owner authorized M1 implementation on 2026-08-23 after technical-lead architecture review.
+HOLD — M1 implementation has been executed on Draft PR #2 and is awaiting technical-lead/Product Owner review. Docker/Compose execution remains pending in a Docker-capable environment because Docker is not installed locally.
 
 ## Milestone
 M1 — Architecture foundation + synthetic prototype + real-read feasibility design
 
 ## Objective
-Implement the approved M1 architecture as a runnable, testable, heavily documented synthetic dashboard prototype that proves the modular application structure, normalized read-only capability/adapter contracts, server-owned freshness/live-state model, SQLite persistence, REST/SSE browser boundary, PWA shell, Docker packaging, dependency-license controls, and test/documentation toolchain required for M2 real-printer validation.
+Review the implemented M1 synthetic dashboard prototype on Draft PR #2. Do not start additional product implementation, M2 work, real-printer access, Bambu protocol work, or merge activity unless the Product Owner explicitly updates this file with a new queued task.
 
 ## Authoritative architecture and review
 Read these first and treat them as binding:

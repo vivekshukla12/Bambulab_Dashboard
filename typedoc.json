@@ -1,0 +1,20 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "packages/domain/src/index.ts",
+    "packages/contracts/src/index.ts",
+    "packages/adapter-api/src/index.ts",
+    "packages/device-core/src/index.ts",
+    "packages/persistence/src/index.ts",
+    "packages/telemetry/src/index.ts",
+    "packages/discovery/src/index.ts",
+    "packages/secrets/src/index.ts",
+    "packages/observability/src/index.ts"
+  ],
+  "out": "docs/generated/typedoc",
+  "tsconfig": "tsconfig.json",
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "readme": "none",
+  "name": "Bambu Printer Dashboard M1 Contracts"
+}
