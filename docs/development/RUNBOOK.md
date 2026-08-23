@@ -22,6 +22,8 @@ By default, local data is stored under `.data/dashboard.sqlite`.
 
 Run `docker compose up --build`. The prototype is available at `http://127.0.0.1:3001`, with persistent SQLite data mounted in the `dashboard-data` volume.
 
+Run `npm run docker:validate` in a Docker-capable environment to build the image, start Compose, verify the dashboard/API/health endpoints and confirm SQLite persistence across container restart and recreation.
+
 ## Validation Commands
 
 - `npm run build`
@@ -29,6 +31,7 @@ Run `docker compose up --build`. The prototype is available at `http://127.0.0.1
 - `npm run test:e2e`
 - `npm run docs:typedoc`
 - `npm run licenses`
+- `npm run docker:validate`
 
 ## Security Notes
 

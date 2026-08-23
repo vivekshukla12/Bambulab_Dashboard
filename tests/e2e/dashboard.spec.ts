@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
 
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+const visibleStatusMessage = (page: Page, message: string) =>
+  page.locator(".status-message", { hasText: message }).first();
 
 test("fleet and device views show synthetic devices and read-only state transitions", async ({ page }) => {
   await page.goto("/");
@@ -9,10 +12,14 @@ test("fleet and device views show synthetic devices and read-only state transiti
   await expect(page.getByRole("heading", { name: "Workshop A1 Mini" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Studio X2D" })).toBeVisible();
 
-  await expect(page.getByText("Printing from synthetic queue")).toBeVisible({ timeout: 10000 });
-  await expect(page.getByText("No fresh update within simulator freshness window")).toBeVisible({ timeout: 10000 });
-  await expect(page.getByText("Synthetic printer connection unavailable")).toBeVisible({ timeout: 10000 });
-  await expect(page.getByText("Recovered and receiving fresh updates")).toBeVisible({ timeout: 10000 });
+  await expect(visibleStatusMessage(page, "Printing from synthetic queue")).toBeVisible({ timeout: 10000 });
+  await expect(visibleStatusMessage(page, "No fresh update within simulator freshness window")).toBeVisible({
+    timeout: 10000
+  });
+  await expect(visibleStatusMessage(page, "Synthetic printer connection unavailable")).toBeVisible({
+    timeout: 10000
+  });
+  await expect(visibleStatusMessage(page, "Recovered and receiving fresh updates")).toBeVisible({ timeout: 10000 });
 
   await page.goto("/devices/synthetic-x2d");
   await expect(page.getByRole("heading", { name: "Studio X2D" })).toBeVisible();

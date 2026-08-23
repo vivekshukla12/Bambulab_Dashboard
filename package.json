@@ -25,6 +25,7 @@
     "docs:typedoc": "typedoc --options typedoc.json",
     "docker:build": "docker compose build",
     "docker:up": "docker compose up --build",
+    "docker:validate": "node scripts/validate-docker-compose.mjs",
     "licenses": "node scripts/license-check.mjs",
     "validate": "npm run build && npm run test && npm run docs:typedoc && npm run licenses"
   },

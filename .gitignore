@@ -15,8 +15,8 @@ Thumbs.db
 *.p12
 *.pfx
 *.crt
-secrets/
-credentials/
+/secrets/
+/credentials/
 
 # Python
 __pycache__/
