@@ -44,13 +44,15 @@ V1 must support, subject to M2 validation on the initial devices:
 ## V1 Platform — fully developable regardless of Bambu write access
 
 ### Application and device management
-- local application onboarding and authentication;
+- local application onboarding/configuration with **no interactive dashboard login required for the approved read-only V1 LAN model**;
+- clear disclosure that LAN reachability means read access to dashboard-visible information;
+- configurable LAN-accessible versus local-only/selected-interface binding where supported;
 - device registry, aliases, groups, locations, tags, notes, and capability metadata;
 - manually configured/approved real-printer endpoints where required by the validated adapter;
 - deterministic synthetic devices and scenarios retained for development/test.
 
 ### Dashboard and UX
-- responsive desktop/tablet/mobile PWA shell;
+- responsive desktop/tablet/mobile PWA-capable shell;
 - fleet/home dashboard;
 - capability-driven device pages;
 - configurable cards/widgets;
@@ -80,25 +82,28 @@ V1 must support, subject to M2 validation on the initial devices:
 
 ### Notifications and alerts
 - in-app Alerts Center;
-- browser notifications;
+- browser notifications where browser secure-context/platform requirements are satisfied;
 - read/unread/history/preferences;
 - global mute;
 - application, maintenance, system-health, security, backup and real-printer read-event notifications.
 
 ### Search, history, and audit
 - global search/command palette for local/product entities and non-printer actions;
-- audit records for login, configuration, API, integration, file, backup, maintenance, security, and adapter events;
+- audit/history records for configuration, API, integration, file, backup, maintenance, security, adapter and service events;
 - searchable/filterable/exportable history within approved retention/privacy constraints.
 
 ### Local API and integrations
-- strongly authenticated, documented local API;
+- documented normalized browser-facing read API/events for the local dashboard;
+- a **separately authenticated integration API/identity boundary** for Home Assistant, MCP, scripts, AI clients, webhooks and future external consumers once those integrations are implemented;
 - typed/machine-readable schemas and capability discovery;
-- event delivery via approved local event mechanism;
-- webhook support with delivery history/retry policy;
+- event delivery via approved local event mechanisms;
+- webhook support with delivery history/retry policy when introduced;
 - Home Assistant integration target for normalized read-only printer entities/events;
 - Home Assistant may serve as the preferred bridge to Alexa and Google Home rather than separate first-party voice integrations;
 - MCP/script/AI-client integration surface;
 - Daisy-compatible local API/events as a future first-party integration target, without coupling Bambu Dashboard to Daisy's implementation or release schedule.
+
+The no-login dashboard decision does **not** eliminate authentication for future machine-to-machine integration identities. External integration credentials/scopes are independently governed and must not be conflated with browser dashboard login.
 
 ### Files/media owned by the dashboard
 - local storage/catalog of prepared files and dashboard-owned media/exports where allowed;
@@ -110,7 +115,7 @@ V1 must support, subject to M2 validation on the initial devices:
 - backup/restore and migration;
 - encrypted sensitive backup design and machine-independent recovery;
 - update/health-check/rollback architecture;
-- read-only offline PWA access to approved cached data;
+- read-only offline PWA access to approved cached data **when served from a browser-supported secure context**;
 - documented install, upgrade, recovery, diagnostics and support paths.
 
 ## Validation-dependent capabilities
