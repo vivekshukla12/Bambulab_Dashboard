@@ -1,7 +1,7 @@
 # Next Codex Task
 
 ## Status
-QUEUED — Resume Draft PR #2 only to remediate technical-lead review findings. M2 and all new product scope remain blocked.
+HOLD — PR #2 remediation complete; awaiting technical-lead/Product Owner review.
 
 ## Milestone
 M1 — Architecture foundation + synthetic prototype + real-read feasibility design

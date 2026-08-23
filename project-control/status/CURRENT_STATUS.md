@@ -4,7 +4,7 @@
 M1 — Architecture foundation + synthetic prototype + real-read feasibility design
 
 ## State
-IMPLEMENTED / DRAFT PR REVIEW — M1 synthetic prototype implementation is on Draft PR #2. Automated local validation passes except Docker/Compose execution, which is blocked on this machine because Docker is not installed.
+REMEDIATION COMPLETE / DRAFT PR REVIEW — M1 synthetic prototype implementation is on Draft PR #2. The technical-lead reproducibility finding has been remediated, fresh-checkout validation passes, and Docker/Compose validation passes in GitHub Actions. Local Docker execution remains unavailable on this workstation because Docker is not installed.
 
 ## Repository
 `vivekshukla12/Bambulab_Dashboard` — public
@@ -61,6 +61,11 @@ Implemented on Draft PR #2:
 - deterministic synthetic A1 Mini-shaped and X2D-shaped devices using the read-only adapter contract;
 - module READMEs, `docs/architecture/MODULE_MAP.md`, TypeDoc generation, license inventory and Docker/Compose packaging files.
 
+Remediated on Draft PR #2:
+- committed the previously local-only `packages/secrets` workspace and fixed the `.gitignore` rule that hid it;
+- verified fresh-checkout `npm ci`, `npm run validate` and `npm run test:e2e` from GitHub branch state;
+- added and ran `npm run docker:validate` in GitHub Actions, proving Docker/Compose build/startup, dashboard/API/health access and SQLite volume persistence across restart/recreation.
+
 Codex may not:
 - access real printers or credentials;
 - implement Bambu protocols, Developer Mode, Fleet Hub, cloud impersonation, write/control features or later milestones;
@@ -73,4 +78,4 @@ M2 is the real-device GO/NO-GO milestone. It must demonstrate useful, stable rea
 If M2 cannot prove enough real capability to make the dashboard genuinely useful, substantial downstream implementation must stop pending an explicit Product Owner continue/re-scope/stop decision.
 
 ## Next authorized action
-Technical-lead/Product Owner review of Draft PR #2. Product Owner should run Docker/Compose validation in an environment with Docker available or authorize CI to satisfy that evidence. Do not merge without explicit Product Owner approval.
+Technical-lead/Product Owner review of remediated Draft PR #2. Docker/Compose validation evidence is now recorded from GitHub Actions. Do not merge without explicit Product Owner approval.

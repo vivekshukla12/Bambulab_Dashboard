@@ -97,7 +97,7 @@ Approved constraints/direction:
   - Verified merge commit: `bad179a0f847f9a478e2c167e62dd94760baa105`.
 
 ## Current milestone
-M1 — Architecture foundation + synthetic prototype + real-read feasibility design — **IMPLEMENTED / DRAFT PR REVIEW**.
+M1 — Architecture foundation + synthetic prototype + real-read feasibility design — **REMEDIATION COMPLETE / DRAFT PR REVIEW**.
 
 M1 architecture is approved and the queued implementation contract has been executed. Final milestone acceptance and merge remain Product Owner decisions.
 
@@ -109,11 +109,11 @@ M1 architecture is approved and the queued implementation contract has been exec
 
 ## Current implementation gate
 
-The M1 implementation contract in:
+The M1 implementation contract and the queued PR #2 remediation in:
 
 `prompts/codex/NEXT_PROMPT.md`
 
-was queued by Product Owner authorization on 2026-08-23 and implemented on Draft PR #2. `prompts/codex/M1_IMPLEMENTATION_PROPOSAL.md` remains a proposal/review artifact.
+were queued by Product Owner authorization on 2026-08-23 and implemented on Draft PR #2. `prompts/codex/M1_IMPLEMENTATION_PROPOSAL.md` remains a proposal/review artifact.
 
 ## M1 implementation summary
 
@@ -125,12 +125,22 @@ was queued by Product Owner authorization on 2026-08-23 and implemented on Draft
 - Added module READMEs, `docs/architecture/MODULE_MAP.md`, TypeDoc output, dependency license inventory/check and Docker/Compose packaging files.
 - No real printers, Bambu protocols, credentials, Developer Mode, Fleet Hub, cloud impersonation, write/control features, cameras/media, AMS integration or external integrations were implemented.
 
+## M1 remediation summary
+
+- Fixed the technical-lead reproducibility blocker by scoping the root secret ignore rules and committing the complete `packages/secrets` workspace.
+- Added `npm run docker:validate` plus the `M1 validation` GitHub Actions workflow for repeatable fresh-checkout and Docker/Compose evidence.
+- Hardened a Playwright assertion that expected a synthetic status message to be unique even though two device cards can legitimately show the same message.
+- No Dockerfile or Compose topology change was required.
+
 ## Validation status
 
-- `npm run validate` passed on 2026-08-23: build, 9 Vitest unit/integration tests, TypeDoc generation and dependency-license inventory.
-- `npm run test:e2e` passed on 2026-08-23: 9 Playwright tests across desktop/tablet/mobile, including live transitions, diagnostics and PWA/offline behavior on localhost.
+- Fresh GitHub checkout validation passed on 2026-08-23 after the remediation code/workflow changes: `npm ci`, `npm run validate` and `npm run test:e2e`.
+- GitHub Actions push run `32660053417` passed on 2026-08-23: fresh checkout validation and Docker Compose validation on Ubuntu 24.04 with Node.js `v24.19.0`.
+- Docker Compose validation job `97244708520` built `bambu-printer-dashboard:m1`, loaded `/` with HTTP 200, verified `GET /api/v1/devices`, verified `GET /api/v1/health` with SQLite WAL and foreign keys enabled, and proved persistent volume state across restart and container recreation.
+- `npm run validate` passed locally on 2026-08-23: build, 9 Vitest unit/integration tests, TypeDoc generation and dependency-license inventory.
+- `npm run test:e2e` passed locally on 2026-08-23: 9 Playwright tests across desktop/tablet/mobile, including live transitions, diagnostics and PWA/offline behavior on localhost.
 - Production-like local run via `npm run build` + `npm start` responded on `/`, `/api/v1/devices` and `/api/v1/health`; health reported SQLite WAL and foreign keys enabled.
-- `npm run docker:build` could not execute locally because `docker` is not installed/on PATH. Dockerfile, compose file and npm scripts are present; Docker/Compose validation remains to be run in a Docker-capable environment.
+- Local Docker execution still cannot run on this workstation because `docker` is not installed/on PATH; Docker/Compose validation is satisfied by the GitHub Actions evidence above.
 
 ## Important decisions
 - GitHub is authoritative project state.
@@ -153,7 +163,7 @@ See `project-control/risks/RISK_REGISTER.md`; highest concerns include real read
 No slicer; no automatic printer/job assignment or print-farm scheduler; no firmware update management; no built-in general rules engine; no remote internet access; no native mobile app; no multi-user/RBAC; no full analytics suite; no NAS backup target. Direct printer write/control, Developer Mode, Fleet Hub, unvalidated camera/media and arbitrary printer-storage operations remain conditional/future unless explicitly promoted by Product Owner decision after supported-interface validation.
 
 ## Next authorized action
-Review Draft PR #2 and run Docker/Compose validation in a Docker-capable environment or CI. Do not merge without explicit Product Owner approval.
+Review remediated Draft PR #2. Docker/Compose validation evidence is now recorded from CI. Do not merge without explicit Product Owner approval.
 
 ## Files to read first
 1. `project-control/status/CURRENT_STATUS.md`
