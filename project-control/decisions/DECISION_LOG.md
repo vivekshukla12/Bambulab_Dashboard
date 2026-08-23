@@ -109,3 +109,14 @@
 - **Consequences:** M1 technology and repository-structure decisions must include a documentation toolchain and module/context strategy. Documentation updates become part of each implementation change and Definition of Done. The exact documentation standard remains stack-dependent (for example Javadoc, TSDoc/JSDoc, Python docstrings/type hints, Rustdoc, or equivalent) and is not selected by this decision.
 - **Approved by:** Product owner on 2026-08-23.
 - **Related milestone / PR:** M1 onward.
+
+## DEC-011 — Exclude printer Developer Mode and defer direct Bambu Lab partnership/contact
+
+- **Date:** 2026-08-23
+- **Status:** Approved / current constraint
+- **Decision:** The project will not require or use Bambu printer Developer Mode. The project will also not contact Bambu Lab or pursue developer-partner authorization at this stage. Reverse-engineered cloud-client impersonation remains prohibited under DEC-006.
+- **Rationale:** Preserve a low-friction end-user posture that does not require weakening/default-changing printer security settings, and avoid making current development dependent on vendor partnership or private authorization.
+- **Alternatives considered:** Direct LAN integration through Developer Mode; immediate Bambu developer-partner/Fleet Hub authorization request — both deferred by product-owner direction.
+- **Consequences:** Fleet Hub API cannot be treated as an executable integration path while its developer authorization/certificate requirements remain unmet. Direct Developer Mode MQTT/FTP/live-stream integration is out of scope. M1 and subsequent work must keep printer transport behind replaceable adapters, implement against deterministic synthetic adapters by default, and distinguish product functionality that is fully deliverable without Bambu access from functionality that is interface-blocked. Bambu Connect or any other publicly available user-mediated interface may be evaluated only within its documented supported boundaries and must not be assumed to provide headless monitoring/control.
+- **Approved by:** Product owner on 2026-08-23.
+- **Related milestone / PR:** M1 onward.
