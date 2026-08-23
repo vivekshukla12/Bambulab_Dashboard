@@ -33,12 +33,12 @@
 - **Status:** Open
 - **Related milestone:** M1 onward
 
-## R-013 — No currently authorized general real-printer integration path under project constraints
+## R-013 — Real-printer read access is viable, but full control path remains unavailable under project constraints
 
-- **Description:** The product owner has excluded Bambu printer Developer Mode and deferred Bambu Lab developer-partner contact. Fleet Hub's documented API requires Developer Center authorization and Bambu-issued credentials/certificates, while Bambu Connect is not documented as a general headless always-on monitoring/control API. Under these constraints, the project currently lacks an approved general interface for full live telemetry and control of real printers.
+- **Description:** Bambu's published authorization-control guidance explicitly preserves third-party read-only printer status/print-progress access, including Home Assistant-style monitoring, but critical write/control operations require stronger authorized paths. The product owner excludes Developer Mode, Fleet Hub hardware/partner authorization is not being pursued, and cloud-client impersonation is prohibited. Therefore a real read-only dashboard is viable, while broad real-printer control remains unavailable under current constraints.
 - **Likelihood:** High
 - **Impact:** High
-- **Mitigation:** Keep all printer transport behind replaceable capability-driven adapters; build and validate the product platform with deterministic synthetic adapters; separately classify every PRD feature as independent, adapter-ready, or interface-blocked; periodically re-evaluate publicly documented supported Bambu interfaces without using Developer Mode, cloud impersonation, or private partnership material.
+- **Mitigation:** Make the first real-device adapter explicitly read-only; maintain a per-model/per-firmware capability matrix for A1 Mini and X2D; validate actual exposed fields before claiming support; keep write/control capabilities disabled unless separately documented and authorized; retain deterministic synthetic adapters for regression tests.
 - **Owner:** Product owner / architecture
 - **Status:** Open / accepted current constraint
-- **Related milestone:** M1 onward
+- **Related milestone:** M1-M2 onward
