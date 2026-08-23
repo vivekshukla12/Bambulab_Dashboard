@@ -98,3 +98,14 @@
 - **Consequences:** PR #1 may be merged. After merge, project-control state must be reconciled to M0 COMPLETE and M1 PLANNING/HOLD. A specific M1 task still requires separate product-owner authorization before Codex implementation.
 - **Approved by:** Product owner on 2026-08-22 after independent M0 completeness review.
 - **Related milestone / PR:** M0 / PR #1.
+
+## DEC-010 — Documentation-first modular and token-efficient development
+
+- **Date:** 2026-08-23
+- **Status:** Approved / baseline
+- **Decision:** All product development must use strong module/package boundaries and heavy developer documentation. Significant modules must carry focused local documentation; public and extension-facing contracts must use the selected language's structured source-documentation and type/schema facilities so IDEs can provide contextual help and generated API/reference documentation can be produced. Repository organization and Codex task instructions must be deliberately token-efficient so routine changes can be made from scoped module context rather than requiring whole-repository re-reading.
+- **Rationale:** The product is intended to be extended and maintained over many milestones by human developers and AI implementation agents. Explicit contracts, discoverable documentation, and narrow context boundaries reduce maintenance cost, regression risk, architectural drift, and AI context/token waste.
+- **Alternatives considered:** Rely primarily on implementation readability and top-level documentation — rejected because it forces future maintainers and agents to reconstruct module behavior and cross-cutting assumptions repeatedly.
+- **Consequences:** M1 technology and repository-structure decisions must include a documentation toolchain and module/context strategy. Documentation updates become part of each implementation change and Definition of Done. The exact documentation standard remains stack-dependent (for example Javadoc, TSDoc/JSDoc, Python docstrings/type hints, Rustdoc, or equivalent) and is not selected by this decision.
+- **Approved by:** Product owner on 2026-08-23.
+- **Related milestone / PR:** M1 onward.
