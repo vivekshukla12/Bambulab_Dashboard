@@ -32,3 +32,13 @@
 - **Owner:** Product owner / architecture
 - **Status:** Open
 - **Related milestone:** M1 onward
+
+## R-013 — No currently authorized general real-printer integration path under project constraints
+
+- **Description:** The product owner has excluded Bambu printer Developer Mode and deferred Bambu Lab developer-partner contact. Fleet Hub's documented API requires Developer Center authorization and Bambu-issued credentials/certificates, while Bambu Connect is not documented as a general headless always-on monitoring/control API. Under these constraints, the project currently lacks an approved general interface for full live telemetry and control of real printers.
+- **Likelihood:** High
+- **Impact:** High
+- **Mitigation:** Keep all printer transport behind replaceable capability-driven adapters; build and validate the product platform with deterministic synthetic adapters; separately classify every PRD feature as independent, adapter-ready, or interface-blocked; periodically re-evaluate publicly documented supported Bambu interfaces without using Developer Mode, cloud impersonation, or private partnership material.
+- **Owner:** Product owner / architecture
+- **Status:** Open / accepted current constraint
+- **Related milestone:** M1 onward
