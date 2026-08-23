@@ -36,12 +36,12 @@
 ## DEC-004 — Technology stack remains undecided in M0
 
 - **Date:** 2026-08-22
-- **Status:** Approved deferral / Pending M1 selection
+- **Status:** Superseded by DEC-014
 - **Decision:** No application framework, frontend framework, datastore, Bambu transport, camera stack, deployment packaging, or secret-recovery mechanism is selected during M0.
 - **Rationale:** The PRD identifies material feasibility/security questions that must be resolved before these choices are safe.
 - **Alternatives considered:** Pick a conventional stack during bootstrap — deferred to avoid accidental architecture authorization.
 - **Consequences:** M1 must produce explicit architecture decisions and prove them in a runnable synthetic prototype.
-- **Approved by:** Product owner through approval of M0 on 2026-08-22; actual technology selections remain subject to M1 authorization/decision.
+- **Approved by:** Product owner through approval of M0 on 2026-08-22; actual technology selections remained subject to M1 authorization/decision until DEC-014.
 - **Related milestone / PR:** M0 → M1.
 
 ## DEC-005 — Adopt MPL-2.0 and explicit third-party trademark posture
@@ -106,7 +106,7 @@
 - **Decision:** All product development must use strong module/package boundaries and heavy developer documentation. Significant modules must carry focused local documentation; public and extension-facing contracts must use the selected language's structured source-documentation and type/schema facilities so IDEs can provide contextual help and generated API/reference documentation can be produced. Repository organization and Codex task instructions must be deliberately token-efficient so routine changes can be made from scoped module context rather than requiring whole-repository re-reading.
 - **Rationale:** The product is intended to be extended and maintained over many milestones by human developers and AI implementation agents. Explicit contracts, discoverable documentation, and narrow context boundaries reduce maintenance cost, regression risk, architectural drift, and AI context/token waste.
 - **Alternatives considered:** Rely primarily on implementation readability and top-level documentation — rejected because it forces future maintainers and agents to reconstruct module behavior and cross-cutting assumptions repeatedly.
-- **Consequences:** M1 technology and repository-structure decisions must include a documentation toolchain and module/context strategy. Documentation updates become part of each implementation change and Definition of Done. The exact documentation standard remains stack-dependent (for example Javadoc, TSDoc/JSDoc, Python docstrings/type hints, Rustdoc, or equivalent) and is not selected by this decision.
+- **Consequences:** M1 technology and repository-structure decisions must include a documentation toolchain and module/context strategy. Documentation updates become part of each implementation change and Definition of Done. The exact documentation standard remained stack-dependent until DEC-014.
 - **Approved by:** Product owner on 2026-08-23.
 - **Related milestone / PR:** M1 onward.
 
@@ -142,3 +142,36 @@
 - **Consequences:** M1 remains architecture/synthetic-first but must explicitly prepare M2 real-read validation. M2 cannot pass on synthetic evidence and must test both initial printers. Later milestones expose only validated real capabilities plus fully local product features. Printer controls, camera/media privileges and vendor-dependent operations remain conditional/future unless separately validated and Product Owner approved.
 - **Approved by:** Product owner on 2026-08-23.
 - **Related milestone / PR:** M1 onward.
+
+## DEC-014 — Approve M1 TypeScript/React/Node/SQLite modular architecture
+
+- **Date:** 2026-08-23
+- **Status:** Approved
+- **Decision:** Adopt the M1 architecture recorded in `project-control/specs/M1_ARCHITECTURE.md`: Node.js 24 LTS + TypeScript; React + Vite frontend; Fastify server; SQLite with `better-sqlite3`; Kysely typed SQL/migrations; npm-workspace monorepo with strict package boundaries; Vitest + Playwright testing; TypeDoc plus structured TypeScript source documentation; REST + Server-Sent Events; direct local development plus Docker/Docker Compose production packaging. Significant modules must have local context documentation and public contracts suitable for IDE hover/generated docs.
+- **Rationale:** This stack supports a lightweight local-first always-on service, strong type sharing between frontend/backend, excellent IDE/documentation support, explicit modular boundaries, efficient Codex context, mature testing, SQLite-native operation and portable packaging without unnecessary infrastructure.
+- **Alternatives considered:** Python/FastAPI backend, Go backend, separate repositories, PostgreSQL, heavier monorepo/application frameworks and heavier frontend state/component frameworks. These remain technically viable but add cross-language contract duplication, operational weight or unnecessary abstraction for current scope.
+- **Consequences:** DEC-004 technology deferral is superseded. Codex must not substitute alternative frameworks/datastores/build systems without a new Product Owner-approved decision. Production/core dependencies require open-source, commercial-use-compatible, MPL-2.0-compatible licensing/provenance checks.
+- **Approved by:** Product owner on 2026-08-23 after architecture interview and consolidated package review.
+- **Related milestone / PR:** M1.
+
+## DEC-015 — Adopt read-only LAN access, discovery and printer-credential policy
+
+- **Date:** 2026-08-23
+- **Status:** Approved
+- **Decision:** The read-only V1 dashboard has no interactive application login. It is LAN-accessible by default with an option to restrict network binding where feasible. Initial read-only LAN deployment may use HTTP while remaining HTTPS-capable; HTTPS plus strong authentication is mandatory before any future write/control or comparable sensitive capability. The dashboard server should advertise a stable LAN-local service name via mDNS or equivalent so manual server IP/port entry is not the normal UX. Future real-printer onboarding uses server-side LAN discovery plus a user-supplied LAN Access Code, with manual IP/serial/access-code fallback. The user decides per printer whether the Access Code is remembered: remembered values are encrypted at rest through the secrets module; declined values remain process-memory-only and must be re-entered after restart.
+- **Rationale:** Read-only LAN monitoring does not justify unnecessary dashboard-login friction, while printer credentials remain sensitive device secrets. Stable local naming and automatic printer discovery reduce setup friction without browser-side LAN scanning. Separating read-only access from future privileged control keeps the current product simple while preserving a hard security gate for later capabilities.
+- **Alternatives considered:** Mandatory V1 dashboard authentication; localhost-only dashboard; manual server IP/port; manual-only printer onboarding; always-persisted or never-persisted Access Codes; mandatory HTTPS before the read-only prototype.
+- **Consequences:** LAN reachability equals dashboard read access and must be documented clearly. Printer Access Codes must never appear in logs, browser storage, normal API responses, diagnostics, source control or plaintext backups. Switching a printer from remembered to non-remembered must delete its persisted encrypted secret. Real-printer access remains M2 and requires separate authorization.
+- **Approved by:** Product owner on 2026-08-23.
+- **Related milestone / PR:** M1 architecture; M2 onboarding target.
+
+## DEC-016 — Adopt tiered telemetry/history retention
+
+- **Date:** 2026-08-23
+- **Status:** Approved
+- **Decision:** Separate durable operational/analytics history from raw high-frequency telemetry. Durable data needed for printer lifecycle, job summaries/outcomes, maintenance/service history, cumulative usage and approved long-term analytics aggregates is retained for the life of the dashboard/printer unless explicitly deleted/reset. Raw/high-frequency telemetry defaults to 30-day retention and is user-configurable from 1 through 365 days. Selected compact aggregates may survive raw-data expiry when useful for maintenance or analytics.
+- **Rationale:** Long-term maintenance and future analytics need historical continuity, while retaining dense telemetry indefinitely would create unnecessary database growth and operational cost.
+- **Alternatives considered:** One global 30/90/365-day retention period; indefinite retention of all raw telemetry.
+- **Consequences:** SQLite schema/jobs must separate durable records/aggregates from expiring raw samples. Retention configuration and cleanup must never delete required secrets/audit data through accidental cross-domain coupling.
+- **Approved by:** Product owner on 2026-08-23.
+- **Related milestone / PR:** M1 persistence architecture onward.
