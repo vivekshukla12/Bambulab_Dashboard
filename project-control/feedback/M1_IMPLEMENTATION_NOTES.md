@@ -8,6 +8,19 @@ PR: `https://github.com/vivekshukla12/Bambulab_Dashboard/pull/2`
 
 Validation head for remediation code/workflow changes: `6b23e850ebb88ae4f1b689bef9165f5759737c9f`
 
+## Product Owner Hands-On Feedback — 2026-08-23
+
+The Product Owner completed hands-on testing of the M1 prototype.
+
+Observed feedback:
+- The prototype UI is functional but visually basic and not sufficiently modern for the eventual product experience.
+- No frontend/UI redesign is requested for M1 and no change to PR #2 is required for this feedback.
+- Visual modernization is explicitly deferred for later planning, either as part of a later product milestone or as a small V1.1 UI/UX refresh after the core V1 functionality is proven.
+
+Classification: **non-blocking / deferred UX improvement**.
+
+This feedback does not expand the current M1 scope and must not trigger unqueued frontend work. Any later UI refresh should preserve the capability-driven information architecture and be separately scoped/authorized.
+
 ## Remediation Evidence
 
 Executed on 2026-08-23 to resolve the technical-lead reproducibility finding.
