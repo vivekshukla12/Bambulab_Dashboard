@@ -42,3 +42,33 @@
 - **Owner:** Product owner / architecture
 - **Status:** Open / accepted current constraint
 - **Related milestone:** M1-M2 onward
+
+## R-014 — Standard-mode read-only status path may vary by firmware/model or become less accessible
+
+- **Description:** Although Bambu publicly states that printer status pushes remain available to third-party monitoring, the exact field set, authentication behavior, cadence, reconnect behavior or firmware enforcement may differ between A1 Mini and X2D or change over time. A technically successful connection may still expose too little stable data for a useful product.
+- **Likelihood:** High
+- **Impact:** Critical
+- **Mitigation:** Treat M2 as a hard dual-device GO/NO-GO gate; test the Product Owner's current firmware on both devices; record a sanitized capability matrix and timing/reliability evidence; isolate the transport behind `adapter-bambu-readonly`; retain synthetic regression; stop before M3 if either device cannot meet the usefulness threshold without prohibited mechanisms.
+- **Owner:** Architecture / Product owner
+- **Status:** Open — primary M2 feasibility risk
+- **Related milestone:** M2
+
+## R-015 — Real LAN Access Code or private device evidence could leak during M2 debugging
+
+- **Description:** M2 introduces real printer credentials and private LAN telemetry into local development. Debugging, logs, screenshots, shell history, CI configuration, issue/PR comments, packet captures or test fixtures could accidentally expose LAN Access Codes, local addresses, identifiers or raw private payloads in the public repository.
+- **Likelihood:** Medium
+- **Impact:** High
+- **Mitigation:** Default M2 real credentials to memory-only/non-persisted handling; never run real-device tests in public CI; redact sensitive fields; prohibit raw private payload/device dumps and identifiers in Git; use local-only debugging evidence and convert findings into sanitized summaries/project-authored synthetic fixtures before commit; review the PR for sensitive material before acceptance.
+- **Owner:** Security / Architecture
+- **Status:** Open
+- **Related milestone:** M2
+
+## R-016 — Read-only MQTTS transport assumptions may depend on unofficial implementation details
+
+- **Description:** Bambu publicly confirms that status pushes remain available, but not every low-level transport/authentication detail required by an independent client may be formally documented in public vendor material. Community implementations may reveal practical behavior, but copying proprietary code or depending on a security bypass would violate project constraints.
+- **Likelihood:** Medium
+- **Impact:** High
+- **Mitigation:** Authorize only standard-mode read-only status consumption; use public vendor statements and legally compatible open-source interoperability references carefully; preserve provenance; do not copy proprietary Bambu network-plugin code; do not bypass signatures/authentication/TLS; stop and surface the boundary if a working client would require prohibited behavior.
+- **Owner:** Product owner / Architecture
+- **Status:** Open
+- **Related milestone:** M2
