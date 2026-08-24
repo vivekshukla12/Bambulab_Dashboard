@@ -42,6 +42,18 @@ export type BambuConnectionPhase =
   | "stopped";
 
 /**
+ * Redacted failure categories safe for local validation evidence and diagnostics.
+ */
+export type BambuFailureCategory =
+  | "none"
+  | "start-failed"
+  | "stream-closed"
+  | "transport-error"
+  | "malformed-status"
+  | "stale-timeout"
+  | "offline-timeout";
+
+/**
  * User-provided M2 real-printer connection fields. Sensitive values remain process-memory only.
  */
 export interface BambuPrinterConnectionInput {
@@ -70,6 +82,13 @@ export interface SanitizedBambuPrinterConnection {
   connectionState: BambuConnectionPhase;
   credentialMode: "memory-only";
   lastObservationAt?: string;
+}
+
+/**
+ * Credential-free connection diagnostics for local-only M2 validation evidence.
+ */
+export interface BambuConnectionDiagnostics extends SanitizedBambuPrinterConnection {
+  lastFailureCategory: BambuFailureCategory;
 }
 
 /**
@@ -253,6 +272,13 @@ export class BambuReadonlyAdapter implements ReadOnlyDeviceAdapter {
   }
 
   /**
+   * Returns credential-free connection diagnostics for local validation evidence.
+   */
+  listConnectionDiagnostics(): BambuConnectionDiagnostics[] {
+    return [...this.sessions.values()].map((session) => session.toConnectionDiagnostics());
+  }
+
+  /**
    * Removes process-memory connection details for one configured real printer.
    */
   async forgetPrinter(deviceId: DeviceId): Promise<boolean> {
@@ -338,6 +364,8 @@ class PrinterSession {
   private reconnectDelayMs: number;
   private device: NormalizedDevice;
   private lastObservationAt: string | undefined;
+  private lastFailureCategory: BambuFailureCategory = "none";
+  private recyclingTransport = false;
   private stopped = false;
 
   constructor(options: PrinterSessionOptions) {
@@ -361,9 +389,7 @@ class PrinterSession {
   async stop(): Promise<void> {
     this.stopped = true;
     this.clearTimers();
-    this.clearTransportSubscriptions();
-    await this.transport?.stop();
-    this.transport = undefined;
+    await this.closeCurrentTransport();
     this.phase = "stopped";
   }
 
@@ -391,13 +417,23 @@ class PrinterSession {
     return connection;
   }
 
+  toConnectionDiagnostics(): BambuConnectionDiagnostics {
+    return {
+      ...this.toSanitizedConnection(),
+      lastFailureCategory: this.lastFailureCategory
+    };
+  }
+
   private async connect(): Promise<void> {
     if (this.stopped) {
       return;
     }
     this.phase = this.phase === "unavailable" ? "reconnecting" : "connecting";
     this.publishTransition("degraded", "Connecting to real printer read-only status stream.");
-    this.clearTransportSubscriptions();
+    await this.closeCurrentTransport();
+    if (this.stopped) {
+      return;
+    }
     const transportConfig: BambuMqttsTransportConfig = {
       host: this.config.host,
       port: this.config.port,
@@ -414,11 +450,12 @@ class PrinterSession {
       this.transport.onState((state) => this.handleTransportState(state)),
       this.transport.onError(() => this.handleTransportError())
     );
+    this.scheduleFreshnessTimers();
 
     try {
       await this.transport.start();
     } catch {
-      this.handleTransportError();
+      await this.recoverTransport("start-failed", "Read-only status stream failed to start; reconnecting with bounded backoff.");
     }
   }
 
@@ -441,6 +478,7 @@ class PrinterSession {
       this.scheduleFreshnessTimers();
       this.publish(this.device);
     } catch {
+      this.lastFailureCategory = "malformed-status";
       this.phase = "reconnecting";
       this.publishTransition("degraded", "Received malformed read-only printer status; waiting for the next valid update.");
     }
@@ -453,12 +491,11 @@ class PrinterSession {
     if (state === "connected") {
       this.phase = "connected";
       this.publishTransition("degraded", "Connected to read-only status stream; waiting for printer status payload.");
+      this.scheduleFreshnessTimers();
       return;
     }
     if (state === "closed") {
-      this.phase = "reconnecting";
-      this.publishTransition("degraded", "Read-only status stream interrupted; reconnecting with bounded backoff.");
-      this.scheduleReconnect();
+      void this.recoverTransport("stream-closed", "Read-only status stream interrupted; reconnecting with bounded backoff.");
     }
   }
 
@@ -466,8 +503,18 @@ class PrinterSession {
     if (this.stopped) {
       return;
     }
+    void this.recoverTransport("transport-error", "Read-only status stream error; reconnecting with bounded backoff.");
+  }
+
+  private async recoverTransport(category: BambuFailureCategory, message: string): Promise<void> {
+    if (this.stopped || this.recyclingTransport) {
+      return;
+    }
+    this.lastFailureCategory = category;
     this.phase = "reconnecting";
-    this.publishTransition("degraded", "Read-only status stream error; reconnecting with bounded backoff.");
+    this.publishTransition("degraded", message);
+    this.clearFreshnessTimers();
+    await this.closeCurrentTransport();
     this.scheduleReconnect();
   }
 
@@ -484,6 +531,9 @@ class PrinterSession {
   }
 
   private scheduleFreshnessTimers(): void {
+    if (this.stopped) {
+      return;
+    }
     if (this.staleTimer) {
       clearTimeout(this.staleTimer);
     }
@@ -491,14 +541,27 @@ class PrinterSession {
       clearTimeout(this.offlineTimer);
     }
     this.staleTimer = setTimeout(() => {
+      this.lastFailureCategory = "stale-timeout";
       this.phase = "stale";
       this.publishTransition("stale", "No fresh real-printer status update within the observed freshness window.");
     }, this.config.staleAfterMs);
     this.offlineTimer = setTimeout(() => {
-      this.phase = "unavailable";
-      this.device = this.placeholderDevice("unavailable", "unavailable", "Real printer status stream unavailable.");
-      this.publish(this.device);
+      void this.markUnavailableAndReconnect();
     }, this.config.offlineAfterMs);
+  }
+
+  private async markUnavailableAndReconnect(): Promise<void> {
+    if (this.stopped || this.recyclingTransport) {
+      return;
+    }
+    this.lastFailureCategory = "offline-timeout";
+    this.phase = "unavailable";
+    this.sequence += 1;
+    this.device = this.placeholderDevice("unavailable", "unavailable", "Real printer status stream unavailable.");
+    this.publish(this.device);
+    this.clearFreshnessTimers();
+    await this.closeCurrentTransport();
+    this.scheduleReconnect();
   }
 
   private publishTransition(quality: FreshnessQuality, message: string): void {
@@ -560,6 +623,10 @@ class PrinterSession {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = undefined;
     }
+    this.clearFreshnessTimers();
+  }
+
+  private clearFreshnessTimers(): void {
     if (this.staleTimer) {
       clearTimeout(this.staleTimer);
       this.staleTimer = undefined;
@@ -573,6 +640,23 @@ class PrinterSession {
   private clearTransportSubscriptions(): void {
     for (const unsubscribe of this.unsubscribers.splice(0)) {
       unsubscribe();
+    }
+  }
+
+  private async closeCurrentTransport(): Promise<void> {
+    const transport = this.transport;
+    this.transport = undefined;
+    this.clearTransportSubscriptions();
+    if (!transport) {
+      return;
+    }
+    this.recyclingTransport = true;
+    try {
+      await transport.stop();
+    } catch {
+      // Transport shutdown errors are intentionally reduced to the redacted category already recorded by the caller.
+    } finally {
+      this.recyclingTransport = false;
     }
   }
 }

@@ -4,7 +4,7 @@
 M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype
 
 ## State
-IMPLEMENTATION IN PROGRESS — Product Owner explicitly started M2 on 2026-08-24. Codex resumed from GitHub, confirmed `prompts/codex/NEXT_PROMPT.md` is QUEUED, created the dedicated M2 branch and opened draft PR #3 before substantial implementation. The offline implementation scaffold is now in place: dedicated Bambu read-only adapter package, memory-only onboarding route/UI, mocked-transport tests and local-only validation runbook/script. Real A1 Mini + X2D validation has not run yet and is still required before any M2 GO/CONDITIONAL GO/NO-GO recommendation. M2 acceptance, GO/NO-GO disposition, merge, and M3 remain separately Product Owner controlled.
+IMPLEMENTATION IN PROGRESS — Product Owner explicitly started M2 on 2026-08-24. Codex resumed from GitHub, confirmed `prompts/codex/NEXT_PROMPT.md` is QUEUED, created the dedicated M2 branch and opened draft PR #3 before substantial implementation. The offline implementation scaffold is now in place and the latest PR #3 technical review remediation has been applied: connection evidence remains pre-stop, reconnect cleanup actively owns one transport per printer, browser credential entry is restricted to loopback/HTTPS guidance and Docker evidence is reconciled with GitHub Actions. Real A1 Mini + X2D validation has not run yet and is still required before any M2 GO/CONDITIONAL GO/NO-GO recommendation. M2 acceptance, GO/NO-GO disposition, merge, and M3 remain separately Product Owner controlled.
 
 ## Repository
 `vivekshukla12/Bambulab_Dashboard` — public
@@ -92,13 +92,16 @@ No UI redesign is required or authorized in M2.
 - Added `GET /api/v1/real-printers` and `POST /api/v1/real-printers` for minimum server-side onboarding. LAN Access Codes remain process-memory-only by default and are not returned by diagnostics.
 - Added minimum fleet-page real-printer onboarding UI without frontend redesign.
 - Added `npm run m2:validate:real -- secrets/m2-printers.local.json` and `docs/development/M2_REAL_DEVICE_VALIDATION.md` for local-only Product Owner LAN validation.
+- Hardened reconnect lifecycle so transport errors, stream closures and silent offline timeouts stop and clean the prior transport before a replacement is created.
+- Expanded the local-only validation report with pre-stop connection state, initial connection timing/result, update cadence/latency summaries, redacted failure categories and `unavailable` capability classification for fields absent from observed live payloads.
+- Tightened browser/runbook guidance: real Access Code entry through the browser form is limited to `localhost`/loopback on the server machine or HTTPS-served dashboards; remote LAN HTTP validation uses the local CLI config path.
 - Current repository evidence in `project-control/feedback/M2_REAL_DEVICE_VALIDATION_EVIDENCE.md` remains `not-tested` for real devices.
 
 ## M2 validation status
 
-- `npm run validate` passed on 2026-08-24 in the Codex environment.
-- `npm run test:e2e` passed on 2026-08-24 across desktop, tablet and mobile Playwright projects.
-- `npm run docker:validate` could not run in the Codex environment because Docker is not installed/available (`docker` command not found). Docker/Compose validation remains required in a Docker-capable environment before technical review.
+- `npm run validate` passed on 2026-08-24 in the Codex environment after the PR #3 review remediation.
+- `npm run test:e2e` passed on 2026-08-24 across desktop, tablet and mobile Playwright projects after the PR #3 review remediation.
+- GitHub Actions run `32725830367` passed both `Fresh checkout validation` and `Docker Compose validation` for the PR branch. Local Docker remains unavailable in the Codex workstation (`docker` command not found), but Docker/Compose evidence is no longer outstanding solely because of that workstation limitation.
 - Real-device validation on the Product Owner LAN has not run; synthetic/offline evidence cannot satisfy M2.
 
 ## Credential/evidence policy
@@ -128,4 +131,4 @@ See `project-control/risks/RISK_REGISTER.md`, especially:
 - R-016 — low-level read transport assumptions may depend on unofficial details.
 
 ## Next authorized action
-Continue `prompts/codex/NEXT_PROMPT.md` within the approved M2 boundary: run Docker/Compose validation in a Docker-capable environment, perform local-only real-device validation on the Product Owner LAN for A1 Mini and X2D, record sanitized evidence, then prepare a technical GO / CONDITIONAL GO / NO-GO recommendation. Do not merge and do not begin M3.
+Continue `prompts/codex/NEXT_PROMPT.md` within the approved M2 boundary: perform local-only real-device validation on the Product Owner LAN for A1 Mini and X2D, record sanitized evidence, then prepare a technical GO / CONDITIONAL GO / NO-GO recommendation. Do not merge and do not begin M3.

@@ -19,7 +19,7 @@ The web app has no public package API. Its network contract is the versioned rea
 
 ## Owned Data
 
-Only transient browser presentation state is owned here. No credentials or printer secrets are stored in browser storage; the LAN Access Code field is cleared after submit.
+Only transient browser presentation state is owned here. No credentials or printer secrets are stored in browser storage; the LAN Access Code field is cleared after submit. Real Access Code entry through the browser form is limited to `localhost`/loopback on the server machine or HTTPS-served dashboards; remote LAN HTTP validation uses the local CLI config path instead.
 
 ## Events
 

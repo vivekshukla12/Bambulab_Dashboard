@@ -6,53 +6,71 @@ import { fileURLToPath } from "node:url";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const configPath = path.resolve(root, process.argv[2] ?? "secrets/m2-printers.local.json");
-const { createBambuReadonlyAdapter } = await import("../packages/adapter-bambu-readonly/dist/index.js");
 
-const config = await readValidationConfig(configPath);
-const durationSeconds = positiveNumber(config.durationSeconds, 120);
-const adapter = createBambuReadonlyAdapter();
-const evidence = new Map();
+await main().catch((error) => {
+  console.error(safeValidationErrorMessage(error));
+  process.exitCode = 1;
+});
 
-adapter.subscribe((event) => recordDeviceEvent(evidence, event.device));
+async function main() {
+  const { createBambuReadonlyAdapter } = await import("../packages/adapter-bambu-readonly/dist/index.js");
+  const config = await readValidationConfig(configPath);
+  const durationSeconds = positiveNumber(config.durationSeconds, 120);
+  const adapter = createBambuReadonlyAdapter();
+  const evidence = new Map();
+  const configured = [];
 
-for (const printer of config.printers) {
-  await adapter.configurePrinter(toConnectionInput(printer));
-}
+  adapter.subscribe((event) => recordDeviceEvent(evidence, event.device));
 
-await adapter.start();
-await wait(durationSeconds * 1000);
-const devices = await adapter.discoverDevices();
-await adapter.stop();
+  for (const printer of config.printers) {
+    const connection = await adapter.configurePrinter(toConnectionInput(printer));
+    configured.push(connection);
+    getDeviceEvidence(evidence, connection.id).configuredAt = connection.configuredAt;
+  }
 
-const generatedAt = new Date().toISOString();
-const report = {
-  generatedAt,
-  durationSeconds,
-  validationMode: "local-only",
-  credentialPolicy: "memory-only; access codes are not printed, logged, persisted or returned",
-  printersConfigured: adapter.listConfiguredPrinters().map((printer) => ({
-    id: printer.id,
-    modelHint: printer.modelHint,
-    source: printer.source,
-    connectionState: printer.connectionState,
-    credentialMode: printer.credentialMode,
-    lastObservationAt: printer.lastObservationAt ?? null
-  })),
-  capabilityMatrix: devices.map((device) => ({
-    id: device.identity.id,
-    modelHint: device.identity.modelHint,
-    lifecycle: device.state.lifecycle,
-    quality: device.state.observation.quality,
-    capabilities: device.capabilities.map((capability) => ({
-      key: capability.key,
-      classification: classifyCapability(device.identity.id, capability.key, evidence),
-      support: capability.support,
-      quality: capability.quality
+  const validationStartedAt = new Date().toISOString();
+  for (const printer of configured) {
+    getDeviceEvidence(evidence, printer.id).connectionAttemptStartedAt = validationStartedAt;
+  }
+
+  await adapter.start();
+  await wait(durationSeconds * 1000);
+  const devices = await adapter.discoverDevices();
+  const connectionDiagnostics = adapter.listConnectionDiagnostics();
+  await adapter.stop();
+
+  const generatedAt = new Date().toISOString();
+  const report = {
+    generatedAt,
+    durationSeconds,
+    validationMode: "local-only",
+    credentialPolicy: "memory-only; access codes are not printed, logged, persisted or returned",
+    printersConfigured: connectionDiagnostics.map((printer) => ({
+      id: printer.id,
+      modelHint: printer.modelHint,
+      source: printer.source,
+      connectionState: printer.connectionState,
+      credentialMode: printer.credentialMode,
+      lastObservationAt: printer.lastObservationAt ?? null
+    })),
+    connectionEvidence: connectionDiagnostics.map((printer) => summarizeConnectionEvidence(printer, evidence)),
+    capabilityMatrix: devices.map((device) => ({
+      id: device.identity.id,
+      modelHint: device.identity.modelHint,
+      lifecycle: device.state.lifecycle,
+      quality: device.state.observation.quality,
+      updateEvidence: summarizeUpdateEvidence(evidence.get(device.identity.id)),
+      capabilities: device.capabilities.map((capability) => ({
+        key: capability.key,
+        classification: classifyCapability(device.identity.id, capability.key, evidence),
+        support: capability.support,
+        quality: capability.quality
+      }))
     }))
-  }))
-};
+  };
 
-console.log(JSON.stringify(report, null, 2));
+  console.log(JSON.stringify(report, null, 2));
+}
 
 async function readValidationConfig(filePath) {
   try {
@@ -93,46 +111,191 @@ function toConnectionInput(printer) {
 }
 
 function recordDeviceEvent(evidence, device) {
-  const deviceEvidence = getOrCreate(evidence, device.identity.id, () => new Map());
-  remember(deviceEvidence, "printer.status", device.state.lifecycle, device.state.observation.quality);
-  if (device.state.telemetry.print?.progressPercent !== undefined) {
-    remember(deviceEvidence, "print.progress", device.state.telemetry.print.progressPercent, device.state.observation.quality);
+  const deviceEvidence = getDeviceEvidence(evidence, device.identity.id);
+  const observation = device.state.observation;
+  const receivedAt = observation.receivedAt;
+  const quality = observation.quality;
+
+  if (
+    deviceEvidence.connectionAttemptStartedAt &&
+    (quality === "live" || (quality === "degraded" && device.state.lifecycle === "connected")) &&
+    !deviceEvidence.firstConnectionObservedAt
+  ) {
+    deviceEvidence.firstConnectionObservedAt = receivedAt;
   }
-  const temperatures = device.state.telemetry.temperatures;
-  if (temperatures?.nozzleC !== undefined) {
-    remember(deviceEvidence, "temperature.nozzle", temperatures.nozzleC, device.state.observation.quality);
+  if (quality === "live") {
+    if (!deviceEvidence.firstLiveUpdateAt) {
+      deviceEvidence.firstLiveUpdateAt = receivedAt;
+    }
+    deviceEvidence.lastLiveUpdateAt = receivedAt;
+    deviceEvidence.liveUpdateTimes.push(receivedAt);
+    const latencyMs = Date.now() - Date.parse(receivedAt);
+    if (Number.isFinite(latencyMs) && latencyMs >= 0) {
+      deviceEvidence.eventLatenciesMs.push(latencyMs);
+    }
   }
-  if (temperatures?.bedC !== undefined) {
-    remember(deviceEvidence, "temperature.bed", temperatures.bedC, device.state.observation.quality);
-  }
-  if (temperatures?.chamberC !== undefined) {
-    remember(deviceEvidence, "temperature.chamber", temperatures.chamberC, device.state.observation.quality);
+
+  for (const capability of device.capabilities) {
+    rememberCapability(deviceEvidence, capability.key, capabilityValue(device, capability.key), capability.support, capability.quality);
   }
 }
 
-function remember(deviceEvidence, key, value, quality) {
-  const capability = getOrCreate(deviceEvidence, key, () => ({ liveCount: 0, values: new Set(), degradedCount: 0 }));
+function rememberCapability(deviceEvidence, key, value, support, quality) {
+  const capability = getOrCreate(deviceEvidence.capabilities, key, () => ({
+    liveCount: 0,
+    liveDescriptorCount: 0,
+    unavailableCount: 0,
+    degradedCount: 0,
+    values: new Set()
+  }));
   if (quality === "live") {
-    capability.liveCount += 1;
-  }
-  if (quality === "degraded" || quality === "stale" || quality === "unavailable") {
+    capability.liveDescriptorCount += 1;
+    if (support === "supported") {
+      capability.liveCount += 1;
+      capability.values.add(String(value ?? "observed"));
+    } else {
+      capability.unavailableCount += 1;
+    }
+  } else if (deviceEvidence.firstLiveUpdateAt && (quality === "degraded" || quality === "stale" || quality === "unavailable")) {
     capability.degradedCount += 1;
   }
-  capability.values.add(String(value));
 }
 
 function classifyCapability(deviceId, key, evidence) {
-  const capability = evidence.get(deviceId)?.get(key);
-  if (!capability || capability.liveCount === 0) {
+  const deviceEvidence = evidence.get(deviceId);
+  const capability = deviceEvidence?.capabilities.get(key);
+  if (!deviceEvidence?.connectionAttemptStartedAt || deviceEvidence.liveUpdateTimes.length === 0 || !capability) {
     return "not-tested";
   }
-  if (capability.degradedCount > capability.liveCount) {
+  if (capability.liveCount === 0 && capability.liveDescriptorCount > 0) {
+    return "unavailable";
+  }
+  if (capability.unavailableCount > 0 || capability.degradedCount > capability.liveCount) {
     return "unreliable";
   }
   if (capability.values.size > 1) {
     return "proven-live";
   }
   return "proven-static";
+}
+
+function summarizeConnectionEvidence(printer, evidence) {
+  const deviceEvidence = evidence.get(printer.id);
+  const firstObservedAt = deviceEvidence?.firstLiveUpdateAt ?? deviceEvidence?.firstConnectionObservedAt ?? null;
+  const latencyMs = elapsedMs(deviceEvidence?.connectionAttemptStartedAt, firstObservedAt);
+  return {
+    id: printer.id,
+    modelHint: printer.modelHint,
+    connectionAttemptStartedAt: deviceEvidence?.connectionAttemptStartedAt ?? null,
+    initialConnectionResult: initialConnectionResult(printer, deviceEvidence),
+    initialConnectionObservedAt: firstObservedAt,
+    initialConnectionLatencyMs: latencyMs,
+    finalPreStopConnectionState: printer.connectionState,
+    lastObservationAt: printer.lastObservationAt ?? null,
+    redactedFailureCategory: redactedFailureCategory(printer, deviceEvidence)
+  };
+}
+
+function summarizeUpdateEvidence(deviceEvidence) {
+  const liveUpdateTimes = deviceEvidence?.liveUpdateTimes ?? [];
+  return {
+    observedLiveUpdates: liveUpdateTimes.length,
+    firstUpdateAt: liveUpdateTimes[0] ?? null,
+    lastUpdateAt: liveUpdateTimes.at(-1) ?? null,
+    cadenceMs: summarizeNumbers(intervalsMs(liveUpdateTimes)),
+    eventLatencyMs: summarizeNumbers(deviceEvidence?.eventLatenciesMs ?? [])
+  };
+}
+
+function initialConnectionResult(printer, deviceEvidence) {
+  if (deviceEvidence?.firstLiveUpdateAt) {
+    return "status-observed";
+  }
+  if (deviceEvidence?.firstConnectionObservedAt) {
+    return "transport-connected-no-status";
+  }
+  if (printer.connectionState === "reconnecting") {
+    return "reconnecting-before-status";
+  }
+  if (printer.connectionState === "unavailable") {
+    return "unavailable-before-status";
+  }
+  return "no-status-observed";
+}
+
+function redactedFailureCategory(printer, deviceEvidence) {
+  if (printer.lastFailureCategory && printer.lastFailureCategory !== "none") {
+    return printer.lastFailureCategory;
+  }
+  if (!deviceEvidence?.firstConnectionObservedAt) {
+    return "no-connection-observed";
+  }
+  if (!deviceEvidence.firstLiveUpdateAt) {
+    return "no-live-status-observed";
+  }
+  return "none";
+}
+
+function capabilityValue(device, key) {
+  switch (key) {
+    case "printer.status":
+      return device.state.lifecycle;
+    case "print.progress":
+      return device.state.telemetry.print?.progressPercent;
+    case "temperature.nozzle":
+      return device.state.telemetry.temperatures?.nozzleC;
+    case "temperature.bed":
+      return device.state.telemetry.temperatures?.bedC;
+    case "temperature.chamber":
+      return device.state.telemetry.temperatures?.chamberC;
+    default:
+      return undefined;
+  }
+}
+
+function getDeviceEvidence(evidence, deviceId) {
+  return getOrCreate(evidence, deviceId, () => ({
+    configuredAt: null,
+    connectionAttemptStartedAt: null,
+    firstConnectionObservedAt: null,
+    firstLiveUpdateAt: null,
+    lastLiveUpdateAt: null,
+    liveUpdateTimes: [],
+    eventLatenciesMs: [],
+    capabilities: new Map()
+  }));
+}
+
+function summarizeNumbers(values) {
+  if (values.length === 0) {
+    return null;
+  }
+  const sorted = [...values].sort((a, b) => a - b);
+  return {
+    min: sorted[0],
+    median: sorted[Math.floor(sorted.length / 2)],
+    max: sorted.at(-1),
+    average: Math.round(sorted.reduce((sum, value) => sum + value, 0) / sorted.length)
+  };
+}
+
+function intervalsMs(timestamps) {
+  const intervals = [];
+  for (let index = 1; index < timestamps.length; index += 1) {
+    const interval = Date.parse(timestamps[index]) - Date.parse(timestamps[index - 1]);
+    if (Number.isFinite(interval) && interval >= 0) {
+      intervals.push(interval);
+    }
+  }
+  return intervals;
+}
+
+function elapsedMs(startedAt, observedAt) {
+  if (!startedAt || !observedAt) {
+    return null;
+  }
+  const elapsed = Date.parse(observedAt) - Date.parse(startedAt);
+  return Number.isFinite(elapsed) && elapsed >= 0 ? elapsed : null;
 }
 
 function getOrCreate(map, key, create) {
@@ -143,6 +306,16 @@ function getOrCreate(map, key, create) {
   const value = create();
   map.set(key, value);
   return value;
+}
+
+function safeValidationErrorMessage(error) {
+  if (error instanceof SyntaxError) {
+    return "M2 local validation failed because the local JSON config could not be parsed.";
+  }
+  if (error instanceof Error && /^Missing required local validation field:/.test(error.message)) {
+    return error.message;
+  }
+  return "M2 local validation failed. Review local-only config and printer reachability without sharing raw errors or private identifiers.";
 }
 
 function requiredString(value, field) {

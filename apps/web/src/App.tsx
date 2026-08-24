@@ -274,7 +274,7 @@ function RealPrinterPanel({
       <p className={`onboarding-status tone-${submitState}`}>
         {submitState === "saved" && lastConnection
           ? `${lastConnection.displayName} configured with memory-only credentials.`
-          : "Real Access Codes are submitted to the local server only and cleared from this form after submit."}
+          : "Use this form only from localhost/loopback on the server machine or an HTTPS dashboard; use CLI validation for remote LAN HTTP."}
       </p>
     </section>
   );

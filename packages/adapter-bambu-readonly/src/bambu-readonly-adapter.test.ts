@@ -68,6 +68,12 @@ class MockTransport implements BambuMqttsStatusTransport {
       listener(state);
     }
   }
+
+  emitError(): void {
+    for (const listener of this.errorListeners) {
+      listener(new Error("synthetic transport failure"));
+    }
+  }
 }
 
 afterEach(() => {
@@ -159,6 +165,58 @@ describe("BambuReadonlyAdapter", () => {
     await adapter.start();
     transports[0]?.emitState("closed");
     expect((await adapter.discoverDevices())[0]?.state.lifecycle).toBe("reconnecting");
+
+    await vi.advanceTimersByTimeAsync(251);
+    expect(transports).toHaveLength(2);
+    expect(transports[0]?.stops).toBe(1);
+    expect(transports[1]?.starts).toBe(1);
+  });
+
+  it("stops an errored transport before creating the reconnect replacement", async () => {
+    vi.useFakeTimers();
+    const transports: MockTransport[] = [];
+    const adapter = createBambuReadonlyAdapter({
+      now: fixedNow,
+      reconnectInitialMs: 250,
+      reconnectMaxMs: 500,
+      transportFactory: () => {
+        const transport = new MockTransport();
+        transports.push(transport);
+        return transport;
+      }
+    });
+
+    await adapter.configurePrinter(realPrinterInput());
+    await adapter.start();
+    transports[0]?.emitError();
+    await Promise.resolve();
+
+    expect(transports[0]?.stops).toBe(1);
+    await vi.advanceTimersByTimeAsync(251);
+    expect(transports).toHaveLength(2);
+    expect(transports[1]?.starts).toBe(1);
+  });
+
+  it("recycles a silent connected transport after the offline freshness window", async () => {
+    vi.useFakeTimers();
+    const transports: MockTransport[] = [];
+    const adapter = createBambuReadonlyAdapter({
+      now: fixedNow,
+      reconnectInitialMs: 250,
+      reconnectMaxMs: 500,
+      transportFactory: () => {
+        const transport = new MockTransport();
+        transports.push(transport);
+        return transport;
+      }
+    });
+
+    await adapter.configurePrinter(realPrinterInput({ staleAfterMs: 100, offlineAfterMs: 200 }));
+    await adapter.start();
+
+    await vi.advanceTimersByTimeAsync(201);
+    expect((await adapter.discoverDevices())[0]?.state.observation.quality).toBe("unavailable");
+    expect(transports[0]?.stops).toBe(1);
 
     await vi.advanceTimersByTimeAsync(251);
     expect(transports).toHaveLength(2);

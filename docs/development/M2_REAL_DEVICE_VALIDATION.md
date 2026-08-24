@@ -14,6 +14,8 @@ Create `secrets/m2-printers.local.json` from the template in `docs/development/R
 
 If the printer's certificate chain is not trusted by the local machine, provide a local CA certificate path through `caCertificatePath`. Do not disable TLS certificate validation.
 
+Enter a real LAN Access Code through the browser form only from `localhost`/loopback on the same server machine or from an HTTPS-served dashboard. For remote LAN HTTP validation, use this CLI config path instead of browser credential entry.
+
 ## Commands
 
 ```bash

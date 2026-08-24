@@ -10,9 +10,13 @@ Offline implementation tests use project-authored sanitized fixture payloads and
 
 Validated in the Codex environment on 2026-08-24:
 
-- `npm run validate` — passed.
-- `npm run test:e2e` — passed across desktop, tablet and mobile Playwright projects.
-- `npm run docker:validate` — not run successfully because Docker is unavailable in this environment (`docker` command not found).
+- `npm run validate` — passed after PR #3 review remediation.
+- `npm run test:e2e` — passed across desktop, tablet and mobile Playwright projects after PR #3 review remediation.
+- Focused adapter regression: `npm run test -- packages/adapter-bambu-readonly/src/bambu-readonly-adapter.test.ts` — passed, including mocked transport cleanup and silent offline recovery tests.
+- GitHub Actions run `32725830367` — passed `Fresh checkout validation` and `Docker Compose validation` for the PR branch.
+- Local `npm run docker:validate` — not runnable in the Codex workstation because Docker is unavailable (`docker` command not found); this is a local environment limitation, not the sole remaining Docker/Compose evidence blocker.
+
+The local validation script now emits sanitized pre-stop connection state, initial connection result/timing, update cadence/latency summaries and redacted failure categories. Real-printer capability rows below remain `not-tested` until Product Owner LAN validation runs.
 
 ## A1 Mini Capability Matrix
 

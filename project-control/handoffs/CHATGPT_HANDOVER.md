@@ -95,7 +95,7 @@ Product Owner M1 UX feedback:
 ## Current milestone
 M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype — **IMPLEMENTATION IN PROGRESS**.
 
-The Product Owner explicitly started M2 on 2026-08-24. `prompts/codex/NEXT_PROMPT.md` is the executable QUEUED contract. Codex resumed from GitHub and created branch `m2/real-device-readonly-prototype` from `main` tip `a192856ada68e3275cec68544565b77ffd05b8a2` before substantial implementation. Draft PR #3 is open at https://github.com/vivekshukla12/Bambulab_Dashboard/pull/3 and must remain unmerged until separate Product Owner acceptance and merge authorization. The offline implementation scaffold is in place, but real A1 Mini + X2D validation has not run yet.
+The Product Owner explicitly started M2 on 2026-08-24. `prompts/codex/NEXT_PROMPT.md` is the executable QUEUED contract. Codex resumed from GitHub and created branch `m2/real-device-readonly-prototype` from `main` tip `a192856ada68e3275cec68544565b77ffd05b8a2` before substantial implementation. Draft PR #3 is open at https://github.com/vivekshukla12/Bambulab_Dashboard/pull/3 and must remain unmerged until separate Product Owner acceptance and merge authorization. The offline implementation scaffold is in place and the latest PR #3 technical review remediation has been applied, but real A1 Mini + X2D validation has not run yet.
 
 M2 implementation authorization is not milestone acceptance and does not authorize merge or M3.
 
@@ -126,13 +126,14 @@ The adapter must preserve the existing normalized read-only contract, synthetic 
 - Server routes `GET /api/v1/real-printers` and `POST /api/v1/real-printers` provide minimum memory-only real-printer onboarding without returning host, serial, Access Code or raw payloads.
 - The fleet UI includes a small real-printer setup form and distinguishes synthetic versus real read-only sources without redesigning the frontend.
 - Local-only validation is documented in `docs/development/M2_REAL_DEVICE_VALIDATION.md`; the command is `npm run m2:validate:real -- secrets/m2-printers.local.json`.
+- The PR #3 review remediation hardened reconnect ownership, added pre-stop connection/timing/cadence/redacted-failure evidence to the validation script and restricted browser Access Code entry guidance to loopback or HTTPS.
 - `project-control/feedback/M2_REAL_DEVICE_VALIDATION_EVIDENCE.md` is prepared but remains `not-tested` for both real printers.
 
 ## Current validation status
 
-- `npm run validate` passed on 2026-08-24.
-- `npm run test:e2e` passed on 2026-08-24 across desktop, tablet and mobile.
-- `npm run docker:validate` could not run because Docker is unavailable in the Codex environment (`docker` command not found).
+- `npm run validate` passed on 2026-08-24 after the PR #3 review remediation.
+- `npm run test:e2e` passed on 2026-08-24 across desktop, tablet and mobile after the PR #3 review remediation.
+- GitHub Actions run `32725830367` passed both `Fresh checkout validation` and `Docker Compose validation` for the PR branch. Docker is still unavailable in the Codex workstation (`docker` command not found), but that local limitation is not an outstanding Docker/Compose evidence blocker.
 - Product Owner LAN real-device validation has not run. M2 still has no GO / CONDITIONAL GO / NO-GO recommendation.
 
 ## M2 credential/evidence policy
@@ -163,7 +164,7 @@ See `project-control/risks/RISK_REGISTER.md`, especially:
 - R-016 low-level read transport assumptions may depend on unofficial implementation details.
 
 ## Next authorized action
-Continue `prompts/codex/NEXT_PROMPT.md` within M2 only: complete Docker/Compose validation in a Docker-capable environment, run Product Owner LAN validation for A1 Mini and X2D, record sanitized evidence and then prepare the technical GO / CONDITIONAL GO / NO-GO recommendation. Stop on any prohibited interface/security boundary. Do not merge and do not start M3.
+Continue `prompts/codex/NEXT_PROMPT.md` within M2 only: run Product Owner LAN validation for A1 Mini and X2D, record sanitized evidence and then prepare the technical GO / CONDITIONAL GO / NO-GO recommendation. Stop on any prohibited interface/security boundary. Do not merge and do not start M3.
 
 ## Files to read first
 1. `project-control/status/CURRENT_STATUS.md`

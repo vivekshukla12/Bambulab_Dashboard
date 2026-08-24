@@ -10,6 +10,8 @@
 
 The Vite dev server proxies read-only API and SSE requests to the Fastify server at `http://127.0.0.1:3001`.
 
+For M2 real-printer onboarding, enter a real LAN Access Code in the browser form only from `localhost`/loopback on the same server machine or from an HTTPS-served dashboard. Use the local CLI validation config instead of the browser form when operating over remote LAN HTTP.
+
 ## Production-Like Local Run
 
 1. Run `npm run build`.
@@ -73,10 +75,10 @@ Template:
 }
 ```
 
-The script prints sanitized JSON only: configured sanitized IDs/model hints, connection state, credential mode, current quality/lifecycle and capability classifications. It does not print host, serial number, Access Code or raw MQTT payloads.
+The script prints sanitized JSON only: configured sanitized IDs/model hints, pre-stop connection state, credential mode, current quality/lifecycle, initial connection timing, update cadence/latency summaries, redacted failure categories and capability classifications. It does not print host, serial number, Access Code, raw transport errors or raw MQTT payloads.
 
 ## Security Notes
 
 The current prototype is read-only and has no dashboard login. LAN reachability means read access to dashboard-visible data. HTTP is acceptable for the read-only prototype shell, while the architecture remains HTTPS-capable for later sensitive or write/control capabilities.
 
-M2 real-printer Access Codes are sensitive device credentials. The dashboard keeps them process-memory-only by default, never persists them, never stores them in browser storage and never returns them through diagnostics. The Access Code still passes from the browser form to the local server in a request body during onboarding, so run real validation only on the trusted Product Owner LAN.
+M2 real-printer Access Codes are sensitive device credentials. The dashboard keeps them process-memory-only by default, never persists them, never stores them in browser storage and never returns them through diagnostics. The Access Code still passes from the browser form to the local server in a request body during onboarding, so browser credential entry is restricted to `localhost`/loopback on the server machine or HTTPS-served dashboards. Remote LAN HTTP is acceptable for read-only viewing only; use `npm run m2:validate:real -- secrets/m2-printers.local.json` for remote LAN HTTP feasibility validation.
