@@ -1,20 +1,22 @@
 # Bambu Printer Dashboard ChatGPT Handover
 
 ## Product purpose
-Local-first responsive browser/PWA operational dashboard for monitoring compatible Bambu Lab printers and related devices, with multi-device visibility, real read-only telemetry, history, filament/maintenance workflows, notifications, audit/history, and a secure local API/event layer. Privileged printer controls are conditional/future rather than a current V1 promise.
+Local-first responsive browser/PWA operational dashboard for monitoring compatible Bambu Lab printers and related devices, with multi-device visibility, real read-only telemetry, history, filament/maintenance workflows, notifications, audit/history, and a documented local API/event layer. Privileged printer controls are conditional/future rather than a current V1 promise.
 
 ## Repository / licensing
-Public repository: `vivekshukla12/Bambulab_Dashboard`. Source code license: MPL-2.0. New original source files use the MPL source-file notice policy in `CONTRIBUTING.md` (normally `SPDX-License-Identifier: MPL-2.0`). Preserve third-party license/provenance. `TRADEMARKS.md` and `NOTICE` define the independent/unofficial relationship and third-party trademark/IP posture.
+Public repository: `vivekshukla12/Bambulab_Dashboard`.
+Source code license: MPL-2.0.
+New original source files use the MPL source-file notice policy in `CONTRIBUTING.md` (normally `SPDX-License-Identifier: MPL-2.0`). Preserve third-party license/provenance. `TRADEMARKS.md` and `NOTICE` define the independent/unofficial relationship and third-party trademark/IP posture.
 
-All production/core technologies and dependencies must be open source, free for commercial use and compatible with MPL-2.0 distribution. Automated dependency-license inventory/checking is part of the approved M1 architecture.
+All production/core technologies and dependencies must be open source, free for commercial use and compatible with MPL-2.0 distribution. Automated dependency-license inventory/checking is part of the architecture.
 
 ## Delivery model
-M0 is complete. Every major product milestone from M1 onward must deliver a runnable/testable prototype. Automated tests and hands-on Product Owner validation are required; feedback is captured under `project-control/feedback/`, triaged, and reconciled with the roadmap before the next milestone is authorized.
+M0 and M1 are complete. Every major milestone from M1 onward must deliver a runnable/testable prototype with automated tests plus Product Owner hands-on validation. Feedback is captured under `project-control/feedback/`, triaged, and reconciled before the next milestone is authorized.
 
 M2 is a hard real-device GO/NO-GO gate: useful, stable read-only monitoring must be proven on both A1 Mini and X2D without Developer Mode or Fleet Hub before substantial downstream feature investment.
 
 ## Current V1 direction
-The PRD remains the requirement-ID baseline. `project-control/specs/V1_FEATURE_SCOPE.md` is the authoritative current V1 feature-boundary overlay.
+The PRD remains the requirement-ID baseline. `project-control/specs/V1_FEATURE_SCOPE.md` is the authoritative current V1 feasibility overlay.
 
 V1 centers on:
 - real local read-only multi-printer monitoring;
@@ -24,27 +26,24 @@ V1 centers on:
 - local filament/spool and maintenance domains;
 - alerts/notifications/search/audit;
 - documented local API/events;
-- Home Assistant integration, with Alexa/Google Home potentially bridged through Home Assistant after validation;
+- Home Assistant integration later, potentially bridging Alexa/Google Home;
 - MCP/scripts/AI clients;
 - Daisy as a future first-party integration consumer through stable documented local API/events, with no early runtime dependency.
 
 Current V1 does not require or promise Developer Mode, Fleet Hub, Bambu partner/private authorization, cloud-client impersonation, broad direct printer controls, or unvalidated camera/printer-storage functionality.
 
-## Approved M1 architecture
-
+## Approved architecture baseline from M1
 Authoritative specification: `project-control/specs/M1_ARCHITECTURE.md`.
 
-Product Owner approved on 2026-08-23:
-
+Approved stack and structure:
 - Node.js 24 LTS + TypeScript;
 - React + Vite frontend;
 - Fastify backend;
-- SQLite with `better-sqlite3`;
-- Kysely typed SQL/migrations;
+- SQLite + `better-sqlite3` + Kysely;
 - npm workspaces + TypeScript project references;
 - strict modular monorepo/package boundaries;
 - Vitest + Playwright;
-- TypeDoc + structured source documentation for IDE hover/generated reference docs;
+- TypeDoc + structured source documentation for IDE/generated reference docs;
 - REST + Server-Sent Events initially;
 - direct local development + Docker/Docker Compose packaging;
 - deterministic permanent synthetic adapter/test scenarios;
@@ -52,37 +51,32 @@ Product Owner approved on 2026-08-23:
 - read-only adapter contract separated from any future control interface;
 - no interactive dashboard login for the read-only V1 model;
 - LAN-accessible default with local/interface-restricted binding option where feasible;
-- stable LAN-local dashboard name/discovery target via mDNS or equivalent;
-- HTTP permitted initially for read-only LAN use; HTTPS + strong authentication mandatory before any write/control capability;
-- future server-side printer LAN discovery + LAN Access Code onboarding with manual fallback;
-- per-printer choice to remember Access Code (encrypted at rest) or keep it process-memory-only until restart;
+- stable LAN-local dashboard name/discovery target via mDNS/equivalent where practical;
+- HTTP permitted initially for read-only LAN use; HTTPS + strong authentication mandatory before future write/control capability;
+- future server-side printer discovery + LAN Access Code onboarding with manual fallback;
+- per-printer choice to remember Access Code encrypted at rest or keep it process-memory-only until restart;
 - durable maintenance/analytics history plus 30-day default raw telemetry configurable from 1–365 days.
 
 See DEC-014, DEC-015 and DEC-016.
 
 ## Documentation/modularity rule
-
-DEC-010 remains mandatory. Significant modules must have focused local README/context documentation; public/extension-facing contracts require structured source docs and generated reference support; `docs/architecture/MODULE_MAP.md` is the intended concise navigation map. Codex tasks should direct agents to minimum module-local context rather than whole-repository re-reading.
+DEC-010 remains mandatory. Significant modules have focused local README/context documentation; public/extension-facing contracts use structured source docs/generated reference support; `docs/architecture/MODULE_MAP.md` is the concise navigation map. Codex tasks must direct agents to minimum module-local context rather than whole-repository rereading.
 
 ## Security boundaries
-
 - LAN-only V1 production access.
 - Read-only V1 dashboard has no interactive application login; LAN reachability equals read access and must be disclosed clearly.
-- HTTP may be used for the initial read-only LAN prototype/release path; architecture must remain HTTPS-capable.
+- HTTP may be used for the initial read-only LAN path; architecture remains HTTPS-capable.
 - Any future printer write/control or comparable sensitive feature requires HTTPS + strong authentication and a new Product Owner-approved security decision.
-- Printer Access Codes remain sensitive device credentials and are governed through the dedicated secrets boundary.
+- Printer Access Codes are sensitive device credentials and are governed through the dedicated secrets boundary.
 - Never log/commit credentials or expose them through browser storage/normal API/diagnostics.
 - Stale/offline state is not live.
 - Do not circumvent vendor/device security or access controls.
 - Dedicated threat model/security review remains required before production release.
 
-## Privacy/data rules
-Synthetic fixtures only by default. Never commit customer/production-derived sensitive data, credentials/tokens, raw private live API dumps, production logs, private screenshots/media, or real identifiers. Real-device testing requires explicit M2 authorization and controlled local evidence handling.
+## Bambu Lab / interface posture
+Independent third-party interoperability project; no affiliation, sponsorship, authorization, certification, maintenance relationship, or endorsement by Bambu Lab is claimed.
 
-## Bambu Lab / legal/interface posture
-Independent third-party interoperability project; no affiliation, sponsorship, authorization, certification, maintenance relationship, or endorsement by Bambu Lab is claimed. Bambu Lab names/marks and other IP remain with their rights holders.
-
-Approved constraints/direction:
+Approved constraints:
 - no printer Developer Mode;
 - no Fleet Hub dependency/extra hardware path for current V1;
 - no Bambu developer-partner/private authorization at this stage;
@@ -91,92 +85,74 @@ Approved constraints/direction:
 - discovering a technical write/control path does not authorize using it.
 
 ## Completed milestones
-- M0 — Repository and governance foundation.
-  - Approved by Product Owner on 2026-08-22.
-  - PR #1 merged on 2026-08-22.
-  - Verified merge commit: `bad179a0f847f9a478e2c167e62dd94760baa105`.
+
+### M0 — Repository and governance foundation
+- Product Owner approved 2026-08-22.
+- PR #1 merged 2026-08-22.
+- Merge commit: `bad179a0f847f9a478e2c167e62dd94760baa105`.
+
+### M1 — Architecture foundation + synthetic prototype + real-read feasibility design
+- Architecture approved by Product Owner.
+- Synthetic prototype implemented on PR #2.
+- Technical-lead review identified one reproducibility blocker (`packages/secrets` missing from committed tree); remediation completed.
+- Fresh-checkout CI, unit/integration tests, Playwright E2E, TypeDoc/license checks, and Docker/Compose validation all passed.
+- Product Owner performed hands-on testing and accepted M1 on 2026-08-24.
+- PR #2 merged into `main` on 2026-08-24.
+- Verified merge commit: `42821596cc0bf80a302b12287063b3ee17f58f3a`.
+
+Product Owner M1 UX feedback:
+- UI is functionally acceptable for M1 but visually basic/not modern enough for final product quality;
+- no frontend redesign is authorized now;
+- visual modernization is deferred as a non-blocking item, potentially a later milestone or small V1.1 UI/UX refresh.
 
 ## Current milestone
-M1 — Architecture foundation + synthetic prototype + real-read feasibility design — **REMEDIATION COMPLETE / DRAFT PR REVIEW**.
+M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype — **PLANNING / HOLD**.
 
-M1 architecture is approved and the queued implementation contract has been executed. Final milestone acceptance and merge remain Product Owner decisions.
+No M2 implementation branch/PR exists yet. `prompts/codex/NEXT_PROMPT.md` is HOLD and is the execution gate.
 
-## Current PR / branch
-- Branch: `m1/synthetic-dashboard-prototype`
-- Draft PR #2: `M1: synthetic dashboard architecture prototype`
-- PR URL: `https://github.com/vivekshukla12/Bambulab_Dashboard/pull/2`
-- Merge is not authorized.
+## M2 hard gate
+M2 must prove sufficiently useful and reliable real read-only monitoring on **both** A1 Mini and X2D. Synthetic evidence cannot pass M2.
 
-## Current implementation gate
+M2 must not require/use:
+- Developer Mode;
+- Fleet Hub hardware;
+- Bambu private/partner authorization;
+- reverse-engineered cloud-client impersonation;
+- printer write/control commands;
+- bypasses or weakening of vendor/device authentication/security controls.
 
-The M1 implementation contract and the queued PR #2 remediation in:
+If M2 cannot prove enough real read-only capability on both printers to make the product genuinely useful, substantial M3+ implementation stops for a formal Product Owner continue/re-scope/stop decision.
 
-`prompts/codex/NEXT_PROMPT.md`
+## M2 planning focus
+Before implementation is queued, define and approve:
+- the smallest supported/authorized local read path to test;
+- server-side discovery and manual fallback;
+- LAN Access Code consent and credential handling;
+- exact field/capability evidence matrix for A1 Mini and X2D;
+- freshness/update-rate/stale/offline/reconnect validation;
+- firmware/model variance recording;
+- sanitized evidence handling with no credentials/private device dumps committed;
+- GO/NO-GO success thresholds;
+- automated adapter/contract tests plus Product Owner real-device validation;
+- branch/PR/documentation/security/stop/merge rules.
 
-were queued by Product Owner authorization on 2026-08-23 and implemented on Draft PR #2. `prompts/codex/M1_IMPLEMENTATION_PROPOSAL.md` remains a proposal/review artifact.
-
-## M1 implementation summary
-
-- Added npm-workspace TypeScript monorepo structure under `apps/` and `packages/`.
-- Implemented normalized read-only domain, API DTOs, adapter contract and deterministic synthetic adapter.
-- Implemented Fastify REST/SSE backend, health diagnostics, structured redacting logs, dashboard discovery descriptor and static production serving.
-- Implemented SQLite/Kysely migrations, WAL/foreign-key configuration, current state, raw telemetry and durable operational event separation.
-- Implemented React/Vite PWA shell with fleet/device/diagnostics views, SSE updates, explicit stale/unavailable/reconnecting/recovered/offline presentation and localhost service-worker validation.
-- Added module READMEs, `docs/architecture/MODULE_MAP.md`, TypeDoc output, dependency license inventory/check and Docker/Compose packaging files.
-- No real printers, Bambu protocols, credentials, Developer Mode, Fleet Hub, cloud impersonation, write/control features, cameras/media, AMS integration or external integrations were implemented.
-
-## M1 remediation summary
-
-- Fixed the technical-lead reproducibility blocker by scoping the root secret ignore rules and committing the complete `packages/secrets` workspace.
-- Added `npm run docker:validate` plus the `M1 validation` GitHub Actions workflow for repeatable fresh-checkout and Docker/Compose evidence.
-- Hardened a Playwright assertion that expected a synthetic status message to be unique even though two device cards can legitimately show the same message.
-- No Dockerfile or Compose topology change was required.
-
-## Validation status
-
-- Fresh GitHub checkout validation passed on 2026-08-23 after the remediation code/workflow changes: `npm ci`, `npm run validate` and `npm run test:e2e`.
-- GitHub Actions push run `32660053417` passed on 2026-08-23: fresh checkout validation and Docker Compose validation on Ubuntu 24.04 with Node.js `v24.19.0`.
-- Docker Compose validation job `97244708520` built `bambu-printer-dashboard:m1`, loaded `/` with HTTP 200, verified `GET /api/v1/devices`, verified `GET /api/v1/health` with SQLite WAL and foreign keys enabled, and proved persistent volume state across restart and container recreation.
-- `npm run validate` passed locally on 2026-08-23: build, 9 Vitest unit/integration tests, TypeDoc generation and dependency-license inventory.
-- `npm run test:e2e` passed locally on 2026-08-23: 9 Playwright tests across desktop/tablet/mobile, including live transitions, diagnostics and PWA/offline behavior on localhost.
-- Production-like local run via `npm run build` + `npm start` responded on `/`, `/api/v1/devices` and `/api/v1/health`; health reported SQLite WAL and foreign keys enabled.
-- Local Docker execution still cannot run on this workstation because `docker` is not installed/on PATH; Docker/Compose validation is satisfied by the GitHub Actions evidence above.
-
-## Important decisions
-- GitHub is authoritative project state.
-- PRD v1.0 is the requirements baseline; V1_FEATURE_SCOPE is the current feasibility overlay.
-- MPL-2.0 is the repository source-code license with required source-file notice/provenance controls.
-- M1+ uses iterative working prototypes with feedback gates.
-- Heavy structured documentation, modularity, IDE assistance/generated reference docs and token-efficient context boundaries are mandatory (DEC-010).
-- Developer Mode and current Fleet Hub/partner-dependent integration are excluded (DEC-011).
-- Real read-only printer monitoring is a viable target; write/control remains separately gated (DEC-012).
-- Read-only-first V1 plus M2 dual-device GO/NO-GO roadmap adopted (DEC-013).
-- M1 TypeScript/React/Node/SQLite architecture approved (DEC-014).
-- Read-only LAN access/discovery/credential model approved (DEC-015).
-- Tiered durable/raw telemetry retention approved (DEC-016).
-- Each milestone/task is separately authorized; architecture approval does not automatically authorize implementation.
+Real-device testing is allowed only after an explicit M2 `QUEUED` task. Until then, do not access/discover real printers or request LAN Access Codes.
 
 ## Current risks
-See `project-control/risks/RISK_REGISTER.md`; highest concerns include real read-only capability/firmware coverage on A1 Mini/X2D, vendor interface authorization/changes, local-vs-cloud capability variance, naming/trademark posture, backup key recovery, audit tamper evidence, LAN TLS/PWA constraints, safe updates, device capability variance, stale telemetry safety, local API attack surface and secure persistent printer credential handling.
-
-## Explicit V1 non-goals / conditional areas
-No slicer; no automatic printer/job assignment or print-farm scheduler; no firmware update management; no built-in general rules engine; no remote internet access; no native mobile app; no multi-user/RBAC; no full analytics suite; no NAS backup target. Direct printer write/control, Developer Mode, Fleet Hub, unvalidated camera/media and arbitrary printer-storage operations remain conditional/future unless explicitly promoted by Product Owner decision after supported-interface validation.
+See `project-control/risks/RISK_REGISTER.md`; highest M2 concerns are real read-only capability/firmware coverage on A1 Mini/X2D, vendor interface authorization/change risk, local-vs-cloud capability variance, credential handling, device capability variance, stale telemetry safety and local API attack surface.
 
 ## Next authorized action
-Review remediated Draft PR #2. Docker/Compose validation evidence is now recorded from CI. Do not merge without explicit Product Owner approval.
+Technical-lead M2 planning and creation/review of a concrete M2 Codex execution contract. Keep `prompts/codex/NEXT_PROMPT.md` on HOLD until Product Owner explicitly approves that contract.
 
 ## Files to read first
 1. `project-control/status/CURRENT_STATUS.md`
 2. `project-control/handoffs/CHATGPT_HANDOVER.md`
-3. `project-control/specs/M1_ARCHITECTURE.md`
-4. `project-control/specs/V1_FEATURE_SCOPE.md`
-5. `project-control/specs/PRODUCT_REQUIREMENTS.md`
-6. `project-control/specs/OPERATING_MODEL.md`
-7. `project-control/specs/MILESTONE_PLAN.md`
-8. `project-control/specs/ARCHITECTURE_GUARDRAILS.md`
-9. `project-control/specs/SECURITY_PRIVACY_GUARDRAILS.md`
-10. `project-control/decisions/DECISION_LOG.md`
-11. `project-control/risks/RISK_REGISTER.md`
-12. `TRADEMARKS.md`
-13. `prompts/codex/NEXT_PROMPT.md`
-14. `prompts/codex/M1_IMPLEMENTATION_PROPOSAL.md`
+3. `prompts/codex/NEXT_PROMPT.md`
+4. `project-control/specs/OPERATING_MODEL.md`
+5. `project-control/specs/MILESTONE_PLAN.md`
+6. `project-control/specs/M1_ARCHITECTURE.md`
+7. `project-control/specs/V1_FEATURE_SCOPE.md`
+8. `project-control/specs/SECURITY_PRIVACY_GUARDRAILS.md`
+9. `project-control/decisions/DECISION_LOG.md`
+10. `project-control/risks/RISK_REGISTER.md`
+11. relevant module-local README/contracts/tests for M2 planning.
