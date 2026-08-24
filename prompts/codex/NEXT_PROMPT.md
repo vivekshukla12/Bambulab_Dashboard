@@ -1,61 +1,58 @@
 # Next Codex Task
 
 ## Status
-HOLD — M1 is complete and merged. M2 is the active planning milestone, but no real-device implementation task is yet authorized.
+HOLD — M2 planning package is technically reviewed and ready for Product Owner approval. No real-device implementation or printer access is authorized yet.
 
 ## Milestone
 M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype
 
 ## Objective while HOLD
-Support planning/review only. Do not implement or access real printers until this file is deliberately replaced with a Product Owner-approved `QUEUED` M2 execution contract.
+Planning/review only. Do not implement, discover, connect to, or query real printers until the Product Owner explicitly approves the M2 implementation contract and this file is deliberately changed to `QUEUED`.
 
-## Current authoritative state
-Read first:
+## Authoritative M2 planning package
+Read these first:
+
 1. `project-control/status/CURRENT_STATUS.md`
-2. `project-control/handoffs/CHATGPT_HANDOVER.md`
-3. `project-control/specs/M1_ARCHITECTURE.md`
-4. `project-control/specs/V1_FEATURE_SCOPE.md`
-5. `project-control/specs/MILESTONE_PLAN.md`
-6. `project-control/specs/OPERATING_MODEL.md`
-7. `project-control/specs/SECURITY_PRIVACY_GUARDRAILS.md`
-8. `project-control/decisions/DECISION_LOG.md`
-9. `project-control/risks/RISK_REGISTER.md`
-10. relevant M1 module READMEs/contracts/tests, only where needed for M2 planning.
+2. `project-control/specs/M2_REAL_DEVICE_VALIDATION.md`
+3. `project-control/reviews/M2_PLANNING_REVIEW.md`
+4. `prompts/codex/M2_IMPLEMENTATION_PROPOSAL.md`
+5. `project-control/specs/OPERATING_MODEL.md`
+6. `project-control/specs/MILESTONE_PLAN.md`
+7. `project-control/specs/M1_ARCHITECTURE.md`
+8. `project-control/specs/V1_FEATURE_SCOPE.md`
+9. `project-control/specs/SECURITY_PRIVACY_GUARDRAILS.md`
+10. `project-control/decisions/DECISION_LOG.md`
+11. `project-control/risks/RISK_REGISTER.md`
+12. affected module-local READMEs/contracts/tests only as needed.
 
-## M1 closure
-M1 was accepted by the Product Owner after hands-on validation and PR #2 was merged into `main` on 2026-08-24. Verified merge commit: `42821596cc0bf80a302b12287063b3ee17f58f3a`.
+## Proposed authorized interface
+If later queued, M2 will evaluate/implement only the standard-mode local **MQTTS read-only status path** for printer-originated status information.
 
-The Product Owner's UI feedback is non-blocking: the current UI is functionally acceptable but visually basic; no UI redesign is authorized now. Modernization is deferred to later planning / possible V1.1.
+The queued task must not use Developer Mode, Fleet Hub, private/partner Bambu authorization, cloud-client impersonation, write/control commands, disabled TLS/security checks, or copied proprietary Bambu network-plugin implementation.
 
 ## M2 hard gate
-M2 must prove sufficiently useful and reliable real read-only monitoring on **both** an A1 Mini and X2D. Synthetic evidence cannot pass M2.
+M2 must prove sufficiently useful and reliable real read-only monitoring on **both** the Product Owner's A1 Mini and X2D. Synthetic evidence cannot pass M2.
 
-If M2 cannot prove enough real read-only capability on both devices, downstream implementation must stop for a formal Product Owner reassessment before M3.
+The technical GO threshold requires credible core monitoring value: availability, current operating/print state, useful print progress during real printing, meaningful temperature/status telemetry, and safe freshness/offline/reconnect behavior on both devices, plus simultaneous monitoring through the existing normalized architecture.
+
+If that cannot be achieved under the approved constraints, downstream implementation stops for Product Owner reassessment before M3.
+
+## Credential/data posture
+If later queued:
+- real LAN Access Codes default to memory-only/non-persisted handling for M2;
+- real-device tests run only locally on the Product Owner's LAN, not public CI;
+- credentials, serial/MAC/IP identifiers, raw private payloads, packet captures, private printer media and unsanitized logs must not be committed;
+- repository evidence must be sanitized summaries/matrices or project-authored synthetic fixtures.
 
 ## Prohibited while HOLD
 Do not:
 - create an M2 implementation branch or PR;
-- access, discover, connect to, or query real printers;
+- access/discover/connect to/query real printers;
 - request/use real LAN Access Codes;
-- implement Bambu device protocols or cloud-client behavior;
-- use Developer Mode;
-- use Fleet Hub;
-- use private Bambu partner/developer authorization;
-- impersonate Bambu cloud clients;
-- add printer write/control commands;
-- weaken or bypass vendor/device security or authentication;
-- commit live device dumps, credentials, private identifiers, logs, screenshots/media, or unsanitized real-device evidence;
-- start M3+ scope.
-
-## Planning work permitted
-- Review the existing read-only adapter/domain contracts from M1.
-- Define the smallest supported/authorized M2 real-read adapter experiment.
-- Define discovery + manual fallback and LAN Access Code consent/secret-handling behavior.
-- Define a per-device capability evidence matrix and success thresholds.
-- Define reconnect/freshness/offline/firmware variance tests.
-- Define safe real-device evidence capture/sanitization rules.
-- Define M2 automated tests and Product Owner hands-on validation steps.
-- Identify any material architecture/security/interface decision that requires Product Owner approval before implementation.
+- implement Bambu transport code;
+- start M3+ work;
+- change architecture/security assumptions;
+- merge anything for M2.
 
 ## Queue transition rule
-Only after technical-lead review and explicit Product Owner approval may this file change to `QUEUED`. The queued version must contain the complete M2 scope, allowed real-device activity, non-goals, security/data handling rules, tests, GO/NO-GO acceptance thresholds, documentation requirements, branch/PR rules, stop conditions and merge gate.
+Only explicit Product Owner approval of the reviewed M2 implementation proposal may change this file to `QUEUED`. The queued version must contain the complete execution contract and remains separate from later milestone acceptance/merge authorization.
