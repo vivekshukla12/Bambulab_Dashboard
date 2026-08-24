@@ -1,11 +1,26 @@
 // SPDX-License-Identifier: MPL-2.0
 
-import type { DeviceDetailDto, DeviceSummaryDto, HealthDto, RealPrinterConnectionDto, SseEventDto } from "@bpd/contracts";
-import { Activity, Gauge, HardDrive, PlugZap, Router, WifiOff } from "lucide-react";
+import type {
+  DeviceDetailDto,
+  DeviceSummaryDto,
+  HealthDto,
+  RealPrinterCandidateDto,
+  RealPrinterConnectionDto,
+  RealPrinterConnectionRequest,
+  SseEventDto
+} from "@bpd/contracts";
+import { Activity, Gauge, HardDrive, PlugZap, Router, Search, WifiOff } from "lucide-react";
 import type { FormEvent, ReactElement } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, NavLink, Route, BrowserRouter as RouterProvider, Routes, useParams } from "react-router-dom";
-import { connectRealPrinter, fetchDevice, fetchDevices, fetchHealth, subscribeToDeviceEvents } from "./api.js";
+import {
+  connectRealPrinter,
+  fetchDevice,
+  fetchDevices,
+  fetchHealth,
+  fetchRealPrinterCandidates,
+  subscribeToDeviceEvents
+} from "./api.js";
 
 type ConnectionState = "connecting" | "live" | "interrupted";
 
@@ -194,21 +209,30 @@ function RealPrinterPanel({
   const [serialNumber, setSerialNumber] = useState("");
   const [accessCode, setAccessCode] = useState("");
   const [port, setPort] = useState("8883");
+  const [candidates, setCandidates] = useState<RealPrinterCandidateDto[]>([]);
+  const [selectedCandidateId, setSelectedCandidateId] = useState("");
+  const [discoveryNote, setDiscoveryNote] = useState<string | undefined>();
   const [lastConnection, setLastConnection] = useState<RealPrinterConnectionDto | undefined>();
   const [submitState, setSubmitState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [discoveryState, setDiscoveryState] = useState<"idle" | "loading" | "done" | "error">("idle");
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitState("saving");
     try {
-      const printer = await connectRealPrinter({
+      const request: RealPrinterConnectionRequest = {
         displayName,
         modelHint,
-        host,
         serialNumber,
-        accessCode,
-        port: Number.parseInt(port, 10) || 8883
-      });
+        accessCode
+      };
+      if (selectedCandidateId) {
+        request.candidateId = selectedCandidateId;
+      } else {
+        request.host = host;
+        request.port = Number.parseInt(port, 10) || 8883;
+      }
+      const printer = await connectRealPrinter(request);
       setLastConnection(printer);
       setSerialNumber("");
       setAccessCode("");
@@ -219,6 +243,37 @@ function RealPrinterPanel({
       setAccessCode("");
     }
   };
+
+  const discover = async () => {
+    setDiscoveryState("loading");
+    try {
+      const discovery = await fetchRealPrinterCandidates();
+      setCandidates(discovery.candidates);
+      setDiscoveryNote(discovery.note);
+      setDiscoveryState("done");
+    } catch {
+      setCandidates([]);
+      setDiscoveryNote("Server-side discovery failed; manual host fallback remains available.");
+      setDiscoveryState("error");
+    }
+  };
+
+  const selectCandidate = (candidateId: string) => {
+    setSelectedCandidateId(candidateId);
+    const candidate = candidates.find((item) => item.id === candidateId);
+    if (!candidate) {
+      return;
+    }
+    setDisplayName(candidate.displayName);
+    setModelHint(candidate.modelHint);
+    setHost("");
+  };
+
+  const onboardingMessage =
+    submitState === "saved" && lastConnection
+      ? `${lastConnection.displayName} configured with memory-only credentials.`
+      : discoveryNote ??
+        "Use this form only from localhost/loopback on the server machine or an HTTPS dashboard; use CLI validation for remote LAN HTTP.";
 
   return (
     <section className="real-printer-panel" aria-label="Real printer onboarding">
@@ -232,8 +287,24 @@ function RealPrinterPanel({
           tone={(health?.realPrinterOnboarding.configuredPrinters ?? 0) > 0 ? "live" : "degraded"}
         />
       </div>
-      <form className="real-printer-form" onSubmit={(event) => void submit(event)}>
+      <div className="candidate-actions">
+        <button type="button" onClick={() => void discover()} disabled={discoveryState === "loading"}>
+          <Search size={16} /> {discoveryState === "loading" ? "Finding" : "Discover"}
+        </button>
         <label>
+          <span>Candidate</span>
+          <select value={selectedCandidateId} onChange={(event) => selectCandidate(event.target.value)}>
+            <option value="">Manual host fallback</option>
+            {candidates.map((candidate) => (
+              <option key={candidate.id} value={candidate.id}>
+                {candidate.displayName} / {candidate.modelHint}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <form className="real-printer-form" onSubmit={(event) => void submit(event)}>
+        <label className="field-wide">
           <span>Name</span>
           <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} required autoComplete="off" />
         </label>
@@ -245,19 +316,31 @@ function RealPrinterPanel({
             <option>Bambu-compatible</option>
           </select>
         </label>
-        <label>
+        <label className="field-wide">
           <span>Host</span>
-          <input value={host} onChange={(event) => setHost(event.target.value)} required autoComplete="off" />
+          <input
+            value={selectedCandidateId ? "Resolved server-side" : host}
+            onChange={(event) => setHost(event.target.value)}
+            required={!selectedCandidateId}
+            disabled={Boolean(selectedCandidateId)}
+            autoComplete="off"
+          />
         </label>
         <label>
           <span>Port</span>
-          <input value={port} onChange={(event) => setPort(event.target.value)} inputMode="numeric" required />
+          <input
+            value={selectedCandidateId ? "" : port}
+            onChange={(event) => setPort(event.target.value)}
+            inputMode="numeric"
+            required={!selectedCandidateId}
+            disabled={Boolean(selectedCandidateId)}
+          />
         </label>
-        <label>
+        <label className="field-wide">
           <span>Serial</span>
           <input value={serialNumber} onChange={(event) => setSerialNumber(event.target.value)} required autoComplete="off" />
         </label>
-        <label>
+        <label className="field-wide">
           <span>LAN Access Code</span>
           <input
             value={accessCode}
@@ -271,11 +354,7 @@ function RealPrinterPanel({
           <PlugZap size={16} /> {submitState === "saving" ? "Connecting" : "Connect"}
         </button>
       </form>
-      <p className={`onboarding-status tone-${submitState}`}>
-        {submitState === "saved" && lastConnection
-          ? `${lastConnection.displayName} configured with memory-only credentials.`
-          : "Use this form only from localhost/loopback on the server machine or an HTTPS dashboard; use CLI validation for remote LAN HTTP."}
-      </p>
+      <p className={`onboarding-status tone-${submitState === "idle" ? discoveryState : submitState}`}>{onboardingMessage}</p>
     </section>
   );
 }

@@ -7,6 +7,7 @@ import type {
   DeviceStateChangedEventDto,
   DeviceSummaryDto,
   HealthDto,
+  RealPrinterDiscoveryDto,
   RealPrinterConnectionDto,
   RealPrinterConnectionRequest,
   SseEventDto
@@ -46,6 +47,18 @@ export async function fetchHealth(): Promise<HealthDto> {
   }
   const body = (await response.json()) as ApiEnvelope<HealthDto>;
   return body.data;
+}
+
+/**
+ * Attempts server-side discovery for sanitized real-printer onboarding candidates.
+ */
+export async function fetchRealPrinterCandidates(): Promise<RealPrinterDiscoveryDto> {
+  const response = await fetch("/api/v1/real-printer-candidates");
+  if (!response.ok) {
+    throw new Error(`Real-printer discovery failed with ${response.status}`);
+  }
+  const body = (await response.json()) as ApiEnvelope<{ discovery: RealPrinterDiscoveryDto }>;
+  return body.data.discovery;
 }
 
 /**

@@ -2,6 +2,8 @@
 
 import {
   createBambuReadonlyAdapter,
+  discoverBambuPrinters,
+  type BambuDiscoveredPrinterCandidate,
   type BambuPrinterConnectionInput,
   type BambuReadonlyAdapter,
   type BambuTransportFactory
@@ -13,6 +15,7 @@ import {
   toDeviceSummaryDto,
   toSseDeviceEventDto,
   type HealthDto,
+  type RealPrinterCandidateDto,
   type RealPrinterConnectionRequest
 } from "@bpd/contracts";
 import { DeviceStateService } from "@bpd/device-core";
@@ -39,6 +42,7 @@ export interface DashboardServer {
  */
 export interface DashboardServerOptions {
   realTransportFactory?: BambuTransportFactory;
+  realPrinterDiscovery?: () => Promise<BambuDiscoveredPrinterCandidate[]>;
 }
 
 /**
@@ -54,6 +58,8 @@ export async function buildDashboardServer(config: ServerConfig, options: Dashbo
   const realAdapter = createBambuReadonlyAdapter(
     options.realTransportFactory ? { transportFactory: options.realTransportFactory } : {}
   );
+  const discoverRealPrinters = options.realPrinterDiscovery ?? (() => discoverBambuPrinters());
+  const discoveredCandidates = new Map<string, BambuDiscoveredPrinterCandidate>();
   const deviceService = new DeviceStateService([syntheticAdapter, realAdapter], database, logger.child({ component: "device-core" }));
   await deviceService.start();
 
@@ -94,9 +100,31 @@ export async function buildDashboardServer(config: ServerConfig, options: Dashbo
     envelope({ printers: realAdapter.listConfiguredPrinters() }, request.id)
   );
 
+  server.get("/api/v1/real-printer-candidates", async (request) => {
+    const candidates = await discoverRealPrinters().catch(() => []);
+    discoveredCandidates.clear();
+    for (const candidate of candidates) {
+      discoveredCandidates.set(candidate.id, candidate);
+    }
+    return envelope(
+      {
+        discovery: {
+          candidates: candidates.map(toRealPrinterCandidateDto),
+          discoveryMethod: "mdns",
+          manualFallbackAvailable: true,
+          note:
+            candidates.length > 0
+              ? "Server-side mDNS discovery found sanitized printer candidates; Access Codes remain memory-only."
+              : "No server-side mDNS candidates found; use the manual host fallback."
+        }
+      },
+      request.id
+    );
+  });
+
   server.post<{ Body: RealPrinterConnectionRequest }>("/api/v1/real-printers", async (request, reply) => {
     try {
-      const printer = await realAdapter.configurePrinter(toBambuConnectionInput(request.body));
+      const printer = await realAdapter.configurePrinter(toBambuConnectionInput(request.body, discoveredCandidates));
       return envelope({ printer }, request.id);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Invalid real-printer configuration.";
@@ -193,16 +221,36 @@ async function buildHealthDto(
   };
 }
 
-function toBambuConnectionInput(body: RealPrinterConnectionRequest): BambuPrinterConnectionInput {
+function toRealPrinterCandidateDto(candidate: BambuDiscoveredPrinterCandidate): RealPrinterCandidateDto {
+  return {
+    id: candidate.id,
+    displayName: candidate.displayName,
+    modelHint: candidate.modelHint,
+    source: candidate.source,
+    discoveredAt: candidate.discoveredAt,
+    endpointHint: candidate.endpointHint,
+    requiresAccessCode: true
+  };
+}
+
+function toBambuConnectionInput(
+  body: RealPrinterConnectionRequest,
+  discoveredCandidates: Map<string, BambuDiscoveredPrinterCandidate>
+): BambuPrinterConnectionInput {
+  const candidate = body.candidateId ? discoveredCandidates.get(body.candidateId) : undefined;
+  if (body.candidateId && !candidate) {
+    throw new Error("Unknown real-printer discovery candidate. Run discovery again or use manual host fallback.");
+  }
   const input: BambuPrinterConnectionInput = {
     displayName: requireBodyString(body.displayName, "displayName"),
     modelHint: requireBodyString(body.modelHint, "modelHint"),
-    host: requireBodyString(body.host, "host"),
+    host: candidate?.host ?? requireBodyString(body.host, "host"),
     serialNumber: requireBodyString(body.serialNumber, "serialNumber"),
     accessCode: requireBodyString(body.accessCode, "accessCode")
   };
-  if (body.port !== undefined) {
-    input.port = body.port;
+  const port = body.port ?? candidate?.port;
+  if (port !== undefined) {
+    input.port = port;
   }
   if (body.caCertificatePath) {
     input.caCertificatePath = body.caCertificatePath;

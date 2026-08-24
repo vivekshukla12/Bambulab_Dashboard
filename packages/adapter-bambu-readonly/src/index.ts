@@ -13,7 +13,8 @@ import type {
   TemperatureTelemetry
 } from "@bpd/domain";
 import { normalizeProgressPercent } from "@bpd/domain";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { createSocket } from "node:dgram";
 import { readFile } from "node:fs/promises";
 import { Buffer } from "node:buffer";
 import { isIP } from "node:net";
@@ -28,6 +29,10 @@ const DEFAULT_OFFLINE_AFTER_MS = 90_000;
 const DEFAULT_RECONNECT_INITIAL_MS = 1_000;
 const DEFAULT_RECONNECT_MAX_MS = 30_000;
 const MQTT_CONNECT_TIMEOUT_MS = 10_000;
+const DEFAULT_DISCOVERY_TIMEOUT_MS = 2_500;
+const MDNS_MULTICAST_ADDRESS = "224.0.0.251";
+const MDNS_PORT = 5353;
+const BAMBULAB_MDNS_SERVICE_TYPES = ["_bambu._tcp.local", "_bblp._tcp.local", "_printer._tcp.local"];
 
 /**
  * Runtime phase for one configured real printer connection.
@@ -89,6 +94,30 @@ export interface SanitizedBambuPrinterConnection {
  */
 export interface BambuConnectionDiagnostics extends SanitizedBambuPrinterConnection {
   lastFailureCategory: BambuFailureCategory;
+}
+
+/**
+ * Sanitized server-side discovery candidate. Host remains server-side and must not be committed as evidence.
+ */
+export interface BambuDiscoveredPrinterCandidate {
+  id: string;
+  displayName: string;
+  modelHint: string;
+  host: string;
+  port: number;
+  source: "mdns";
+  discoveredAt: string;
+  endpointHint: string;
+  requiresAccessCode: true;
+}
+
+/**
+ * Options for bounded server-side printer discovery.
+ */
+export interface BambuPrinterDiscoveryOptions {
+  timeoutMs?: number;
+  serviceTypes?: string[];
+  now?: () => Date;
 }
 
 /**
@@ -332,6 +361,59 @@ export class BambuReadonlyAdapter implements ReadOnlyDeviceAdapter {
  */
 export function createBambuReadonlyAdapter(options?: BambuReadonlyAdapterOptions): BambuReadonlyAdapter {
   return new BambuReadonlyAdapter(options);
+}
+
+/**
+ * Attempts server-side mDNS discovery for Bambu-compatible local printer candidates.
+ */
+export async function discoverBambuPrinters(
+  options: BambuPrinterDiscoveryOptions = {}
+): Promise<BambuDiscoveredPrinterCandidate[]> {
+  const timeoutMs = positiveInteger(options.timeoutMs, DEFAULT_DISCOVERY_TIMEOUT_MS);
+  const serviceTypes = (options.serviceTypes ?? BAMBULAB_MDNS_SERVICE_TYPES).map(normalizeDnsName);
+  const discoveredAt = (options.now ?? (() => new Date()))().toISOString();
+
+  return new Promise((resolve) => {
+    const socket = createSocket({ type: "udp4", reuseAddr: true });
+    const records: MdnsRecord[] = [];
+    let settled = false;
+    const finish = () => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // Closing a UDP socket after a local discovery error has no evidence value.
+      }
+      resolve(candidatesFromMdnsRecords(records, serviceTypes, discoveredAt));
+    };
+    const timer = setTimeout(finish, timeoutMs);
+
+    socket.on("message", (message) => {
+      records.push(...parseMdnsRecords(message));
+    });
+    socket.once("error", finish);
+    socket.bind(MDNS_PORT, () => {
+      try {
+        socket.addMembership(MDNS_MULTICAST_ADDRESS);
+        socket.setMulticastTTL(1);
+      } catch {
+        finish();
+        return;
+      }
+      for (const serviceType of serviceTypes) {
+        const query = encodeMdnsPtrQuery(serviceType);
+        socket.send(query, MDNS_PORT, MDNS_MULTICAST_ADDRESS, (error) => {
+          if (error) {
+            finish();
+          }
+        });
+      }
+    });
+  });
 }
 
 interface PrinterSessionOptions {
@@ -659,6 +741,269 @@ class PrinterSession {
       this.recyclingTransport = false;
     }
   }
+}
+
+interface MdnsRecord {
+  name: string;
+  type: number;
+  ptr?: string;
+  srv?: {
+    port: number;
+    target: string;
+  };
+  txt?: Map<string, string>;
+  address?: string;
+}
+
+interface MdnsReadNameResult {
+  name: string;
+  nextOffset: number;
+}
+
+function encodeMdnsPtrQuery(serviceType: string): Buffer {
+  const header = Buffer.alloc(12);
+  header.writeUInt16BE(1, 4);
+  return Buffer.concat([header, encodeDnsName(serviceType), Buffer.from([0, 12, 0, 1])]);
+}
+
+function encodeDnsName(name: string): Buffer {
+  const labels = normalizeDnsName(name).split(".");
+  const chunks = labels.map((label) => Buffer.concat([Buffer.from([Buffer.byteLength(label)]), Buffer.from(label, "utf8")]));
+  return Buffer.concat([...chunks, Buffer.from([0])]);
+}
+
+function parseMdnsRecords(message: Buffer): MdnsRecord[] {
+  if (message.length < 12) {
+    return [];
+  }
+  let offset = 12;
+  const questionCount = message.readUInt16BE(4);
+  const answerCount = message.readUInt16BE(6);
+  const authorityCount = message.readUInt16BE(8);
+  const additionalCount = message.readUInt16BE(10);
+
+  for (let index = 0; index < questionCount; index += 1) {
+    const questionName = readDnsName(message, offset);
+    offset = questionName.nextOffset + 4;
+    if (offset > message.length) {
+      return [];
+    }
+  }
+
+  const records: MdnsRecord[] = [];
+  const recordCount = answerCount + authorityCount + additionalCount;
+  for (let index = 0; index < recordCount; index += 1) {
+    const recordName = readDnsName(message, offset);
+    offset = recordName.nextOffset;
+    if (offset + 10 > message.length) {
+      break;
+    }
+    const type = message.readUInt16BE(offset);
+    const rdLength = message.readUInt16BE(offset + 8);
+    const rdOffset = offset + 10;
+    const nextOffset = rdOffset + rdLength;
+    if (nextOffset > message.length) {
+      break;
+    }
+    const record: MdnsRecord = {
+      name: recordName.name,
+      type
+    };
+    if (type === 12) {
+      record.ptr = readDnsName(message, rdOffset).name;
+    } else if (type === 33 && rdLength >= 6) {
+      record.srv = {
+        port: message.readUInt16BE(rdOffset + 4),
+        target: readDnsName(message, rdOffset + 6).name
+      };
+    } else if (type === 16) {
+      record.txt = parseTxtRecord(message.subarray(rdOffset, nextOffset));
+    } else if (type === 1 && rdLength === 4) {
+      record.address = [...message.subarray(rdOffset, nextOffset)].join(".");
+    }
+    records.push(record);
+    offset = nextOffset;
+  }
+  return records;
+}
+
+function readDnsName(message: Buffer, offset: number, depth = 0): MdnsReadNameResult {
+  if (depth > 8 || offset >= message.length) {
+    return { name: "", nextOffset: offset };
+  }
+  const labels: string[] = [];
+  let cursor = offset;
+  let nextOffset = offset;
+  let jumped = false;
+
+  while (cursor < message.length) {
+    const length = message[cursor] ?? 0;
+    if (length === 0) {
+      if (!jumped) {
+        nextOffset = cursor + 1;
+      }
+      break;
+    }
+    if ((length & 0xc0) === 0xc0) {
+      if (cursor + 1 >= message.length) {
+        break;
+      }
+      const pointer = ((length & 0x3f) << 8) | (message[cursor + 1] ?? 0);
+      if (!jumped) {
+        nextOffset = cursor + 2;
+      }
+      const pointed = readDnsName(message, pointer, depth + 1);
+      if (pointed.name) {
+        labels.push(pointed.name);
+      }
+      jumped = true;
+      break;
+    }
+    if ((length & 0xc0) !== 0 || cursor + 1 + length > message.length) {
+      break;
+    }
+    cursor += 1;
+    labels.push(message.subarray(cursor, cursor + length).toString("utf8"));
+    cursor += length;
+    if (!jumped) {
+      nextOffset = cursor;
+    }
+  }
+
+  return {
+    name: normalizeDnsName(labels.join(".")),
+    nextOffset
+  };
+}
+
+function parseTxtRecord(data: Buffer): Map<string, string> {
+  const txt = new Map<string, string>();
+  let offset = 0;
+  while (offset < data.length) {
+    const length = data[offset] ?? 0;
+    offset += 1;
+    if (length === 0 || offset + length > data.length) {
+      continue;
+    }
+    const entry = data.subarray(offset, offset + length).toString("utf8");
+    offset += length;
+    const separator = entry.indexOf("=");
+    if (separator === -1) {
+      txt.set(entry.toLowerCase(), "true");
+    } else {
+      txt.set(entry.slice(0, separator).toLowerCase(), entry.slice(separator + 1));
+    }
+  }
+  return txt;
+}
+
+function candidatesFromMdnsRecords(
+  records: MdnsRecord[],
+  serviceTypes: string[],
+  discoveredAt: string
+): BambuDiscoveredPrinterCandidate[] {
+  const services = new Map<string, { serviceType: string; srv?: MdnsRecord["srv"]; txt?: Map<string, string> }>();
+  const addresses = new Map<string, string>();
+
+  for (const record of records) {
+    if (record.type === 12 && record.ptr && serviceTypes.includes(record.name)) {
+      const existing = services.get(record.ptr) ?? { serviceType: record.name };
+      services.set(record.ptr, existing);
+    }
+    const serviceType = serviceTypeForInstance(record.name, serviceTypes);
+    if (serviceType && (record.srv || record.txt)) {
+      const existing = services.get(record.name) ?? { serviceType };
+      if (record.srv) {
+        existing.srv = record.srv;
+      }
+      if (record.txt) {
+        existing.txt = record.txt;
+      }
+      services.set(record.name, existing);
+    }
+    if (record.address) {
+      addresses.set(record.name, record.address);
+    }
+  }
+
+  const candidates = new Map<string, BambuDiscoveredPrinterCandidate>();
+  for (const [serviceName, service] of services) {
+    const host = service.srv?.target;
+    if (!host || !looksLikeBambuCandidate(serviceName, service.serviceType, service.txt)) {
+      continue;
+    }
+    const port = service.serviceType === "_printer._tcp.local" ? DEFAULT_PORT : service.srv?.port ?? DEFAULT_PORT;
+    const endpointHost = stripLocalRoot(host);
+    const address = addresses.get(host);
+    const id = candidateId(serviceName, endpointHost, port);
+    candidates.set(id, {
+      id,
+      displayName: sanitizeDiscoveryLabel(instanceName(serviceName, service.serviceType)),
+      modelHint: inferDiscoveredModelHint(serviceName, service.txt),
+      host: endpointHost || address || host,
+      port,
+      source: "mdns",
+      discoveredAt,
+      endpointHint: `${service.serviceType} candidate on port ${port}`,
+      requiresAccessCode: true
+    });
+  }
+  return [...candidates.values()].sort((left, right) => left.displayName.localeCompare(right.displayName));
+}
+
+function serviceTypeForInstance(name: string, serviceTypes: string[]): string | undefined {
+  return serviceTypes.find((serviceType) => name.endsWith(`.${serviceType}`));
+}
+
+function instanceName(serviceName: string, serviceType: string): string {
+  return serviceName.endsWith(`.${serviceType}`) ? serviceName.slice(0, -serviceType.length - 1) : serviceName;
+}
+
+function looksLikeBambuCandidate(serviceName: string, serviceType: string, txt: Map<string, string> | undefined): boolean {
+  if (serviceType === "_bambu._tcp.local" || serviceType === "_bblp._tcp.local") {
+    return true;
+  }
+  const haystack = [serviceName, serviceType, ...(txt ? [...txt.values()] : [])].join(" ").toLowerCase();
+  return haystack.includes("bambu") || haystack.includes("bblp");
+}
+
+function inferDiscoveredModelHint(serviceName: string, txt: Map<string, string> | undefined): string {
+  const haystack = [serviceName, ...(txt ? [...txt.values()] : [])].join(" ").toLowerCase();
+  if (haystack.includes("a1 mini") || haystack.includes("a1-mini")) {
+    return "A1 Mini";
+  }
+  if (haystack.includes("x2d")) {
+    return "X2D";
+  }
+  if (haystack.includes("x1")) {
+    return "X1";
+  }
+  if (haystack.includes("p1")) {
+    return "P1";
+  }
+  return "Bambu-compatible";
+}
+
+function sanitizeDiscoveryLabel(value: string): string {
+  const normalized = value
+    .replace(/([0-9a-f]{2}[:-]){5}[0-9a-f]{2}/gi, "[redacted]")
+    .replace(/\b[a-z0-9]{10,}\b/gi, "[redacted]")
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .trim();
+  return normalized.length > 0 ? normalized : "Discovered Bambu printer";
+}
+
+function candidateId(serviceName: string, host: string, port: number): string {
+  const digest = createHash("sha256").update(`${serviceName}|${host}|${port}`).digest("hex").slice(0, 12);
+  return `bambu-mdns-${digest}`;
+}
+
+function normalizeDnsName(value: string): string {
+  return value.trim().replace(/\.$/, "").toLowerCase();
+}
+
+function stripLocalRoot(value: string): string {
+  return value.replace(/\.$/, "");
 }
 
 /**

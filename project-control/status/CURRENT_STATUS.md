@@ -4,7 +4,7 @@
 M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype
 
 ## State
-IMPLEMENTATION IN PROGRESS — Product Owner explicitly started M2 on 2026-08-24. Codex resumed from GitHub, confirmed `prompts/codex/NEXT_PROMPT.md` is QUEUED, created the dedicated M2 branch and opened draft PR #3 before substantial implementation. The offline implementation scaffold is now in place and the latest PR #3 technical review remediation has been applied: connection evidence remains pre-stop, reconnect cleanup actively owns one transport per printer, browser credential entry is restricted to loopback/HTTPS guidance and Docker evidence is reconciled with GitHub Actions. Real A1 Mini + X2D validation has not run yet and is still required before any M2 GO/CONDITIONAL GO/NO-GO recommendation. M2 acceptance, GO/NO-GO disposition, merge, and M3 remain separately Product Owner controlled.
+IMPLEMENTATION IN PROGRESS — Product Owner explicitly started M2 on 2026-08-24. Codex resumed from GitHub, confirmed `prompts/codex/NEXT_PROMPT.md` is QUEUED, created the dedicated M2 branch and opened draft PR #3 before substantial implementation. The offline implementation scaffold is now in place and PR #3 technical review remediation has been applied: connection evidence remains pre-stop, reconnect cleanup actively owns one transport per printer, browser credential entry is restricted to loopback/HTTPS guidance and Docker evidence is reconciled with GitHub Actions. The latest PR #3 clarification also required a discovery-first onboarding attempt before Product Owner hands-on validation; the branch now includes bounded server-side mDNS discovery candidates with manual fallback preserved. Real A1 Mini + X2D validation has not run yet and is still required before any M2 GO/CONDITIONAL GO/NO-GO recommendation. M2 acceptance, GO/NO-GO disposition, merge, and M3 remain separately Product Owner controlled.
 
 ## Repository
 `vivekshukla12/Bambulab_Dashboard` — public
@@ -95,13 +95,15 @@ No UI redesign is required or authorized in M2.
 - Hardened reconnect lifecycle so transport errors, stream closures and silent offline timeouts stop and clean the prior transport before a replacement is created.
 - Expanded the local-only validation report with pre-stop connection state, initial connection timing/result, update cadence/latency summaries, redacted failure categories and `unavailable` capability classification for fields absent from observed live payloads.
 - Tightened browser/runbook guidance: real Access Code entry through the browser form is limited to `localhost`/loopback on the server machine or HTTPS-served dashboards; remote LAN HTTP validation uses the local CLI config path.
+- Added a bounded server-side mDNS discovery attempt through `packages/adapter-bambu-readonly`, a sanitized `GET /api/v1/real-printer-candidates` route, and candidate selection in the existing fleet onboarding UI. Raw endpoint details stay server-side and manual host fallback remains available.
+- Added optional `npm run m2:validate:real -- --interactive` local validation entry with hidden serial/Access Code prompts and sanitized JSON on stdout; the ignored JSON config path remains the engineering fallback.
 - Current repository evidence in `project-control/feedback/M2_REAL_DEVICE_VALIDATION_EVIDENCE.md` remains `not-tested` for real devices.
 
 ## M2 validation status
 
 - `npm run validate` passed on 2026-08-24 in the Codex environment after the PR #3 review remediation.
 - `npm run test:e2e` passed on 2026-08-24 across desktop, tablet and mobile Playwright projects after the PR #3 review remediation.
-- GitHub Actions run `32725830367` passed both `Fresh checkout validation` and `Docker Compose validation` for the PR branch. Local Docker remains unavailable in the Codex workstation (`docker` command not found), but Docker/Compose evidence is no longer outstanding solely because of that workstation limitation.
+- GitHub Actions run `32767627648` passed both `Fresh checkout validation` and `Docker Compose validation` for remediation commit `5e111ec30c6638a2fecbc03ad28b10c7bf9dce59`. Local Docker remains unavailable in the Codex workstation (`docker` command not found), but Docker/Compose evidence is no longer outstanding solely because of that workstation limitation.
 - Real-device validation on the Product Owner LAN has not run; synthetic/offline evidence cannot satisfy M2.
 
 ## Credential/evidence policy

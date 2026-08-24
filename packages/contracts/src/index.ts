@@ -120,12 +120,36 @@ export interface AdapterHealthDto {
 }
 
 /**
+ * Browser-safe real-printer discovery candidate. Private endpoint details stay server-side.
+ */
+export interface RealPrinterCandidateDto {
+  id: string;
+  displayName: string;
+  modelHint: string;
+  source: "mdns";
+  discoveredAt: string;
+  endpointHint: string;
+  requiresAccessCode: true;
+}
+
+/**
+ * Credential-free discovery result for the M2 onboarding flow.
+ */
+export interface RealPrinterDiscoveryDto {
+  candidates: RealPrinterCandidateDto[];
+  discoveryMethod: "mdns";
+  manualFallbackAvailable: true;
+  note: string;
+}
+
+/**
  * Browser-to-server request for configuring one real printer. Access Code must be sent only in the JSON body.
  */
 export interface RealPrinterConnectionRequest {
+  candidateId?: string;
   displayName: string;
   modelHint: string;
-  host: string;
+  host?: string;
   serialNumber: string;
   accessCode: string;
   port?: number;

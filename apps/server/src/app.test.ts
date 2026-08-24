@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import { afterEach, describe, expect, it } from "vitest";
-import type { BambuMqttsStatusTransport, BambuStatusMessage, BambuTransportState } from "@bpd/adapter-bambu-readonly";
+import type {
+  BambuDiscoveredPrinterCandidate,
+  BambuMqttsStatusTransport,
+  BambuMqttsTransportConfig,
+  BambuStatusMessage,
+  BambuTransportState
+} from "@bpd/adapter-bambu-readonly";
 import { createTempDatabase, type TempDatabase } from "@bpd/test-support";
 import { buildDashboardServer, type DashboardServer } from "./app.js";
 import { loadServerConfig } from "./config.js";
@@ -82,6 +88,64 @@ describe("Fastify API", () => {
     expect(healthResponse.statusCode).toBe(200);
     expect(healthResponse.body).toContain("bambu-readonly-m2");
     expect(healthResponse.body).not.toContain("SYNTHETIC_ACCESS_CODE");
+  });
+
+  it("discovers sanitized real-printer candidates and resolves selected endpoints server-side", async () => {
+    temp = await createTempDatabase();
+    const transportConfigs: BambuMqttsTransportConfig[] = [];
+    dashboard = await buildDashboardServer(
+      {
+        ...loadServerConfig({}),
+        databasePath: temp.databasePath,
+        syntheticIntervalMs: 1000
+      },
+      {
+        realPrinterDiscovery: async () => [
+          {
+            id: "bambu-mdns-synthetic",
+            displayName: "Product Owner A1 Mini",
+            modelHint: "A1 Mini",
+            host: "private-printer.local",
+            port: 8883,
+            source: "mdns",
+            discoveredAt: "2026-08-24T20:00:00.000Z",
+            endpointHint: "_bambu._tcp.local candidate on port 8883",
+            requiresAccessCode: true
+          } satisfies BambuDiscoveredPrinterCandidate
+        ],
+        realTransportFactory: (config) => {
+          transportConfigs.push(config);
+          return new MockRealTransport();
+        }
+      }
+    );
+
+    const candidatesResponse = await dashboard.server.inject({ method: "GET", url: "/api/v1/real-printer-candidates" });
+    expect(candidatesResponse.statusCode).toBe(200);
+    expect(candidatesResponse.body).toContain("bambu-mdns-synthetic");
+    expect(candidatesResponse.body).toContain("Product Owner A1 Mini");
+    expect(candidatesResponse.body).not.toContain("private-printer.local");
+    expect(candidatesResponse.body).not.toContain("SYNTHETIC_ACCESS_CODE");
+    expect(candidatesResponse.body).not.toContain("SYNTHETIC_SERIAL_FOR_TEST");
+
+    const connectResponse = await dashboard.server.inject({
+      method: "POST",
+      url: "/api/v1/real-printers",
+      payload: {
+        candidateId: "bambu-mdns-synthetic",
+        displayName: "Product Owner A1 Mini",
+        modelHint: "A1 Mini",
+        serialNumber: "SYNTHETIC_SERIAL_FOR_TEST",
+        accessCode: "SYNTHETIC_ACCESS_CODE"
+      }
+    });
+
+    expect(connectResponse.statusCode).toBe(200);
+    expect(transportConfigs[0]?.host).toBe("private-printer.local");
+    expect(connectResponse.body).toContain("memory-only");
+    expect(connectResponse.body).not.toContain("private-printer.local");
+    expect(connectResponse.body).not.toContain("SYNTHETIC_ACCESS_CODE");
+    expect(connectResponse.body).not.toContain("SYNTHETIC_SERIAL_FOR_TEST");
   });
 });
 

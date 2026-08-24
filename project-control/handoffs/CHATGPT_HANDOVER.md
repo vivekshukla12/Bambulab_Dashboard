@@ -95,7 +95,7 @@ Product Owner M1 UX feedback:
 ## Current milestone
 M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype — **IMPLEMENTATION IN PROGRESS**.
 
-The Product Owner explicitly started M2 on 2026-08-24. `prompts/codex/NEXT_PROMPT.md` is the executable QUEUED contract. Codex resumed from GitHub and created branch `m2/real-device-readonly-prototype` from `main` tip `a192856ada68e3275cec68544565b77ffd05b8a2` before substantial implementation. Draft PR #3 is open at https://github.com/vivekshukla12/Bambulab_Dashboard/pull/3 and must remain unmerged until separate Product Owner acceptance and merge authorization. The offline implementation scaffold is in place and the latest PR #3 technical review remediation has been applied, but real A1 Mini + X2D validation has not run yet.
+The Product Owner explicitly started M2 on 2026-08-24. `prompts/codex/NEXT_PROMPT.md` is the executable QUEUED contract. Codex resumed from GitHub and created branch `m2/real-device-readonly-prototype` from `main` tip `a192856ada68e3275cec68544565b77ffd05b8a2` before substantial implementation. Draft PR #3 is open at https://github.com/vivekshukla12/Bambulab_Dashboard/pull/3 and must remain unmerged until separate Product Owner acceptance and merge authorization. The offline implementation scaffold is in place, PR #3 technical review remediation has been applied, and the latest clarification's discovery-first onboarding gap has been addressed with a bounded server-side mDNS attempt plus manual fallback. Real A1 Mini + X2D validation has not run yet.
 
 M2 implementation authorization is not milestone acceptance and does not authorize merge or M3.
 
@@ -127,13 +127,15 @@ The adapter must preserve the existing normalized read-only contract, synthetic 
 - The fleet UI includes a small real-printer setup form and distinguishes synthetic versus real read-only sources without redesigning the frontend.
 - Local-only validation is documented in `docs/development/M2_REAL_DEVICE_VALIDATION.md`; the command is `npm run m2:validate:real -- secrets/m2-printers.local.json`.
 - The PR #3 review remediation hardened reconnect ownership, added pre-stop connection/timing/cadence/redacted-failure evidence to the validation script and restricted browser Access Code entry guidance to loopback or HTTPS.
+- The latest PR #3 clarification required discovery-first onboarding before Product Owner real-device validation. The branch now has server-side mDNS candidate discovery, a sanitized candidate API, candidate selection in the existing UI, and manual host fallback if discovery is unavailable or unreliable.
+- The local validation script also supports `npm run m2:validate:real -- --interactive` for hands-on local entry with hidden serial/Access Code prompts while keeping stdout as sanitized JSON. The ignored JSON config path remains available.
 - `project-control/feedback/M2_REAL_DEVICE_VALIDATION_EVIDENCE.md` is prepared but remains `not-tested` for both real printers.
 
 ## Current validation status
 
 - `npm run validate` passed on 2026-08-24 after the PR #3 review remediation.
 - `npm run test:e2e` passed on 2026-08-24 across desktop, tablet and mobile after the PR #3 review remediation.
-- GitHub Actions run `32725830367` passed both `Fresh checkout validation` and `Docker Compose validation` for the PR branch. Docker is still unavailable in the Codex workstation (`docker` command not found), but that local limitation is not an outstanding Docker/Compose evidence blocker.
+- GitHub Actions run `32767627648` passed both `Fresh checkout validation` and `Docker Compose validation` for remediation commit `5e111ec30c6638a2fecbc03ad28b10c7bf9dce59`. Docker is still unavailable in the Codex workstation (`docker` command not found), but that local limitation is not an outstanding Docker/Compose evidence blocker.
 - Product Owner LAN real-device validation has not run. M2 still has no GO / CONDITIONAL GO / NO-GO recommendation.
 
 ## M2 credential/evidence policy

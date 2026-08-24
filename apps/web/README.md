@@ -7,7 +7,7 @@ Provides the React/Vite read-only dashboard shell for fleet, device views and mi
 ## Responsibilities
 
 - Render the synthetic fleet and minimal capability-driven device detail views.
-- Provide a minimum real-printer setup form for local Product Owner validation.
+- Provide a minimum real-printer setup form with server-side discovery candidate selection and manual fallback for local Product Owner validation.
 - Consume only `@bpd/contracts` API/SSE DTOs.
 - Present live, stale, unavailable, reconnecting and recovered states explicitly.
 - Provide the PWA manifest, service worker registration and offline indication.
@@ -19,7 +19,7 @@ The web app has no public package API. Its network contract is the versioned rea
 
 ## Owned Data
 
-Only transient browser presentation state is owned here. No credentials or printer secrets are stored in browser storage; the LAN Access Code field is cleared after submit. Real Access Code entry through the browser form is limited to `localhost`/loopback on the server machine or HTTPS-served dashboards; remote LAN HTTP validation uses the local CLI config path instead.
+Only transient browser presentation state is owned here. No credentials or printer secrets are stored in browser storage; the LAN Access Code field is cleared after submit. Discovery candidates are sanitized DTOs; endpoint details remain server-side. Real Access Code entry through the browser form is limited to `localhost`/loopback on the server machine or HTTPS-served dashboards; remote LAN HTTP validation uses the local CLI config path instead.
 
 ## Events
 

@@ -9,6 +9,7 @@ Owns the read-only HTTP boundary: Fastify REST snapshots, Server-Sent Events, di
 - Start the dashboard service and synthetic adapter.
 - Start the M2 Bambu read-only adapter with no real printers configured until local onboarding occurs.
 - Expose only versioned read-only API routes.
+- Attempt server-side real-printer discovery and expose only sanitized candidates.
 - Accept process-memory-only real-printer connection details through the server-side onboarding route.
 - Keep browser clients behind REST/SSE contracts.
 - Serve the built web shell in production-like runs.
@@ -19,6 +20,7 @@ Owns the read-only HTTP boundary: Fastify REST snapshots, Server-Sent Events, di
 - `GET /api/v1/devices`
 - `GET /api/v1/devices/:id`
 - `GET /api/v1/devices/:id/state`
+- `GET /api/v1/real-printer-candidates`
 - `GET /api/v1/real-printers`
 - `POST /api/v1/real-printers`
 - `GET /api/v1/events`
@@ -35,6 +37,7 @@ Consumes normalized adapter events through device core and emits API DTO events 
 ## Invariants
 
 - No write/control printer route exists.
+- Discovery candidate responses do not expose host, serial number, Access Code or raw mDNS TXT data.
 - Real-printer onboarding never returns host, serial number, Access Code or raw status payloads.
 - Request identifiers are stable per request and appear in structured logs.
 - Health diagnostics remain synthetic-safe and credential-free.

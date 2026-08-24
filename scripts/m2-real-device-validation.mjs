@@ -2,10 +2,14 @@
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import readline from "node:readline";
 import { fileURLToPath } from "node:url";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const configPath = path.resolve(root, process.argv[2] ?? "secrets/m2-printers.local.json");
+const args = process.argv.slice(2);
+const interactive = args.includes("--interactive");
+const configArg = args.find((arg) => arg !== "--interactive") ?? "secrets/m2-printers.local.json";
+const configPath = path.resolve(root, configArg);
 
 await main().catch((error) => {
   console.error(safeValidationErrorMessage(error));
@@ -13,8 +17,8 @@ await main().catch((error) => {
 });
 
 async function main() {
-  const { createBambuReadonlyAdapter } = await import("../packages/adapter-bambu-readonly/dist/index.js");
-  const config = await readValidationConfig(configPath);
+  const { createBambuReadonlyAdapter, discoverBambuPrinters } = await import("../packages/adapter-bambu-readonly/dist/index.js");
+  const config = interactive ? await readInteractiveValidationConfig(discoverBambuPrinters) : await readValidationConfig(configPath);
   const durationSeconds = positiveNumber(config.durationSeconds, 120);
   const adapter = createBambuReadonlyAdapter();
   const evidence = new Map();
@@ -84,6 +88,133 @@ async function readValidationConfig(filePath) {
     console.error("Create secrets/m2-printers.local.json from the runbook template. Do not commit it.");
     throw error;
   }
+}
+
+async function readInteractiveValidationConfig(discoverBambuPrinters) {
+  if (!process.stdin.isTTY || !process.stderr.isTTY) {
+    throw new Error("Interactive validation requires a local TTY.");
+  }
+
+  const rl = createPromptInterface();
+  try {
+    console.error("M2 interactive validation keeps credentials in process memory only and does not write a config file.");
+    console.error("Attempting server-side mDNS discovery for sanitized local candidates...");
+    const candidates = await discoverBambuPrinters().catch(() => []);
+    if (candidates.length === 0) {
+      console.error("No sanitized mDNS candidates were found; manual host fallback remains available.");
+    } else {
+      for (const [index, candidate] of candidates.entries()) {
+        console.error(`${index + 1}. ${candidate.displayName} / ${candidate.modelHint} (${candidate.endpointHint})`);
+      }
+    }
+
+    const durationSeconds = positiveInteger(await promptWithDefault(rl, "Observation duration seconds [180]: ", "180"), 180);
+    const printerCount = positiveInteger(await promptWithDefault(rl, "Printers to validate [2]: ", "2"), 2);
+    const printers = [];
+
+    for (let index = 0; index < printerCount; index += 1) {
+      console.error(`Printer ${index + 1}`);
+      const candidate = await chooseCandidate(rl, candidates);
+      const displayName = await promptWithDefault(
+        rl,
+        `Display name [${candidate?.displayName ?? `Printer ${index + 1}`}]: `,
+        candidate?.displayName ?? `Printer ${index + 1}`
+      );
+      const modelHint = await promptWithDefault(
+        rl,
+        `Model hint [${candidate?.modelHint ?? "Bambu-compatible"}]: `,
+        candidate?.modelHint ?? "Bambu-compatible"
+      );
+      const id = await promptWithDefault(rl, `Sanitized id [${defaultPrinterId(displayName, index)}]: `, defaultPrinterId(displayName, index));
+      const host = candidate?.host ?? (await promptRequired(rl, "Manual host/IP: ", "host"));
+      const port = positiveInteger(
+        await promptWithDefault(rl, `MQTTS port [${candidate?.port ?? 8883}]: `, String(candidate?.port ?? 8883)),
+        candidate?.port ?? 8883
+      );
+      const serialNumber = await promptRequired(rl, "Serial number (hidden): ", "serialNumber", { hidden: true });
+      const accessCode = await promptRequired(rl, "LAN Access Code (hidden): ", "accessCode", { hidden: true });
+      const caCertificatePath = await promptWithDefault(rl, "CA certificate path, optional []: ", "");
+      const printer = {
+        id,
+        displayName,
+        modelHint,
+        host,
+        port,
+        serialNumber,
+        accessCode
+      };
+      if (caCertificatePath) {
+        printer.caCertificatePath = caCertificatePath;
+      }
+      printers.push(printer);
+    }
+
+    return {
+      durationSeconds,
+      printers
+    };
+  } finally {
+    rl.close();
+  }
+}
+
+function createPromptInterface() {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stderr, terminal: true });
+  rl.stdoutMuted = false;
+  const originalWriteToOutput = rl._writeToOutput.bind(rl);
+  rl._writeToOutput = (stringToWrite) => {
+    if (!rl.stdoutMuted) {
+      originalWriteToOutput(stringToWrite);
+    }
+  };
+  return rl;
+}
+
+async function promptWithDefault(rl, question, fallback) {
+  const answer = (await rl.question(question)).trim();
+  return answer || fallback;
+}
+
+async function promptRequired(rl, question, field, options = {}) {
+  const answer = options.hidden ? await promptHidden(rl, question) : (await rl.question(question)).trim();
+  if (!answer) {
+    throw new Error(`Missing required local validation field: ${field}.`);
+  }
+  return answer;
+}
+
+async function promptHidden(rl, question) {
+  rl.output.write(question);
+  rl.stdoutMuted = true;
+  try {
+    return (await rl.question("")).trim();
+  } finally {
+    rl.stdoutMuted = false;
+    rl.output.write("\n");
+  }
+}
+
+async function chooseCandidate(rl, candidates) {
+  if (candidates.length === 0) {
+    return undefined;
+  }
+  const answer = await promptWithDefault(rl, "Candidate number, or Enter for manual fallback []: ", "");
+  if (!answer) {
+    return undefined;
+  }
+  const index = Number.parseInt(answer, 10) - 1;
+  if (!Number.isInteger(index) || index < 0 || index >= candidates.length) {
+    throw new Error("Invalid interactive discovery candidate selection.");
+  }
+  return candidates[index];
+}
+
+function defaultPrinterId(displayName, index) {
+  const slug = displayName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return slug || `printer-${index + 1}`;
 }
 
 function toConnectionInput(printer) {
@@ -312,6 +443,12 @@ function safeValidationErrorMessage(error) {
   if (error instanceof SyntaxError) {
     return "M2 local validation failed because the local JSON config could not be parsed.";
   }
+  if (error instanceof Error && error.message === "Interactive validation requires a local TTY.") {
+    return error.message;
+  }
+  if (error instanceof Error && error.message === "Invalid interactive discovery candidate selection.") {
+    return error.message;
+  }
   if (error instanceof Error && /^Missing required local validation field:/.test(error.message)) {
     return error.message;
   }
@@ -327,6 +464,11 @@ function requiredString(value, field) {
 
 function positiveNumber(value, fallback) {
   const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function positiveInteger(value, fallback) {
+  const parsed = Number.parseInt(String(value), 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 

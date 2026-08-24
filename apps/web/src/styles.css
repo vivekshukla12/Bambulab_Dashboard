@@ -405,6 +405,19 @@ h2 {
   gap: 12px;
 }
 
+.candidate-actions {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.4fr) minmax(220px, 1fr);
+  gap: 10px;
+  align-items: end;
+}
+
+.candidate-actions label {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
 .real-printer-form {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -418,22 +431,18 @@ h2 {
   gap: 5px;
 }
 
-.real-printer-form label:nth-child(1),
-.real-printer-form label:nth-child(3) {
+.real-printer-form .field-wide {
   grid-column: span 2;
 }
 
-.real-printer-form label:nth-child(5),
-.real-printer-form label:nth-child(6) {
-  grid-column: span 2;
-}
-
+.candidate-actions label span,
 .real-printer-form label span {
   color: #64748b;
   font-size: 0.78rem;
   font-weight: 700;
 }
 
+.candidate-actions select,
 .real-printer-form input,
 .real-printer-form select {
   width: 100%;
@@ -446,6 +455,7 @@ h2 {
   font: inherit;
 }
 
+.candidate-actions button,
 .real-printer-form button {
   min-height: 40px;
   border: 0;
@@ -462,6 +472,11 @@ h2 {
   cursor: pointer;
 }
 
+.candidate-actions button {
+  background: #1f4053;
+}
+
+.candidate-actions button:disabled,
 .real-printer-form button:disabled {
   cursor: wait;
   background: #64748b;
@@ -502,15 +517,13 @@ h2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .candidate-actions,
   .real-printer-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .real-printer-form label,
-  .real-printer-form label:nth-child(1),
-  .real-printer-form label:nth-child(3),
-  .real-printer-form label:nth-child(5),
-  .real-printer-form label:nth-child(6) {
+  .real-printer-form .field-wide {
     grid-column: span 1;
   }
 }
@@ -539,6 +552,7 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+  .candidate-actions,
   .real-printer-form {
     grid-template-columns: 1fr;
   }
