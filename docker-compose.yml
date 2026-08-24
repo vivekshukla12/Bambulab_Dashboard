@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MPL-2.0
+
+services:
+  dashboard:
+    build:
+      context: .
+    image: bambu-printer-dashboard:m1
+    environment:
+      BPD_HOST: 0.0.0.0
+      BPD_PORT: 3001
+      BPD_DATABASE_PATH: /data/dashboard.sqlite
+      BPD_WEB_DIST: /app/apps/web/dist
+    ports:
+      - "3001:3001"
+    volumes:
+      - dashboard-data:/data
+
+volumes:
+  dashboard-data:

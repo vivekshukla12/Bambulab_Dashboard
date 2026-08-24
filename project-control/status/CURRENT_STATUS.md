@@ -4,7 +4,7 @@
 M1 — Architecture foundation + synthetic prototype + real-read feasibility design
 
 ## State
-IMPLEMENTATION AUTHORIZED / QUEUED — M1 architecture and execution contract are approved. Codex may execute only the task in `prompts/codex/NEXT_PROMPT.md`.
+PRODUCT OWNER HANDS-ON VALIDATION COMPLETE / MERGE DECISION PENDING — M1 synthetic prototype implementation is on Draft PR #2. Technical-lead review is accepted, remediation is complete, automated fresh-checkout and Docker/Compose validation pass, and the Product Owner has completed hands-on testing. No merge is authorized yet.
 
 ## Repository
 `vivekshukla12/Bambulab_Dashboard` — public
@@ -13,10 +13,14 @@ IMPLEMENTATION AUTHORIZED / QUEUED — M1 architecture and execution contract ar
 Mozilla Public License 2.0 (MPL-2.0). New original source files must carry the MPL-2.0 source-file notice policy defined in `CONTRIBUTING.md` and DEC-008.
 
 ## Current branch
-`main` until Codex creates the authorized M1 implementation branch.
+`m1/synthetic-dashboard-prototype`
 
 ## Current PR
-None yet for M1. Codex is authorized to create a draft M1 PR from its implementation branch. No merge is authorized.
+Draft PR #2 — `M1: synthetic dashboard architecture prototype`
+
+https://github.com/vivekshukla12/Bambulab_Dashboard/pull/2
+
+No merge is authorized.
 
 ## Product direction
 V1 is read-only-first for real Bambu printers. The product is a local-first operational dashboard centered on real monitoring, historical intelligence, maintenance, notifications and secure integrations. Printer write/control, Developer Mode, Fleet Hub dependency, cloud-client impersonation and private Bambu partner authorization are not part of the current V1 path.
@@ -47,13 +51,30 @@ Approved baseline includes:
 See DEC-014, DEC-015 and DEC-016.
 
 ## Authorization
-On 2026-08-23 the Product Owner authorized M1 implementation after technical-lead review. `prompts/codex/NEXT_PROMPT.md` is now `QUEUED` and is the only executable Codex scope.
+On 2026-08-23 the Product Owner authorized M1 implementation after technical-lead review. `prompts/codex/NEXT_PROMPT.md` was executed as the controlling Codex scope.
 
-Codex may:
-- create an M1 implementation branch from current `main`;
-- open a draft PR;
-- implement and validate only the authorized M1 synthetic prototype contract;
-- update project-control files as required by that contract.
+Implemented on Draft PR #2:
+- npm-workspace TypeScript monorepo with bounded packages and TypeScript project references;
+- Fastify read-only REST/SSE backend;
+- React/Vite PWA shell with fleet, device details, diagnostics and explicit stale/unavailable/reconnect/offline states;
+- SQLite/Kysely persistence with migrations, WAL, foreign keys and restart-surviving current state;
+- deterministic synthetic A1 Mini-shaped and X2D-shaped devices using the read-only adapter contract;
+- module READMEs, `docs/architecture/MODULE_MAP.md`, TypeDoc generation, license inventory and Docker/Compose packaging files.
+
+Remediated on Draft PR #2:
+- committed the previously local-only `packages/secrets` workspace and fixed the `.gitignore` rule that hid it;
+- verified fresh-checkout `npm ci`, `npm run validate` and `npm run test:e2e` from GitHub branch state;
+- added and ran `npm run docker:validate` in GitHub Actions, proving Docker/Compose build/startup, dashboard/API/health access and SQLite volume persistence across restart/recreation.
+
+## Product Owner hands-on feedback
+The Product Owner tested the M1 prototype on 2026-08-23.
+
+Feedback:
+- the prototype UI is functionally acceptable for M1 but visually basic and not sufficiently modern for the eventual product experience;
+- no frontend/UI redesign is requested for M1;
+- UI modernization is deferred as a non-blocking item for later planning, potentially as part of a later milestone or a small V1.1 UI/UX refresh.
+
+This feedback is recorded in `project-control/feedback/M1_IMPLEMENTATION_NOTES.md` and must not trigger unqueued frontend work.
 
 Codex may not:
 - access real printers or credentials;
@@ -67,4 +88,4 @@ M2 is the real-device GO/NO-GO milestone. It must demonstrate useful, stable rea
 If M2 cannot prove enough real capability to make the dashboard genuinely useful, substantial downstream implementation must stop pending an explicit Product Owner continue/re-scope/stop decision.
 
 ## Next authorized action
-Codex executes `prompts/codex/NEXT_PROMPT.md`, creates the M1 branch/draft PR, implements the scoped synthetic prototype, runs required automated and hands-on validation, records evidence, and returns the PR for technical-lead/Product Owner review. Do not merge without explicit Product Owner approval.
+Product Owner makes the explicit M1 acceptance/merge decision for Draft PR #2. Until that decision, keep `prompts/codex/NEXT_PROMPT.md` on HOLD, do not merge, and do not start M2.

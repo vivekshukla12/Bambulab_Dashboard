@@ -1,0 +1,10 @@
+.git
+.data
+node_modules
+apps/*/dist
+packages/*/dist
+docs/generated
+test-results
+playwright-report
+*.tsbuildinfo
+npm-debug.log*

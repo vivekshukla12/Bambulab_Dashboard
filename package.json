@@ -1,0 +1,54 @@
+{
+  "name": "bambu-printer-dashboard",
+  "version": "0.1.0-m1",
+  "private": true,
+  "type": "module",
+  "description": "Local-first read-only synthetic prototype for the Bambu Printer Dashboard M1 milestone.",
+  "license": "MPL-2.0",
+  "packageManager": "npm@11.13.0",
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11 <12"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build:ts && npm run build --workspace @bpd/web",
+    "build:ts": "tsc -b packages/domain packages/contracts packages/adapter-api packages/telemetry packages/observability packages/discovery packages/secrets packages/persistence packages/adapter-synthetic packages/device-core packages/test-support apps/server",
+    "dev:server": "npm run dev --workspace @bpd/server",
+    "dev:web": "npm run dev --workspace @bpd/web --",
+    "start": "npm run start --workspace @bpd/server",
+    "test": "vitest run --config vitest.config.ts",
+    "test:e2e": "playwright test",
+    "docs:typedoc": "typedoc --options typedoc.json",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up --build",
+    "docker:validate": "node scripts/validate-docker-compose.mjs",
+    "licenses": "node scripts/license-check.mjs",
+    "validate": "npm run build && npm run test && npm run docs:typedoc && npm run licenses"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.2.0",
+    "fastify": "^5.0.0",
+    "kysely": "^0.28.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "tsx": "^4.20.0",
+    "typedoc": "^0.28.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.0"
+  }
+}

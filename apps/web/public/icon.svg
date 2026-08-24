@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Dashboard icon">
+  <!-- SPDX-License-Identifier: MPL-2.0 -->
+  <rect width="128" height="128" rx="24" fill="#0f766e"/>
+  <path d="M33 38h62v18H33zM42 56h44v39H42z" fill="#f8fafc"/>
+  <path d="M51 66h26v7H51zm0 14h18v7H51z" fill="#0f766e"/>
+  <circle cx="93" cy="82" r="12" fill="#f59e0b"/>
+</svg>

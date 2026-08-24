@@ -1,0 +1,21 @@
+{
+  "name": "@bpd/server",
+  "version": "0.1.0-m1",
+  "private": true,
+  "type": "module",
+  "license": "MPL-2.0",
+  "scripts": {
+    "dev": "tsx --conditions=development src/main.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js"
+  },
+  "dependencies": {
+    "@bpd/adapter-synthetic": "0.1.0-m1",
+    "@bpd/contracts": "0.1.0-m1",
+    "@bpd/device-core": "0.1.0-m1",
+    "@bpd/discovery": "0.1.0-m1",
+    "@bpd/observability": "0.1.0-m1",
+    "@bpd/persistence": "0.1.0-m1",
+    "fastify": "^5.0.0"
+  }
+}

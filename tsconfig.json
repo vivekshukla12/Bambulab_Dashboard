@@ -1,0 +1,17 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/domain" },
+    { "path": "./packages/contracts" },
+    { "path": "./packages/adapter-api" },
+    { "path": "./packages/telemetry" },
+    { "path": "./packages/observability" },
+    { "path": "./packages/discovery" },
+    { "path": "./packages/secrets" },
+    { "path": "./packages/persistence" },
+    { "path": "./packages/adapter-synthetic" },
+    { "path": "./packages/device-core" },
+    { "path": "./packages/test-support" },
+    { "path": "./apps/server" }
+  ]
+}

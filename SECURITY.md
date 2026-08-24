@@ -4,8 +4,9 @@ Security is an architectural requirement for Bambu Printer Dashboard.
 
 ## Baseline rules
 
-- V1 production access is LAN-only and authenticated.
-- HTTPS is required even on LAN.
+- V1 production access is LAN-only.
+- The approved read-only V1 browser dashboard has no interactive application login; LAN reachability means read access to dashboard-visible information.
+- Initial read-only LAN operation may use HTTP. HTTPS plus strong authentication is mandatory before any future printer write/control capability, sensitive remote exposure, multi-user model, or comparable security expansion.
 - Credentials, tokens, authorization headers, webhook secrets, encryption keys, and backup secrets must never be committed or exposed in logs.
 - Destructive/high-impact actions require explicit confirmation.
 - API write/control operations require strong authentication and explicit capability/policy boundaries.
