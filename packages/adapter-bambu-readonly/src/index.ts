@@ -18,7 +18,13 @@ import { createSocket } from "node:dgram";
 import { readFile } from "node:fs/promises";
 import { Buffer } from "node:buffer";
 import { isIP } from "node:net";
-import { connect as connectTls, type ConnectionOptions, type TLSSocket } from "node:tls";
+import {
+  connect as connectTls,
+  type ConnectionOptions,
+  type DetailedPeerCertificate,
+  type PeerCertificate,
+  type TLSSocket
+} from "node:tls";
 
 const ADAPTER_ID = "bambu-readonly-m2";
 const SOURCE = "bambu-readonly";
@@ -59,6 +65,11 @@ export type BambuFailureCategory =
   | "offline-timeout";
 
 /**
+ * TLS trust source for the credential-bearing MQTTS connection.
+ */
+export type BambuTlsTrustProfile = "system" | "local-printer-chain";
+
+/**
  * User-provided M2 real-printer connection fields. Sensitive values remain process-memory only.
  */
 export interface BambuPrinterConnectionInput {
@@ -71,6 +82,8 @@ export interface BambuPrinterConnectionInput {
   port?: number;
   username?: string;
   caCertificatePath?: string;
+  tlsServerName?: string;
+  tlsTrustProfile?: BambuTlsTrustProfile;
   staleAfterMs?: number;
   offlineAfterMs?: number;
 }
@@ -130,6 +143,8 @@ export interface BambuMqttsTransportConfig {
   accessCode: string;
   serialNumber: string;
   caCertificatePath?: string;
+  tlsServerName?: string;
+  tlsTrustProfile: BambuTlsTrustProfile;
   clientId?: string;
   keepAliveSeconds?: number;
 }
@@ -187,6 +202,8 @@ interface InternalPrinterConfig {
   staleAfterMs: number;
   offlineAfterMs: number;
   caCertificatePath?: string;
+  tlsServerName?: string;
+  tlsTrustProfile: BambuTlsTrustProfile;
 }
 
 interface NormalizationContext {
@@ -347,10 +364,14 @@ export class BambuReadonlyAdapter implements ReadOnlyDeviceAdapter {
       accessCode: requireNonBlank(input.accessCode, "accessCode"),
       configuredAt: this.now().toISOString(),
       staleAfterMs: positiveInteger(input.staleAfterMs, DEFAULT_STALE_AFTER_MS),
-      offlineAfterMs: positiveInteger(input.offlineAfterMs, DEFAULT_OFFLINE_AFTER_MS)
+      offlineAfterMs: positiveInteger(input.offlineAfterMs, DEFAULT_OFFLINE_AFTER_MS),
+      tlsTrustProfile: input.tlsTrustProfile ?? "system"
     };
     if (input.caCertificatePath) {
       config.caCertificatePath = input.caCertificatePath;
+    }
+    if (input.tlsServerName) {
+      config.tlsServerName = input.tlsServerName;
     }
     return config;
   }
@@ -521,10 +542,14 @@ class PrinterSession {
       port: this.config.port,
       username: this.config.username,
       accessCode: this.config.accessCode,
-      serialNumber: this.config.serialNumber
+      serialNumber: this.config.serialNumber,
+      tlsTrustProfile: this.config.tlsTrustProfile
     };
     if (this.config.caCertificatePath) {
       transportConfig.caCertificatePath = this.config.caCertificatePath;
+    }
+    if (this.config.tlsServerName) {
+      transportConfig.tlsServerName = this.config.tlsServerName;
     }
     this.transport = this.transportFactory(transportConfig);
     this.unsubscribers.push(
@@ -1100,14 +1125,19 @@ class NodeMqttsStatusTransport implements BambuMqttsStatusTransport {
 
   async start(): Promise<void> {
     this.emitState("connecting");
-    const ca = this.config.caCertificatePath ? await readFile(this.config.caCertificatePath) : undefined;
+    const localTlsProfile =
+      !this.config.caCertificatePath && this.config.tlsTrustProfile === "local-printer-chain"
+        ? await discoverLocalPrinterTlsProfile(this.config.host, this.config.port)
+        : undefined;
+    const ca = this.config.caCertificatePath ? await readFile(this.config.caCertificatePath) : localTlsProfile?.ca;
     const tlsOptions: ConnectionOptions = {
       host: this.config.host,
       port: this.config.port,
       rejectUnauthorized: true
     };
-    if (isIP(this.config.host) === 0) {
-      tlsOptions.servername = this.config.host;
+    const tlsServerName = this.config.tlsServerName ?? localTlsProfile?.serverName ?? (isIP(this.config.host) === 0 ? this.config.host : undefined);
+    if (tlsServerName) {
+      tlsOptions.servername = tlsServerName;
     }
     if (ca) {
       tlsOptions.ca = ca;
@@ -1254,6 +1284,83 @@ class NodeMqttsStatusTransport implements BambuMqttsStatusTransport {
       listener(error);
     }
   }
+}
+
+interface LocalPrinterTlsProfile {
+  ca: Buffer;
+  serverName?: string;
+}
+
+async function discoverLocalPrinterTlsProfile(host: string, port: number): Promise<LocalPrinterTlsProfile> {
+  return new Promise((resolve, reject) => {
+    let connectTimer: NodeJS.Timeout | undefined;
+    const socket = connectTls(
+      {
+        host,
+        port,
+        rejectUnauthorized: false
+      },
+      () => {
+        if (connectTimer) {
+          clearTimeout(connectTimer);
+        }
+        const certificate = socket.getPeerCertificate(true);
+        socket.destroy();
+        const profile = localPrinterTlsProfileFromCertificate(certificate);
+        if (!profile) {
+          reject(new Error("Local printer TLS profile could not be derived."));
+          return;
+        }
+        resolve(profile);
+      }
+    );
+    connectTimer = setTimeout(() => {
+      const error = new Error("Local printer TLS profile probe timed out.");
+      socket.destroy(error);
+      reject(error);
+    }, MQTT_CONNECT_TIMEOUT_MS);
+    socket.once("error", (error) => {
+      if (connectTimer) {
+        clearTimeout(connectTimer);
+      }
+      reject(error);
+    });
+    socket.once("close", () => {
+      if (connectTimer) {
+        clearTimeout(connectTimer);
+      }
+    });
+  });
+}
+
+function localPrinterTlsProfileFromCertificate(certificate: PeerCertificate | DetailedPeerCertificate): LocalPrinterTlsProfile | undefined {
+  if (!certificate || !certificate.raw) {
+    return undefined;
+  }
+  const caCertificates: Buffer[] = [];
+  const seen = new Set<string>();
+  let current = (certificate as DetailedPeerCertificate).issuerCertificate;
+  while (current?.raw && !seen.has(current.fingerprint256)) {
+    seen.add(current.fingerprint256);
+    if (current.fingerprint256 !== certificate.fingerprint256) {
+      caCertificates.push(current.raw);
+    }
+    current = current.issuerCertificate;
+  }
+  if (caCertificates.length === 0) {
+    caCertificates.push(certificate.raw);
+  }
+  const commonName = certificate.subject?.CN;
+  const serverName = (Array.isArray(commonName) ? commonName[0] : commonName)?.trim();
+  return {
+    ca: Buffer.from(caCertificates.map(pemFromDerCertificate).join("")),
+    ...(serverName ? { serverName } : {})
+  };
+}
+
+function pemFromDerCertificate(raw: Buffer): string {
+  const base64 = raw.toString("base64").match(/.{1,64}/g)?.join("\n") ?? "";
+  return `-----BEGIN CERTIFICATE-----\n${base64}\n-----END CERTIFICATE-----\n`;
 }
 
 interface DecodedPacket {

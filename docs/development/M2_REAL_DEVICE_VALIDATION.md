@@ -12,7 +12,7 @@ Do not use Developer Mode, Fleet Hub, cloud-client impersonation, write/control 
 
 Create `secrets/m2-printers.local.json` from the template in `docs/development/RUNBOOK.md`. The file must stay uncommitted. Use sanitized aliases for `id` and `displayName` because those may appear in sanitized evidence. For hands-on local entry without writing a config file, run `npm run m2:validate:real -- --interactive`; prompts go to stderr, stdout remains the sanitized JSON report, and serial/Access Code entry is hidden.
 
-If the printer's certificate chain is not trusted by the local machine, provide a local CA certificate path through `caCertificatePath`. Do not disable TLS certificate validation.
+If the printer's certificate chain is not trusted by the local machine, use `tlsTrustProfile: "local-printer-chain"` or provide a local CA certificate path through `caCertificatePath`. File-based and interactive local validation default to `local-printer-chain`. The local-printer-chain profile probes the printer certificate before credentials are sent, derives the local issuer/certificate identity in process memory and then keeps TLS certificate validation enabled for the credential-bearing MQTTS connection. Do not disable TLS certificate validation.
 
 Enter a real LAN Access Code through the browser form only from `localhost`/loopback on the same server machine or from an HTTPS-served dashboard. For remote LAN HTTP validation, use this CLI config path instead of browser credential entry.
 

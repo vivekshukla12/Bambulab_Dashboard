@@ -31,6 +31,7 @@ Emits normalized read-only device events through the `@bpd/adapter-api` contract
 - No printer write/control method or arbitrary command passthrough exists.
 - The production transport never publishes MQTT messages.
 - TLS certificate validation remains enabled; callers may provide a local CA certificate path when needed.
+- The M2 `local-printer-chain` TLS profile may derive a local issuer and certificate identity from the printer before credentials are sent, then uses that profile for the credential-bearing connection with certificate validation still enabled.
 - Health and configured-printer summaries are credential-free and do not expose host/IP, serial or raw payload values.
 
 ## Dependencies

@@ -131,6 +131,8 @@ async function readInteractiveValidationConfig(discoverBambuPrinters) {
         await promptWithDefault(rl, `MQTTS port [${candidate?.port ?? 8883}]: `, String(candidate?.port ?? 8883)),
         candidate?.port ?? 8883
       );
+      const tlsTrustProfile = await promptTlsTrustProfile(rl);
+      const tlsServerName = await promptHiddenOptional(rl, "TLS server name override, optional (hidden): ");
       const serialNumber = await promptRequired(rl, "Serial number (hidden): ", "serialNumber", { hidden: true });
       const accessCode = await promptRequired(rl, "LAN Access Code (hidden): ", "accessCode", { hidden: true });
       const caCertificatePath = await promptWithDefault(rl, "CA certificate path, optional []: ", "");
@@ -140,9 +142,13 @@ async function readInteractiveValidationConfig(discoverBambuPrinters) {
         modelHint,
         host,
         port,
+        tlsTrustProfile,
         serialNumber,
         accessCode
       };
+      if (tlsServerName) {
+        printer.tlsServerName = tlsServerName;
+      }
       if (caCertificatePath) {
         printer.caCertificatePath = caCertificatePath;
       }
@@ -194,6 +200,15 @@ async function promptHidden(rl, question) {
   }
 }
 
+async function promptHiddenOptional(rl, question) {
+  return promptHidden(rl, question);
+}
+
+async function promptTlsTrustProfile(rl) {
+  const value = await promptWithDefault(rl, "TLS trust profile [local-printer-chain]: ", "local-printer-chain");
+  return validateTlsTrustProfile(value);
+}
+
 async function chooseCandidate(rl, candidates) {
   if (candidates.length === 0) {
     return undefined;
@@ -232,6 +247,10 @@ function toConnectionInput(printer) {
   if (printer.caCertificatePath) {
     input.caCertificatePath = path.resolve(root, printer.caCertificatePath);
   }
+  if (printer.tlsServerName) {
+    input.tlsServerName = requiredString(printer.tlsServerName, "tlsServerName");
+  }
+  input.tlsTrustProfile = validateTlsTrustProfile(printer.tlsTrustProfile ?? "local-printer-chain");
   if (printer.staleAfterMs !== undefined) {
     input.staleAfterMs = Number(printer.staleAfterMs);
   }
@@ -449,6 +468,9 @@ function safeValidationErrorMessage(error) {
   if (error instanceof Error && error.message === "Invalid interactive discovery candidate selection.") {
     return error.message;
   }
+  if (error instanceof Error && error.message === "Invalid local validation TLS trust profile.") {
+    return error.message;
+  }
   if (error instanceof Error && /^Missing required local validation field:/.test(error.message)) {
     return error.message;
   }
@@ -470,6 +492,13 @@ function positiveNumber(value, fallback) {
 function positiveInteger(value, fallback) {
   const parsed = Number.parseInt(String(value), 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function validateTlsTrustProfile(value) {
+  if (value === "system" || value === "local-printer-chain") {
+    return value;
+  }
+  throw new Error("Invalid local validation TLS trust profile.");
 }
 
 function wait(ms) {

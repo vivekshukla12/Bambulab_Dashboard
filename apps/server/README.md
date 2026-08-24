@@ -38,7 +38,7 @@ Consumes normalized adapter events through device core and emits API DTO events 
 
 - No write/control printer route exists.
 - Discovery candidate responses do not expose host, serial number, Access Code or raw mDNS TXT data.
-- Real-printer onboarding never returns host, serial number, Access Code or raw status payloads.
+- Real-printer onboarding never returns host, serial number, Access Code, TLS server identity or raw status payloads.
 - Request identifiers are stable per request and appear in structured logs.
 - Health diagnostics remain synthetic-safe and credential-free.
 

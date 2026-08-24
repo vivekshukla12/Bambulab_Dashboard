@@ -44,7 +44,7 @@ Real-device validation is local-only and must be run on the Product Owner's LAN.
 3. Use sanitized `id` and `displayName` values in that file.
 4. Optionally use the dashboard's server-side discovery in the Fleet panel to identify candidates, then keep private hosts/serials/Access Codes only in the ignored local config.
 5. Run `npm run m2:validate:real -- secrets/m2-printers.local.json`.
-6. For hands-on local entry without writing a config file, run `npm run m2:validate:real -- --interactive`; prompts go to stderr, stdout remains the sanitized JSON report and serial/Access Code entry is hidden.
+6. For hands-on local entry without writing a config file, run `npm run m2:validate:real -- --interactive`; prompts go to stderr, stdout remains the sanitized JSON report and serial/Access Code entry is hidden. File configs and interactive prompts default to the `local-printer-chain` TLS trust profile when the printer certificate is local/private and not trusted by the workstation.
 7. Copy only sanitized capability classifications, timing summaries and pass/fail rows into repository evidence.
 
 Template:
@@ -59,6 +59,7 @@ Template:
       "modelHint": "A1 Mini",
       "host": "LOCAL_HOST_OR_IP_NOT_FOR_COMMIT",
       "port": 8883,
+      "tlsTrustProfile": "local-printer-chain",
       "serialNumber": "LOCAL_SERIAL_NOT_FOR_COMMIT",
       "accessCode": "LOCAL_ACCESS_CODE_NOT_FOR_COMMIT",
       "caCertificatePath": "secrets/bambu-local-ca.pem"
@@ -69,6 +70,7 @@ Template:
       "modelHint": "X2D",
       "host": "LOCAL_HOST_OR_IP_NOT_FOR_COMMIT",
       "port": 8883,
+      "tlsTrustProfile": "local-printer-chain",
       "serialNumber": "LOCAL_SERIAL_NOT_FOR_COMMIT",
       "accessCode": "LOCAL_ACCESS_CODE_NOT_FOR_COMMIT",
       "caCertificatePath": "secrets/bambu-local-ca.pem"
@@ -77,7 +79,7 @@ Template:
 }
 ```
 
-The script prints sanitized JSON only: configured sanitized IDs/model hints, pre-stop connection state, credential mode, current quality/lifecycle, initial connection timing, update cadence/latency summaries, redacted failure categories and capability classifications. It does not print host, serial number, Access Code, raw transport errors or raw MQTT payloads.
+The script prints sanitized JSON only: configured sanitized IDs/model hints, pre-stop connection state, credential mode, current quality/lifecycle, initial connection timing, update cadence/latency summaries, redacted failure categories and capability classifications. It does not print host, serial number, Access Code, TLS server identity, raw transport errors or raw MQTT payloads.
 
 ## Security Notes
 

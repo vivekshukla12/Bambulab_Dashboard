@@ -60,11 +60,15 @@ describe("Fastify API", () => {
 
   it("accepts real-printer onboarding without returning credentials or private identifiers", async () => {
     temp = await createTempDatabase();
+    const transportConfigs: BambuMqttsTransportConfig[] = [];
     dashboard = await buildDashboardServer({
       ...loadServerConfig({}),
       databasePath: temp.databasePath,
       syntheticIntervalMs: 1000
-    }, { realTransportFactory: () => new MockRealTransport() });
+    }, { realTransportFactory: (config) => {
+      transportConfigs.push(config);
+      return new MockRealTransport();
+    } });
 
     const response = await dashboard.server.inject({
       method: "POST",
@@ -74,20 +78,57 @@ describe("Fastify API", () => {
         modelHint: "A1 Mini",
         host: "example-printer.local",
         serialNumber: "SYNTHETIC_SERIAL_FOR_TEST",
-        accessCode: "SYNTHETIC_ACCESS_CODE"
+        accessCode: "SYNTHETIC_ACCESS_CODE",
+        tlsTrustProfile: "local-printer-chain",
+        tlsServerName: "SYNTHETIC_TLS_SERVER_NAME"
       }
     });
     expect(response.statusCode).toBe(200);
+    expect(transportConfigs[0]?.tlsTrustProfile).toBe("local-printer-chain");
+    expect(transportConfigs[0]?.tlsServerName).toBe("SYNTHETIC_TLS_SERVER_NAME");
     const serialized = response.body;
     expect(serialized).toContain("memory-only");
     expect(serialized).not.toContain("SYNTHETIC_ACCESS_CODE");
     expect(serialized).not.toContain("SYNTHETIC_SERIAL_FOR_TEST");
     expect(serialized).not.toContain("example-printer.local");
+    expect(serialized).not.toContain("SYNTHETIC_TLS_SERVER_NAME");
 
     const healthResponse = await dashboard.server.inject({ method: "GET", url: "/api/v1/health" });
     expect(healthResponse.statusCode).toBe(200);
     expect(healthResponse.body).toContain("bambu-readonly-m2");
     expect(healthResponse.body).not.toContain("SYNTHETIC_ACCESS_CODE");
+  });
+
+  it("rejects invalid TLS trust profiles before configuring the real adapter", async () => {
+    temp = await createTempDatabase();
+    const transportConfigs: BambuMqttsTransportConfig[] = [];
+    dashboard = await buildDashboardServer({
+      ...loadServerConfig({}),
+      databasePath: temp.databasePath,
+      syntheticIntervalMs: 1000
+    }, { realTransportFactory: (config) => {
+      transportConfigs.push(config);
+      return new MockRealTransport();
+    } });
+
+    const response = await dashboard.server.inject({
+      method: "POST",
+      url: "/api/v1/real-printers",
+      payload: {
+        displayName: "Product Owner A1 Mini",
+        modelHint: "A1 Mini",
+        host: "example-printer.local",
+        serialNumber: "SYNTHETIC_SERIAL_FOR_TEST",
+        accessCode: "SYNTHETIC_ACCESS_CODE",
+        tlsTrustProfile: "disabled"
+      }
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body).toContain("Invalid real-printer TLS trust profile.");
+    expect(response.body).not.toContain("SYNTHETIC_ACCESS_CODE");
+    expect(response.body).not.toContain("SYNTHETIC_SERIAL_FOR_TEST");
+    expect(transportConfigs).toHaveLength(0);
   });
 
   it("discovers sanitized real-printer candidates and resolves selected endpoints server-side", async () => {

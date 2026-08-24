@@ -209,6 +209,8 @@ function RealPrinterPanel({
   const [serialNumber, setSerialNumber] = useState("");
   const [accessCode, setAccessCode] = useState("");
   const [port, setPort] = useState("8883");
+  const [tlsTrustProfile, setTlsTrustProfile] =
+    useState<NonNullable<RealPrinterConnectionRequest["tlsTrustProfile"]>>("local-printer-chain");
   const [candidates, setCandidates] = useState<RealPrinterCandidateDto[]>([]);
   const [selectedCandidateId, setSelectedCandidateId] = useState("");
   const [discoveryNote, setDiscoveryNote] = useState<string | undefined>();
@@ -224,7 +226,8 @@ function RealPrinterPanel({
         displayName,
         modelHint,
         serialNumber,
-        accessCode
+        accessCode,
+        tlsTrustProfile
       };
       if (selectedCandidateId) {
         request.candidateId = selectedCandidateId;
@@ -335,6 +338,16 @@ function RealPrinterPanel({
             required={!selectedCandidateId}
             disabled={Boolean(selectedCandidateId)}
           />
+        </label>
+        <label>
+          <span>TLS</span>
+          <select
+            value={tlsTrustProfile}
+            onChange={(event) => setTlsTrustProfile(event.target.value as NonNullable<RealPrinterConnectionRequest["tlsTrustProfile"]>)}
+          >
+            <option value="local-printer-chain">Local chain</option>
+            <option value="system">System trust</option>
+          </select>
         </label>
         <label className="field-wide">
           <span>Serial</span>

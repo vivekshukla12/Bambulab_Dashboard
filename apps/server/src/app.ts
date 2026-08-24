@@ -255,6 +255,12 @@ function toBambuConnectionInput(
   if (body.caCertificatePath) {
     input.caCertificatePath = body.caCertificatePath;
   }
+  if (body.tlsServerName) {
+    input.tlsServerName = body.tlsServerName;
+  }
+  if (body.tlsTrustProfile) {
+    input.tlsTrustProfile = requireTlsTrustProfile(body.tlsTrustProfile);
+  }
   return input;
 }
 
@@ -263,4 +269,11 @@ function requireBodyString(value: string | undefined, field: string): string {
     throw new Error(`Missing required real-printer field: ${field}.`);
   }
   return value.trim();
+}
+
+function requireTlsTrustProfile(value: string): NonNullable<BambuPrinterConnectionInput["tlsTrustProfile"]> {
+  if (value === "system" || value === "local-printer-chain") {
+    return value;
+  }
+  throw new Error("Invalid real-printer TLS trust profile.");
 }

@@ -28,7 +28,7 @@ Defines `device.snapshot` and `device.state.changed` SSE payloads consumed by th
 
 - Contracts are versioned under API `v1`.
 - DTOs must never contain credentials, LAN Access Codes or adapter-private payloads.
-- Real-printer discovery DTOs must not expose LAN hosts, serial numbers, Access Codes or raw mDNS records.
+- Real-printer discovery DTOs must not expose LAN hosts, serial numbers, Access Codes, TLS server identities or raw mDNS records.
 - Read-only contracts do not expose printer control commands.
 
 ## Dependencies

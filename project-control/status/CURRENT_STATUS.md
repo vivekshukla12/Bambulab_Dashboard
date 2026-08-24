@@ -97,6 +97,7 @@ No UI redesign is required or authorized in M2.
 - Tightened browser/runbook guidance: real Access Code entry through the browser form is limited to `localhost`/loopback on the server machine or HTTPS-served dashboards; remote LAN HTTP validation uses the local CLI config path.
 - Added a bounded server-side mDNS discovery attempt through `packages/adapter-bambu-readonly`, a sanitized `GET /api/v1/real-printer-candidates` route, and candidate selection in the existing fleet onboarding UI. Raw endpoint details stay server-side and manual host fallback remains available.
 - Added optional `npm run m2:validate:real -- --interactive` local validation entry with hidden serial/Access Code prompts and sanitized JSON on stdout; the ignored JSON config path remains the engineering fallback.
+- Added an explicit `local-printer-chain` TLS trust profile for local/private printer certificates: the adapter probes certificate material before sending credentials, derives the local issuer/certificate identity in memory and still uses `rejectUnauthorized: true` for the credential-bearing MQTTS connection. Sanitized A1 Mini diagnostics showed the target port reachable but raw-IP strict TLS unsuitable without this profile.
 - Current repository evidence in `project-control/feedback/M2_REAL_DEVICE_VALIDATION_EVIDENCE.md` remains `not-tested` for real devices.
 
 ## M2 validation status

@@ -154,6 +154,8 @@ export interface RealPrinterConnectionRequest {
   accessCode: string;
   port?: number;
   caCertificatePath?: string;
+  tlsServerName?: string;
+  tlsTrustProfile?: "system" | "local-printer-chain";
 }
 
 /**

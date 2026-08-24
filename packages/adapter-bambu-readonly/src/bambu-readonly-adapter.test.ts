@@ -7,6 +7,7 @@ import {
   createBambuReadonlyAdapter,
   normalizeBambuStatusPayload,
   parseBambuStatusPayload,
+  type BambuMqttsTransportConfig,
   type BambuMqttsStatusTransport,
   type BambuStatusMessage,
   type BambuTransportState
@@ -120,6 +121,34 @@ describe("BambuReadonlyAdapter", () => {
     expect(serialized).not.toContain("SYNTHETIC_SERIAL_FOR_TEST");
     expect(serialized).not.toContain("192.168.");
     expect(serialized).toContain("memory-only");
+  });
+
+  it("keeps local TLS trust profile details inside the adapter boundary", async () => {
+    const transportConfigs: BambuMqttsTransportConfig[] = [];
+    const adapter = createBambuReadonlyAdapter({
+      now: fixedNow,
+      transportFactory: (config) => {
+        transportConfigs.push(config);
+        return new MockTransport();
+      }
+    });
+
+    await adapter.configurePrinter(
+      realPrinterInput({
+        host: "192.0.2.10",
+        tlsServerName: "SYNTHETIC_TLS_SERVER_NAME",
+        tlsTrustProfile: "local-printer-chain"
+      })
+    );
+    await adapter.start();
+
+    expect(transportConfigs[0]?.tlsTrustProfile).toBe("local-printer-chain");
+    expect(transportConfigs[0]?.tlsServerName).toBe("SYNTHETIC_TLS_SERVER_NAME");
+    const serialized = JSON.stringify(adapter.listConfiguredPrinters());
+    expect(serialized).not.toContain("192.0.2.10");
+    expect(serialized).not.toContain("SYNTHETIC_TLS_SERVER_NAME");
+    expect(serialized).not.toContain("SYNTHETIC_ACCESS_CODE");
+    expect(serialized).not.toContain("SYNTHETIC_SERIAL_FOR_TEST");
   });
 
   it("marks stale and unavailable states without presenting stale data as live", async () => {
