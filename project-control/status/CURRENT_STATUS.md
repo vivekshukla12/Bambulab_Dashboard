@@ -4,7 +4,7 @@
 M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype
 
 ## State
-PLANNING / HOLD — M1 is complete, accepted, and merged. M2 is now the active milestone for planning, but no M2 implementation task is yet queued.
+PLANNING COMPLETE / HOLD — M1 is complete, accepted, and merged. The M2 real-device validation specification and Codex implementation proposal are technically reviewed and ready for Product Owner approval. No M2 implementation or real-printer access is authorized yet.
 
 ## Repository
 `vivekshukla12/Bambulab_Dashboard` — public
@@ -40,36 +40,70 @@ V1 remains read-only-first for real Bambu printers. The product is a local-first
 
 See `project-control/specs/V1_FEATURE_SCOPE.md` for the current V1 feature boundary and `project-control/specs/MILESTONE_PLAN.md` for the roadmap.
 
-## M2 purpose and hard gate
-M2 is the mandatory real-device GO/NO-GO milestone. It must demonstrate sufficiently useful and reliable read-only monitoring on **both** an A1 Mini and X2D under the approved security/legal/interface constraints.
+## M2 approved planning direction
+The technical-lead M2 planning package is now complete:
 
-Synthetic evidence cannot satisfy M2.
+- `project-control/specs/M2_REAL_DEVICE_VALIDATION.md`
+- `project-control/reviews/M2_PLANNING_REVIEW.md`
+- `prompts/codex/M2_IMPLEMENTATION_PROPOSAL.md`
 
-M2 must not require or use:
+Technical recommendation: approve this package as the M2 executable baseline, but implementation remains blocked until explicit Product Owner authorization changes `prompts/codex/NEXT_PROMPT.md` from HOLD to QUEUED.
+
+## Proposed M2 interface
+M2 will evaluate/implement only the **standard-mode local MQTTS read-only status path** for printer-originated status information that Bambu publicly states remains available to third-party monitoring software.
+
+The M2 path must not require or use:
 - Developer Mode;
 - Fleet Hub hardware;
 - Bambu partner/private authorization;
 - reverse-engineered Bambu cloud-client impersonation;
 - printer write/control commands;
-- bypasses or weakening of vendor/device authentication or security controls.
+- bypasses or weakening of vendor/device authentication/security controls;
+- copied proprietary Bambu network-plugin implementation.
 
-If M2 cannot prove enough real read-only capability on both initial target devices to make the dashboard genuinely useful, substantial downstream implementation must stop for a formal Product Owner continue/re-scope/stop decision before M3.
+If useful read monitoring cannot be established under those constraints, implementation stops and the result feeds the M2 GO/NO-GO decision.
 
-## M2 planning requirements
-Before Codex implementation is queued, technical-lead planning must define and Product Owner must approve a concrete M2 execution contract covering at least:
-- exact supported/authorized local read path to evaluate;
-- device discovery/manual fallback behavior;
-- LAN Access Code handling and consent;
-- field/capability evidence matrix for A1 Mini and X2D;
-- freshness/update/reconnect/offline validation;
-- firmware/model variance recording;
-- controlled handling of real-device evidence with no secrets/private dumps committed;
-- success thresholds for the M2 GO/NO-GO decision;
-- automated tests around the adapter boundary plus hands-on real-device validation;
-- branch/PR, documentation, security, stop and merge rules.
+## M2 prototype target
+The accepted M1 dashboard will be extended with a dedicated `adapter-bambu-readonly` boundary so the Product Owner can monitor the real A1 Mini and X2D locally while retaining synthetic mode.
 
-## Security/data gate
-Real-device testing in M2 may use the Product Owner's local printers only under an explicitly queued M2 task. Real LAN Access Codes, private device payloads, logs or identifiers must never be committed to the repository. Evidence must be sanitized or summarized according to the security/privacy guardrails.
+M2 should prove:
+- real connectivity/availability;
+- real printer/print state;
+- useful real-print progress;
+- reliably exposed temperatures/status telemetry;
+- explicit freshness/stale/offline/reconnect/recovery semantics;
+- simultaneous A1 Mini + X2D monitoring;
+- normalized persistence/history inputs;
+- capability differences without model-specific product-layer branching.
+
+No UI redesign is required in M2.
+
+## Credential/evidence policy
+For M2 feasibility:
+- real LAN Access Codes default to memory-only/non-persisted handling;
+- real-device testing runs locally on the Product Owner's LAN, not in public CI;
+- credentials, serial numbers, MAC addresses, local IPs, account identifiers, raw private payload dumps, packet captures, private printer media and unsanitized logs must not be committed;
+- repository evidence must be sanitized matrices/summaries or project-authored synthetic fixtures.
+
+Persistent real credential storage is not required for the M2 GO/NO-GO decision.
+
+## M2 GO/NO-GO gate
+Synthetic evidence cannot satisfy M2.
+
+Technical lead should recommend **GO** only if both A1 Mini and X2D provide enough stable real data for a credible core monitoring product: availability, current operating/print state, useful progress during printing, meaningful temperature/status telemetry, and safe freshness/recovery behavior.
+
+A **CONDITIONAL GO** requires an explicit Product Owner-approved reduction in product claims for non-core/model-specific gaps.
+
+Recommend **NO-GO / reassessment required** if either target printer cannot provide useful stable monitoring under the approved constraints or required data depends on a prohibited interface/security mechanism.
+
+No M3 implementation may begin before the Product Owner decides the M2 gate.
+
+## M2 primary risks
+See `project-control/risks/RISK_REGISTER.md`, especially:
+- R-013 — read-only viable direction / control unavailable;
+- R-014 — firmware/model variability may undermine useful monitoring;
+- R-015 — credential/private evidence leakage during real-device debugging;
+- R-016 — low-level read transport assumptions may depend on unofficial details.
 
 ## Next authorized action
-Technical-lead M2 planning and creation/review of the concrete M2 Codex execution contract. Keep `prompts/codex/NEXT_PROMPT.md` on HOLD until that contract is explicitly approved. Do not start real-printer implementation or access yet.
+Product Owner reviews and explicitly approves or changes the M2 planning package. Keep `prompts/codex/NEXT_PROMPT.md` on HOLD and do not access real printers until explicit implementation authorization is given.
