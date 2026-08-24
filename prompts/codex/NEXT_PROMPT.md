@@ -1,65 +1,61 @@
 # Next Codex Task
 
 ## Status
-HOLD — PR #2 remediation complete; awaiting technical-lead/Product Owner review.
+HOLD — M1 is complete and merged. M2 is the active planning milestone, but no real-device implementation task is yet authorized.
 
 ## Milestone
-M1 — Architecture foundation + synthetic prototype + real-read feasibility design
+M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype
 
-## Objective
-Update existing branch `m1/synthetic-dashboard-prototype` and Draft PR #2 so the committed repository is fully reproducible from a fresh checkout and the approved Docker/Compose deployment path is actually validated. Do not create a new PR unless technically unavoidable. Do not merge.
+## Objective while HOLD
+Support planning/review only. Do not implement or access real printers until this file is deliberately replaced with a Product Owner-approved `QUEUED` M2 execution contract.
 
-## Authoritative review finding
-The technical-lead review identified a blocking reproducibility defect: the committed PR references a `packages/secrets` workspace from the root build, Dockerfile, generated TypeDoc output and implementation notes, but the PR does not contain the corresponding committed workspace source/package files. The reported successful local build therefore cannot yet be treated as reproducible from GitHub state alone.
+## Current authoritative state
+Read first:
+1. `project-control/status/CURRENT_STATUS.md`
+2. `project-control/handoffs/CHATGPT_HANDOVER.md`
+3. `project-control/specs/M1_ARCHITECTURE.md`
+4. `project-control/specs/V1_FEATURE_SCOPE.md`
+5. `project-control/specs/MILESTONE_PLAN.md`
+6. `project-control/specs/OPERATING_MODEL.md`
+7. `project-control/specs/SECURITY_PRIVACY_GUARDRAILS.md`
+8. `project-control/decisions/DECISION_LOG.md`
+9. `project-control/risks/RISK_REGISTER.md`
+10. relevant M1 module READMEs/contracts/tests, only where needed for M2 planning.
 
-Docker/Compose execution is also still unvalidated. Because the production packaging uses Node Alpine with the native `better-sqlite3` dependency, an actual Docker build/run is required before M1 acceptance.
+## M1 closure
+M1 was accepted by the Product Owner after hands-on validation and PR #2 was merged into `main` on 2026-08-24. Verified merge commit: `42821596cc0bf80a302b12287063b3ee17f58f3a`.
 
-## Required work
+The Product Owner's UI feedback is non-blocking: the current UI is functionally acceptable but visually basic; no UI redesign is authorized now. Modernization is deferred to later planning / possible V1.1.
 
-1. Verify and commit the complete `packages/secrets` workspace required by the approved M1 architecture, including its `package.json`, TypeScript configuration, source, tests and module README as applicable. Ensure every committed source file follows the MPL-2.0 source-file notice policy.
+## M2 hard gate
+M2 must prove sufficiently useful and reliable real read-only monitoring on **both** an A1 Mini and X2D. Synthetic evidence cannot pass M2.
 
-2. Verify there are no other local-only or untracked source/configuration files required for the build, tests, generated documentation, runtime or Docker packaging.
+If M2 cannot prove enough real read-only capability on both devices, downstream implementation must stop for a formal Product Owner reassessment before M3.
 
-3. From a fresh/clean checkout of the updated branch, using only files committed to GitHub, run and record:
-   - `npm ci`
-   - `npm run validate`
-   - `npm run test:e2e`
-
-4. In a Docker-capable environment, run and record:
-   - Docker/Compose build;
-   - startup through Docker Compose;
-   - successful dashboard load;
-   - successful `GET /api/v1/devices`;
-   - successful `GET /api/v1/health`;
-   - SQLite persistence across container restart/recreation using the configured persistent volume.
-
-5. If Docker validation exposes a packaging problem involving Node Alpine, `better-sqlite3`, native compilation/runtime libraries or another existing M1 dependency, fix it within the already approved architecture. If resolution would require changing the major approved stack or introducing a significant new infrastructure dependency, stop and report instead of improvising.
-
-6. Update `project-control/feedback/M1_IMPLEMENTATION_NOTES.md` with:
-   - fresh-checkout validation evidence;
-   - Docker/Compose validation evidence;
-   - any packaging change made;
-   - any remaining limitation or risk.
-
-7. Reconcile `project-control/status/CURRENT_STATUS.md` and `project-control/handoffs/CHATGPT_HANDOVER.md` only as needed to reflect the remediation state. When remediation is complete, set this file back to `HOLD — PR #2 remediation complete; awaiting technical-lead/Product Owner review`.
-
-## Explicitly prohibited
+## Prohibited while HOLD
 Do not:
-- start M2;
-- access or discover real printers;
-- use real LAN Access Codes or credentials;
-- implement Bambu protocols/MQTT/cloud access, Developer Mode or Fleet Hub;
-- add printer write/control functionality;
-- add cameras/media, AMS integration, Home Assistant, Alexa, Google Home or Daisy work;
-- change the approved major architecture without Product Owner approval;
-- merge PR #2.
+- create an M2 implementation branch or PR;
+- access, discover, connect to, or query real printers;
+- request/use real LAN Access Codes;
+- implement Bambu device protocols or cloud-client behavior;
+- use Developer Mode;
+- use Fleet Hub;
+- use private Bambu partner/developer authorization;
+- impersonate Bambu cloud clients;
+- add printer write/control commands;
+- weaken or bypass vendor/device security or authentication;
+- commit live device dumps, credentials, private identifiers, logs, screenshots/media, or unsanitized real-device evidence;
+- start M3+ scope.
 
-## Completion report
-Push all fixes to the existing Draft PR #2 and report in the PR/repository state:
-- new head commit SHA;
-- exact files/fixes added or changed;
-- results of `npm ci`, `npm run validate`, `npm run test:e2e`;
-- Docker/Compose validation results including persistence test;
-- remaining limitations/risks, if any.
+## Planning work permitted
+- Review the existing read-only adapter/domain contracts from M1.
+- Define the smallest supported/authorized M2 real-read adapter experiment.
+- Define discovery + manual fallback and LAN Access Code consent/secret-handling behavior.
+- Define a per-device capability evidence matrix and success thresholds.
+- Define reconnect/freshness/offline/firmware variance tests.
+- Define safe real-device evidence capture/sanitization rules.
+- Define M2 automated tests and Product Owner hands-on validation steps.
+- Identify any material architecture/security/interface decision that requires Product Owner approval before implementation.
 
-Codex implementation completion is not M1 acceptance and is not merge authorization. The Product Owner retains final acceptance and merge authority.
+## Queue transition rule
+Only after technical-lead review and explicit Product Owner approval may this file change to `QUEUED`. The queued version must contain the complete M2 scope, allowed real-device activity, non-goals, security/data handling rules, tests, GO/NO-GO acceptance thresholds, documentation requirements, branch/PR rules, stop conditions and merge gate.
