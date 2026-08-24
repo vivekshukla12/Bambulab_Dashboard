@@ -69,7 +69,7 @@ Approved constraints:
 - publicly available read-only printer status paths explicitly left available by Bambu may be evaluated under DEC-006/DEC-012;
 - discovering a technical write/control path does not authorize using it.
 
-Public Bambu authorization-control guidance explicitly states printer status pushes remain available to third-party monitoring (including Home Assistant-style monitoring) while critical operations are authorization-controlled. M2 uses this as the product-level basis for evaluating standard-mode local read-only status consumption; it does not treat every low-level implementation detail as officially documented or guaranteed.
+M2 is authorized to evaluate/implement only the reviewed standard-mode local MQTTS read-only status path. If a usable client requires security bypass, signature circumvention, private authorization, proprietary implementation copying or write/control traffic, stop and return for Product Owner review.
 
 ## Completed milestones
 
@@ -93,39 +93,40 @@ Product Owner M1 UX feedback:
 - visual modernization deferred, potentially later milestone or small V1.1 UI/UX refresh.
 
 ## Current milestone
-M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype — **PLANNING COMPLETE / HOLD**.
+M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype — **IMPLEMENTATION AUTHORIZED / QUEUED**.
 
-No M2 implementation branch/PR exists. `prompts/codex/NEXT_PROMPT.md` is HOLD and remains the execution gate.
+The Product Owner explicitly started M2 on 2026-08-24. `prompts/codex/NEXT_PROMPT.md` is the executable QUEUED contract. At queue time, no M2 branch or PR exists yet; Codex is authorized to create a dedicated M2 branch from current `main` and open a draft PR before substantial implementation.
 
-## M2 planning package
-Technical-lead planning is complete and recorded in:
+M2 implementation authorization is not milestone acceptance and does not authorize merge or M3.
 
+## M2 authoritative package
 - `project-control/specs/M2_REAL_DEVICE_VALIDATION.md`
 - `project-control/reviews/M2_PLANNING_REVIEW.md`
 - `prompts/codex/M2_IMPLEMENTATION_PROPOSAL.md`
+- executable gate: `prompts/codex/NEXT_PROMPT.md`
 
-Technical disposition: **APPROVE FOR PRODUCT OWNER REVIEW**. The package is recommended as the executable M2 baseline, but it is not yet authorized for Codex execution.
+## M2 implementation boundary
+Implement/evaluate only the standard-mode local **MQTTS read-only status path** through a dedicated `adapter-bambu-readonly` package.
 
-## Proposed M2 implementation direction
-If explicitly queued, M2 may implement/evaluate only the standard-mode local **MQTTS read-only status path** through a dedicated `adapter-bambu-readonly` package.
-
-It must not use:
+Do not use:
 - Developer Mode;
 - Fleet Hub;
-- private/partner Bambu credentials;
+- private/partner Bambu credentials or authorization;
 - cloud-client impersonation;
 - write/control commands;
 - weakened TLS/security;
 - authorization/signature bypass;
 - copied proprietary Bambu network-plugin implementation.
 
+The adapter must preserve the existing normalized read-only contract, synthetic regression path, server-owned freshness/persistence model and capability-driven product layers.
+
 ## M2 credential/evidence policy
 For M2 feasibility:
-- real LAN Access Codes default to memory-only/non-persisted handling;
-- real-device tests run only locally on the Product Owner LAN, not public CI;
+- real LAN Access Codes default to process-memory-only/non-persisted handling;
+- real-device tests run only locally on the Product Owner LAN, not public/shared CI;
 - credentials, serial/MAC/IP/account identifiers, raw private payloads, packet captures, private printer media and unsanitized logs are not committed;
 - repository evidence is sanitized capability/timing/pass-fail summaries or project-authored synthetic fixtures;
-- persistent real credential storage is not required to pass M2.
+- persistent real credential storage is not required to pass M2 and requires separate Product Owner request within the already-approved SecretStore boundary.
 
 ## M2 hard gate
 Both A1 Mini and X2D must demonstrate a genuinely useful core read-only monitoring product. Required value includes availability, current operating/print state, useful progress during real printing, meaningful temperature/status telemetry, safe stale/offline/reconnect behavior, simultaneous dual-device monitoring and compatibility with the existing normalized architecture.
@@ -147,7 +148,7 @@ See `project-control/risks/RISK_REGISTER.md`, especially:
 - R-016 low-level read transport assumptions may depend on unofficial implementation details.
 
 ## Next authorized action
-Product Owner reviews and explicitly approves or changes the M2 planning package. Until approval, keep `NEXT_PROMPT.md` HOLD and do not access/discover real printers or request LAN Access Codes.
+Codex may resume from GitHub and execute `prompts/codex/NEXT_PROMPT.md`: create the M2 branch/draft PR, implement the dedicated read-only adapter and minimum onboarding, preserve synthetic regression, and prepare sanitized local-only validation for the Product Owner's A1 Mini and X2D. Stop on any prohibited interface/security boundary. Do not merge and do not start M3.
 
 ## Files to read first
 1. `project-control/status/CURRENT_STATUS.md`
