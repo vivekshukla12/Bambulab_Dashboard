@@ -4,7 +4,7 @@
 M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype
 
 ## State
-IMPLEMENTATION AUTHORIZED / QUEUED — Product Owner explicitly started M2 on 2026-08-24. The reviewed M2 planning package is now the executable baseline. `prompts/codex/NEXT_PROMPT.md` is QUEUED for controlled Codex execution. M2 acceptance, GO/NO-GO disposition, merge, and M3 remain separately Product Owner controlled.
+IMPLEMENTATION STARTED — Product Owner explicitly started M2 on 2026-08-24. Codex resumed from GitHub, confirmed `prompts/codex/NEXT_PROMPT.md` is QUEUED, and created the dedicated M2 branch. The reviewed M2 planning package remains the executable baseline. M2 acceptance, GO/NO-GO disposition, merge, and M3 remain separately Product Owner controlled.
 
 ## Repository
 `vivekshukla12/Bambulab_Dashboard` — public
@@ -13,10 +13,10 @@ IMPLEMENTATION AUTHORIZED / QUEUED — Product Owner explicitly started M2 on 20
 Mozilla Public License 2.0 (MPL-2.0). New original source files must carry the MPL-2.0 source-file notice policy defined in `CONTRIBUTING.md` and DEC-008. Preserve third-party provenance and license compatibility.
 
 ## Current branch
-`main` for project-control state. Codex is authorized to create a dedicated M2 milestone branch from current `main` before substantial implementation.
+`m2/real-device-readonly-prototype`, created from current `main` tip `a192856ada68e3275cec68544565b77ffd05b8a2` before substantial implementation.
 
 ## Current PR
-None for M2 at queue time. Codex must open a draft M2 PR targeting `main` before substantial implementation and must not merge it.
+M2 draft PR opening is in progress. Codex must record the PR number/URL here once the draft PR exists and must not merge it.
 
 ## Completed milestones
 

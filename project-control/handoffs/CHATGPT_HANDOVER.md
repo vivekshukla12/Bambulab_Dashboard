@@ -93,9 +93,9 @@ Product Owner M1 UX feedback:
 - visual modernization deferred, potentially later milestone or small V1.1 UI/UX refresh.
 
 ## Current milestone
-M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype — **IMPLEMENTATION AUTHORIZED / QUEUED**.
+M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype — **IMPLEMENTATION STARTED**.
 
-The Product Owner explicitly started M2 on 2026-08-24. `prompts/codex/NEXT_PROMPT.md` is the executable QUEUED contract. At queue time, no M2 branch or PR exists yet; Codex is authorized to create a dedicated M2 branch from current `main` and open a draft PR before substantial implementation.
+The Product Owner explicitly started M2 on 2026-08-24. `prompts/codex/NEXT_PROMPT.md` is the executable QUEUED contract. Codex resumed from GitHub and created branch `m2/real-device-readonly-prototype` from `main` tip `a192856ada68e3275cec68544565b77ffd05b8a2` before substantial implementation. The M2 draft PR is being opened next and must be recorded in project-control state once it exists.
 
 M2 implementation authorization is not milestone acceptance and does not authorize merge or M3.
 
