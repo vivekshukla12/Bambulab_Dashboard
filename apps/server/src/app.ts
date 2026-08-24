@@ -1,7 +1,20 @@
 // SPDX-License-Identifier: MPL-2.0
 
+import {
+  createBambuReadonlyAdapter,
+  type BambuPrinterConnectionInput,
+  type BambuReadonlyAdapter,
+  type BambuTransportFactory
+} from "@bpd/adapter-bambu-readonly";
 import { createSyntheticAdapter } from "@bpd/adapter-synthetic";
-import { envelope, toDeviceDetailDto, toDeviceSummaryDto, toSseDeviceEventDto, type HealthDto } from "@bpd/contracts";
+import {
+  envelope,
+  toDeviceDetailDto,
+  toDeviceSummaryDto,
+  toSseDeviceEventDto,
+  type HealthDto,
+  type RealPrinterConnectionRequest
+} from "@bpd/contracts";
 import { DeviceStateService } from "@bpd/device-core";
 import { getDashboardDiscoveryDescriptor } from "@bpd/discovery";
 import { createLogger, createRequestId } from "@bpd/observability";
@@ -17,20 +30,31 @@ export interface DashboardServer {
   server: FastifyInstance;
   deviceService: DeviceStateService;
   database: DashboardDatabase;
+  realAdapter: BambuReadonlyAdapter;
   close(): Promise<void>;
 }
 
 /**
- * Builds the M1 read-only dashboard server and starts synthetic observation.
+ * Test/runtime hooks for server-owned adapter wiring.
  */
-export async function buildDashboardServer(config: ServerConfig): Promise<DashboardServer> {
+export interface DashboardServerOptions {
+  realTransportFactory?: BambuTransportFactory;
+}
+
+/**
+ * Builds the read-only dashboard server and starts adapter observation.
+ */
+export async function buildDashboardServer(config: ServerConfig, options: DashboardServerOptions = {}): Promise<DashboardServer> {
   const logger = createLogger("server");
   const database = await DashboardDatabase.open({
     databasePath: config.databasePath,
     logger: logger.child({ component: "database" })
   });
   const syntheticAdapter = createSyntheticAdapter({ intervalMs: config.syntheticIntervalMs });
-  const deviceService = new DeviceStateService([syntheticAdapter], database, logger.child({ component: "device-core" }));
+  const realAdapter = createBambuReadonlyAdapter(
+    options.realTransportFactory ? { transportFactory: options.realTransportFactory } : {}
+  );
+  const deviceService = new DeviceStateService([syntheticAdapter, realAdapter], database, logger.child({ component: "device-core" }));
   await deviceService.start();
 
   const server = Fastify({
@@ -66,7 +90,23 @@ export async function buildDashboardServer(config: ServerConfig): Promise<Dashbo
     return envelope({ state: device.state }, request.id);
   });
 
-  server.get("/api/v1/health", async (request) => envelope(await buildHealthDto(config, database, deviceService), request.id));
+  server.get("/api/v1/real-printers", async (request) =>
+    envelope({ printers: realAdapter.listConfiguredPrinters() }, request.id)
+  );
+
+  server.post<{ Body: RealPrinterConnectionRequest }>("/api/v1/real-printers", async (request, reply) => {
+    try {
+      const printer = await realAdapter.configurePrinter(toBambuConnectionInput(request.body));
+      return envelope({ printer }, request.id);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invalid real-printer configuration.";
+      return reply.code(400).send(envelope({ error: message }, request.id));
+    }
+  });
+
+  server.get("/api/v1/health", async (request) =>
+    envelope(await buildHealthDto(config, database, deviceService, realAdapter), request.id)
+  );
 
   server.get("/api/v1/events", async (_request, reply) => {
     reply.hijack();
@@ -103,6 +143,7 @@ export async function buildDashboardServer(config: ServerConfig): Promise<Dashbo
     server,
     deviceService,
     database,
+    realAdapter,
     close: async () => {
       await server.close();
       await deviceService.stop();
@@ -114,11 +155,13 @@ export async function buildDashboardServer(config: ServerConfig): Promise<Dashbo
 async function buildHealthDto(
   config: ServerConfig,
   database: DashboardDatabase,
-  deviceService: DeviceStateService
+  deviceService: DeviceStateService,
+  realAdapter: BambuReadonlyAdapter
 ): Promise<HealthDto> {
   const databaseHealth = await database.health();
   const deviceHealth = deviceService.health();
   const primaryAdapter = deviceHealth.adapters[0];
+  const configuredPrinters = realAdapter.listConfiguredPrinters();
   return {
     server: {
       status: "ok",
@@ -133,6 +176,13 @@ async function buildHealthDto(
       devices: primaryAdapter?.devices ?? 0,
       currentStep: primaryAdapter?.currentStep ?? 0
     },
+    adapters: deviceHealth.adapters,
+    realPrinterOnboarding: {
+      status: configuredPrinters.length === 0 ? "degraded" : "ok",
+      configuredPrinters: configuredPrinters.length,
+      credentialMode: "memory-only",
+      note: "Real printer Access Codes are process-memory-only for M2 and are not returned by diagnostics."
+    },
     events: deviceHealth.events,
     discovery: getDashboardDiscoveryDescriptor({
       host: config.host,
@@ -141,4 +191,28 @@ async function buildHealthDto(
       advertised: false
     })
   };
+}
+
+function toBambuConnectionInput(body: RealPrinterConnectionRequest): BambuPrinterConnectionInput {
+  const input: BambuPrinterConnectionInput = {
+    displayName: requireBodyString(body.displayName, "displayName"),
+    modelHint: requireBodyString(body.modelHint, "modelHint"),
+    host: requireBodyString(body.host, "host"),
+    serialNumber: requireBodyString(body.serialNumber, "serialNumber"),
+    accessCode: requireBodyString(body.accessCode, "accessCode")
+  };
+  if (body.port !== undefined) {
+    input.port = body.port;
+  }
+  if (body.caCertificatePath) {
+    input.caCertificatePath = body.caCertificatePath;
+  }
+  return input;
+}
+
+function requireBodyString(value: string | undefined, field: string): string {
+  if (!value || value.trim() === "") {
+    throw new Error(`Missing required real-printer field: ${field}.`);
+  }
+  return value.trim();
 }

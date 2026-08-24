@@ -1,4 +1,4 @@
-# M1 Development Runbook
+# Development Runbook
 
 ## Local Development
 
@@ -33,6 +33,50 @@ Run `npm run docker:validate` in a Docker-capable environment to build the image
 - `npm run licenses`
 - `npm run docker:validate`
 
+## M2 Local Real-Device Validation
+
+Real-device validation is local-only and must be run on the Product Owner's LAN. Do not run it in public/shared CI and do not commit the local config file or raw output containing private details.
+
+1. Build the TypeScript packages with `npm run build:ts`.
+2. Create `secrets/m2-printers.local.json`; the `secrets/` folder is ignored by Git.
+3. Use sanitized `id` and `displayName` values in that file.
+4. Run `npm run m2:validate:real -- secrets/m2-printers.local.json`.
+5. Copy only sanitized capability classifications, timing summaries and pass/fail rows into repository evidence.
+
+Template:
+
+```json
+{
+  "durationSeconds": 180,
+  "printers": [
+    {
+      "id": "a1-mini",
+      "displayName": "A1 Mini",
+      "modelHint": "A1 Mini",
+      "host": "LOCAL_HOST_OR_IP_NOT_FOR_COMMIT",
+      "port": 8883,
+      "serialNumber": "LOCAL_SERIAL_NOT_FOR_COMMIT",
+      "accessCode": "LOCAL_ACCESS_CODE_NOT_FOR_COMMIT",
+      "caCertificatePath": "secrets/bambu-local-ca.pem"
+    },
+    {
+      "id": "x2d",
+      "displayName": "X2D",
+      "modelHint": "X2D",
+      "host": "LOCAL_HOST_OR_IP_NOT_FOR_COMMIT",
+      "port": 8883,
+      "serialNumber": "LOCAL_SERIAL_NOT_FOR_COMMIT",
+      "accessCode": "LOCAL_ACCESS_CODE_NOT_FOR_COMMIT",
+      "caCertificatePath": "secrets/bambu-local-ca.pem"
+    }
+  ]
+}
+```
+
+The script prints sanitized JSON only: configured sanitized IDs/model hints, connection state, credential mode, current quality/lifecycle and capability classifications. It does not print host, serial number, Access Code or raw MQTT payloads.
+
 ## Security Notes
 
-M1 is read-only and has no dashboard login. LAN reachability means read access to dashboard-visible synthetic data. HTTP is acceptable for this M1 read-only prototype, while the architecture remains HTTPS-capable for later sensitive or write/control capabilities.
+The current prototype is read-only and has no dashboard login. LAN reachability means read access to dashboard-visible data. HTTP is acceptable for the read-only prototype shell, while the architecture remains HTTPS-capable for later sensitive or write/control capabilities.
+
+M2 real-printer Access Codes are sensitive device credentials. The dashboard keeps them process-memory-only by default, never persists them, never stores them in browser storage and never returns them through diagnostics. The Access Code still passes from the browser form to the local server in a request body during onboarding, so run real validation only on the trusted Product Owner LAN.

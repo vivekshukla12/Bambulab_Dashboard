@@ -10,6 +10,7 @@
     "start": "node dist/main.js"
   },
   "dependencies": {
+    "@bpd/adapter-bambu-readonly": "0.1.0-m1",
     "@bpd/adapter-synthetic": "0.1.0-m1",
     "@bpd/contracts": "0.1.0-m1",
     "@bpd/device-core": "0.1.0-m1",

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
 
-import type { DeviceDetailDto, DeviceSummaryDto, HealthDto, SseEventDto } from "@bpd/contracts";
-import { Activity, Gauge, HardDrive, Router, WifiOff } from "lucide-react";
-import type { ReactElement } from "react";
+import type { DeviceDetailDto, DeviceSummaryDto, HealthDto, RealPrinterConnectionDto, SseEventDto } from "@bpd/contracts";
+import { Activity, Gauge, HardDrive, PlugZap, Router, WifiOff } from "lucide-react";
+import type { FormEvent, ReactElement } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, NavLink, Route, BrowserRouter as RouterProvider, Routes, useParams } from "react-router-dom";
-import { fetchDevice, fetchDevices, fetchHealth, subscribeToDeviceEvents } from "./api.js";
+import { connectRealPrinter, fetchDevice, fetchDevices, fetchHealth, subscribeToDeviceEvents } from "./api.js";
 
 type ConnectionState = "connecting" | "live" | "interrupted";
 
@@ -92,7 +92,7 @@ function DashboardShell(): ReactElement {
           </section>
         ) : null}
         <Routes>
-          <Route path="/" element={<FleetView devices={devices} health={health} />} />
+          <Route path="/" element={<FleetView devices={devices} health={health} onRefresh={refresh} />} />
           <Route path="/devices/:deviceId" element={<DeviceDetail />} />
           <Route path="/diagnostics" element={<DiagnosticsView health={health} />} />
         </Routes>
@@ -101,7 +101,15 @@ function DashboardShell(): ReactElement {
   );
 }
 
-function FleetView({ devices, health }: { devices: DeviceSummaryDto[]; health: HealthDto | undefined }): ReactElement {
+function FleetView({
+  devices,
+  health,
+  onRefresh
+}: {
+  devices: DeviceSummaryDto[];
+  health: HealthDto | undefined;
+  onRefresh(): Promise<void>;
+}): ReactElement {
   const summary = useMemo(
     () => ({
       total: devices.length,
@@ -120,7 +128,8 @@ function FleetView({ devices, health }: { devices: DeviceSummaryDto[]; health: H
         <Metric label="Stale" value={summary.stale.toString()} tone="stale" />
         <Metric label="Unavailable" value={summary.unavailable.toString()} tone="unavailable" />
       </section>
-      <section className="device-grid" aria-label="Synthetic devices">
+      <RealPrinterPanel health={health} onRefresh={onRefresh} />
+      <section className="device-grid" aria-label="Dashboard devices">
         {devices.map((device) => (
           <DeviceCard key={device.id} device={device} />
         ))}
@@ -144,6 +153,10 @@ function DeviceCard({ device }: { device: DeviceSummaryDto }): ReactElement {
         </div>
         <StatusPill label={device.lifecycle} tone={device.quality} />
       </div>
+      <div className="source-row">
+        <span>{device.source === "synthetic" ? "Synthetic source" : "Real read-only source"}</span>
+        <span>{device.adapterId}</span>
+      </div>
       <div className="progress-block">
         <div className="progress-label">
           <span>{device.activeJobName ?? "No active print"}</span>
@@ -165,6 +178,105 @@ function DeviceCard({ device }: { device: DeviceSummaryDto }): ReactElement {
         View details
       </Link>
     </article>
+  );
+}
+
+function RealPrinterPanel({
+  health,
+  onRefresh
+}: {
+  health: HealthDto | undefined;
+  onRefresh(): Promise<void>;
+}): ReactElement {
+  const [displayName, setDisplayName] = useState("");
+  const [modelHint, setModelHint] = useState("A1 Mini");
+  const [host, setHost] = useState("");
+  const [serialNumber, setSerialNumber] = useState("");
+  const [accessCode, setAccessCode] = useState("");
+  const [port, setPort] = useState("8883");
+  const [lastConnection, setLastConnection] = useState<RealPrinterConnectionDto | undefined>();
+  const [submitState, setSubmitState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmitState("saving");
+    try {
+      const printer = await connectRealPrinter({
+        displayName,
+        modelHint,
+        host,
+        serialNumber,
+        accessCode,
+        port: Number.parseInt(port, 10) || 8883
+      });
+      setLastConnection(printer);
+      setSerialNumber("");
+      setAccessCode("");
+      setSubmitState("saved");
+      await onRefresh();
+    } catch {
+      setSubmitState("error");
+      setAccessCode("");
+    }
+  };
+
+  return (
+    <section className="real-printer-panel" aria-label="Real printer onboarding">
+      <div className="panel-heading">
+        <div>
+          <p className="eyebrow">M2 real read-only adapter</p>
+          <h2>Connect a real printer</h2>
+        </div>
+        <StatusPill
+          label={`${health?.realPrinterOnboarding.configuredPrinters ?? 0} configured`}
+          tone={(health?.realPrinterOnboarding.configuredPrinters ?? 0) > 0 ? "live" : "degraded"}
+        />
+      </div>
+      <form className="real-printer-form" onSubmit={(event) => void submit(event)}>
+        <label>
+          <span>Name</span>
+          <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} required autoComplete="off" />
+        </label>
+        <label>
+          <span>Model</span>
+          <select value={modelHint} onChange={(event) => setModelHint(event.target.value)}>
+            <option>A1 Mini</option>
+            <option>X2D</option>
+            <option>Bambu-compatible</option>
+          </select>
+        </label>
+        <label>
+          <span>Host</span>
+          <input value={host} onChange={(event) => setHost(event.target.value)} required autoComplete="off" />
+        </label>
+        <label>
+          <span>Port</span>
+          <input value={port} onChange={(event) => setPort(event.target.value)} inputMode="numeric" required />
+        </label>
+        <label>
+          <span>Serial</span>
+          <input value={serialNumber} onChange={(event) => setSerialNumber(event.target.value)} required autoComplete="off" />
+        </label>
+        <label>
+          <span>LAN Access Code</span>
+          <input
+            value={accessCode}
+            onChange={(event) => setAccessCode(event.target.value)}
+            type="password"
+            required
+            autoComplete="new-password"
+          />
+        </label>
+        <button type="submit" disabled={submitState === "saving"}>
+          <PlugZap size={16} /> {submitState === "saving" ? "Connecting" : "Connect"}
+        </button>
+      </form>
+      <p className={`onboarding-status tone-${submitState}`}>
+        {submitState === "saved" && lastConnection
+          ? `${lastConnection.displayName} configured with memory-only credentials.`
+          : "Real Access Codes are submitted to the local server only and cleared from this form after submit."}
+      </p>
+    </section>
   );
 }
 
@@ -229,6 +341,11 @@ function DiagnosticsView({ health }: { health: HealthDto | undefined }): ReactEl
       <HealthTile icon={<HardDrive size={18} />} label="Database" value={`${health.database.status} / ${health.database.journalMode}`} />
       <HealthTile icon={<Gauge size={18} />} label="Raw event pipeline" value={`${health.events.status} / ${health.events.subscribers} clients`} />
       <HealthTile icon={<Activity size={18} />} label="Synthetic adapter" value={`${health.simulator.devices} devices / step ${health.simulator.currentStep}`} />
+      <HealthTile
+        icon={<PlugZap size={18} />}
+        label="Real adapter"
+        value={`${health.realPrinterOnboarding.configuredPrinters} configured / ${health.realPrinterOnboarding.credentialMode}`}
+      />
       <HealthTile
         icon={<Router size={18} />}
         label="Discovery"

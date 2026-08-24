@@ -10,6 +10,7 @@ This map is the first stop for scoped M1 maintenance. Read the affected package 
 | Contracts | `packages/contracts` | domain | Versioned API/SSE DTO contracts and mappers. |
 | Adapter API | `packages/adapter-api` | domain | Read-only adapter interface for synthetic and future real adapters. |
 | Synthetic adapter | `packages/adapter-synthetic` | adapter API, domain | Permanent deterministic A1 Mini-shaped and X2D-shaped scenarios. |
+| Bambu read-only adapter | `packages/adapter-bambu-readonly` | adapter API, domain | M2 standard-mode local MQTTS read-only status adapter, parser, freshness and mocked-transport tests. |
 | Device core | `packages/device-core` | adapter API, domain, persistence, telemetry, observability | Server-owned live state, event fan-out, persistence reconciliation. |
 | Persistence | `packages/persistence` | domain, observability | SQLite/Kysely migrations, repositories, raw telemetry/history split. |
 | Telemetry | `packages/telemetry` | domain | Freshness summaries and retention policy helpers. |

@@ -7,6 +7,8 @@ import type {
   DeviceStateChangedEventDto,
   DeviceSummaryDto,
   HealthDto,
+  RealPrinterConnectionDto,
+  RealPrinterConnectionRequest,
   SseEventDto
 } from "@bpd/contracts";
 
@@ -44,6 +46,24 @@ export async function fetchHealth(): Promise<HealthDto> {
   }
   const body = (await response.json()) as ApiEnvelope<HealthDto>;
   return body.data;
+}
+
+/**
+ * Configures one real printer through the server-side memory-only M2 onboarding boundary.
+ */
+export async function connectRealPrinter(request: RealPrinterConnectionRequest): Promise<RealPrinterConnectionDto> {
+  const response = await fetch("/api/v1/real-printers", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+  if (!response.ok) {
+    throw new Error(`Real-printer onboarding failed with ${response.status}`);
+  }
+  const body = (await response.json()) as ApiEnvelope<{ printer: RealPrinterConnectionDto }>;
+  return body.data.printer;
 }
 
 /**

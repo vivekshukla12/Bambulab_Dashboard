@@ -4,7 +4,7 @@
 M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype
 
 ## State
-IMPLEMENTATION STARTED — Product Owner explicitly started M2 on 2026-08-24. Codex resumed from GitHub, confirmed `prompts/codex/NEXT_PROMPT.md` is QUEUED, and created the dedicated M2 branch. The reviewed M2 planning package remains the executable baseline. M2 acceptance, GO/NO-GO disposition, merge, and M3 remain separately Product Owner controlled.
+IMPLEMENTATION IN PROGRESS — Product Owner explicitly started M2 on 2026-08-24. Codex resumed from GitHub, confirmed `prompts/codex/NEXT_PROMPT.md` is QUEUED, created the dedicated M2 branch and opened draft PR #3 before substantial implementation. The offline implementation scaffold is now in place: dedicated Bambu read-only adapter package, memory-only onboarding route/UI, mocked-transport tests and local-only validation runbook/script. Real A1 Mini + X2D validation has not run yet and is still required before any M2 GO/CONDITIONAL GO/NO-GO recommendation. M2 acceptance, GO/NO-GO disposition, merge, and M3 remain separately Product Owner controlled.
 
 ## Repository
 `vivekshukla12/Bambulab_Dashboard` — public
@@ -84,6 +84,23 @@ M2 must prove or disprove:
 
 No UI redesign is required or authorized in M2.
 
+## M2 implementation progress
+
+- Draft PR #3 is open and unmerged.
+- Added `packages/adapter-bambu-readonly` for the approved standard-mode local MQTTS read-only status path, with no printer write/control surface and no third-party MQTT dependency.
+- Added mocked-transport tests for adapter contract conformance, parser/normalizer behavior, stale/offline/reconnect semantics, credential-free diagnostics and no control API surface.
+- Added `GET /api/v1/real-printers` and `POST /api/v1/real-printers` for minimum server-side onboarding. LAN Access Codes remain process-memory-only by default and are not returned by diagnostics.
+- Added minimum fleet-page real-printer onboarding UI without frontend redesign.
+- Added `npm run m2:validate:real -- secrets/m2-printers.local.json` and `docs/development/M2_REAL_DEVICE_VALIDATION.md` for local-only Product Owner LAN validation.
+- Current repository evidence in `project-control/feedback/M2_REAL_DEVICE_VALIDATION_EVIDENCE.md` remains `not-tested` for real devices.
+
+## M2 validation status
+
+- `npm run validate` passed on 2026-08-24 in the Codex environment.
+- `npm run test:e2e` passed on 2026-08-24 across desktop, tablet and mobile Playwright projects.
+- `npm run docker:validate` could not run in the Codex environment because Docker is not installed/available (`docker` command not found). Docker/Compose validation remains required in a Docker-capable environment before technical review.
+- Real-device validation on the Product Owner LAN has not run; synthetic/offline evidence cannot satisfy M2.
+
 ## Credential/evidence policy
 For M2 feasibility:
 - real LAN Access Codes default to process-memory-only/non-persisted handling;
@@ -111,4 +128,4 @@ See `project-control/risks/RISK_REGISTER.md`, especially:
 - R-016 — low-level read transport assumptions may depend on unofficial details.
 
 ## Next authorized action
-Codex may now resume from GitHub, read `prompts/codex/RESUME.md`, then execute the QUEUED contract in `prompts/codex/NEXT_PROMPT.md`: create the M2 branch and draft PR, implement within the approved boundary, preserve synthetic regression, and prepare local-only real-device validation. Do not merge and do not begin M3.
+Continue `prompts/codex/NEXT_PROMPT.md` within the approved M2 boundary: run Docker/Compose validation in a Docker-capable environment, perform local-only real-device validation on the Product Owner LAN for A1 Mini and X2D, record sanitized evidence, then prepare a technical GO / CONDITIONAL GO / NO-GO recommendation. Do not merge and do not begin M3.

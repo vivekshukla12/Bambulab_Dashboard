@@ -86,6 +86,13 @@ export interface HealthDto {
     devices: number;
     currentStep: number;
   };
+  adapters: AdapterHealthDto[];
+  realPrinterOnboarding: {
+    status: "ok" | "degraded";
+    configuredPrinters: number;
+    credentialMode: "memory-only";
+    note: string;
+  };
   events: {
     status: "ok" | "degraded";
     subscribers: number;
@@ -98,6 +105,45 @@ export interface HealthDto {
     manualUrl: string;
     note: string;
   };
+}
+
+/**
+ * Credential-free adapter health DTO exposed in diagnostics.
+ */
+export interface AdapterHealthDto {
+  adapterId: string;
+  status: "ok" | "degraded";
+  scenario: string;
+  devices: number;
+  currentStep: number;
+  lastEventAt?: string;
+}
+
+/**
+ * Browser-to-server request for configuring one real printer. Access Code must be sent only in the JSON body.
+ */
+export interface RealPrinterConnectionRequest {
+  displayName: string;
+  modelHint: string;
+  host: string;
+  serialNumber: string;
+  accessCode: string;
+  port?: number;
+  caCertificatePath?: string;
+}
+
+/**
+ * Credential-free real-printer connection summary.
+ */
+export interface RealPrinterConnectionDto {
+  id: string;
+  displayName: string;
+  modelHint: string;
+  source: "bambu-readonly";
+  configuredAt: string;
+  connectionState: "configured" | "connecting" | "connected" | "stale" | "unavailable" | "reconnecting" | "stopped";
+  credentialMode: "memory-only";
+  lastObservationAt?: string;
 }
 
 /**

@@ -161,7 +161,8 @@ h2 {
 .health-tile,
 .detail-header,
 .capability-table,
-.offline-banner {
+.offline-banner,
+.real-printer-panel {
   background: #ffffff;
   border: 1px solid #d9e2ec;
   border-radius: 8px;
@@ -234,6 +235,14 @@ h2 {
   background: #e2e8f0;
 }
 
+.tone-saved {
+  color: #075f56;
+}
+
+.tone-error {
+  color: #991b1b;
+}
+
 .progress-block {
   display: grid;
   gap: 6px;
@@ -256,6 +265,24 @@ h2 {
 .status-message {
   min-height: 24px;
   margin-bottom: 0;
+}
+
+.source-row {
+  min-height: 26px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.source-row span {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: #f1f5f9;
 }
 
 .capability-row {
@@ -365,6 +392,87 @@ h2 {
   border-color: #fed7aa;
 }
 
+.real-printer-panel {
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.real-printer-form {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.real-printer-form label {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.real-printer-form label:nth-child(1),
+.real-printer-form label:nth-child(3) {
+  grid-column: span 2;
+}
+
+.real-printer-form label:nth-child(5),
+.real-printer-form label:nth-child(6) {
+  grid-column: span 2;
+}
+
+.real-printer-form label span {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.real-printer-form input,
+.real-printer-form select {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: #18212f;
+  background: #ffffff;
+  font: inherit;
+}
+
+.real-printer-form button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #ffffff;
+  background: #0f766e;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.real-printer-form button:disabled {
+  cursor: wait;
+  background: #64748b;
+}
+
+.onboarding-status {
+  margin-bottom: 0;
+  color: #475569;
+  font-size: 0.86rem;
+}
+
 .diagnostic-note {
   grid-column: 1 / -1;
   color: #475569;
@@ -393,6 +501,18 @@ h2 {
   .diagnostics-page {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .real-printer-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .real-printer-form label,
+  .real-printer-form label:nth-child(1),
+  .real-printer-form label:nth-child(3),
+  .real-printer-form label:nth-child(5),
+  .real-printer-form label:nth-child(6) {
+    grid-column: span 1;
+  }
 }
 
 @media (max-width: 640px) {
@@ -401,7 +521,8 @@ h2 {
   }
 
   .topbar,
-  .detail-header {
+  .detail-header,
+  .panel-heading {
     align-items: flex-start;
     flex-direction: column;
   }
@@ -415,6 +536,10 @@ h2 {
   }
 
   .capability-line {
+    grid-template-columns: 1fr;
+  }
+
+  .real-printer-form {
     grid-template-columns: 1fr;
   }
 }

@@ -4,6 +4,7 @@
     "packages/domain/src/index.ts",
     "packages/contracts/src/index.ts",
     "packages/adapter-api/src/index.ts",
+    "packages/adapter-bambu-readonly/src/index.ts",
     "packages/device-core/src/index.ts",
     "packages/persistence/src/index.ts",
     "packages/telemetry/src/index.ts",
@@ -16,5 +17,5 @@
   "excludePrivate": true,
   "excludeInternal": true,
   "readme": "none",
-  "name": "Bambu Printer Dashboard M1 Contracts"
+  "name": "Bambu Printer Dashboard M2 Contracts"
 }
