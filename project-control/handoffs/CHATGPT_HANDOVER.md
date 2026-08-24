@@ -95,7 +95,7 @@ Product Owner M1 UX feedback:
 ## Current milestone
 M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype — **IMPLEMENTATION STARTED**.
 
-The Product Owner explicitly started M2 on 2026-08-24. `prompts/codex/NEXT_PROMPT.md` is the executable QUEUED contract. Codex resumed from GitHub and created branch `m2/real-device-readonly-prototype` from `main` tip `a192856ada68e3275cec68544565b77ffd05b8a2` before substantial implementation. The M2 draft PR is being opened next and must be recorded in project-control state once it exists.
+The Product Owner explicitly started M2 on 2026-08-24. `prompts/codex/NEXT_PROMPT.md` is the executable QUEUED contract. Codex resumed from GitHub and created branch `m2/real-device-readonly-prototype` from `main` tip `a192856ada68e3275cec68544565b77ffd05b8a2` before substantial implementation. Draft PR #3 is open at https://github.com/vivekshukla12/Bambulab_Dashboard/pull/3 and must remain unmerged until separate Product Owner acceptance and merge authorization.
 
 M2 implementation authorization is not milestone acceptance and does not authorize merge or M3.
 

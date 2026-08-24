@@ -16,7 +16,12 @@ Mozilla Public License 2.0 (MPL-2.0). New original source files must carry the M
 `m2/real-device-readonly-prototype`, created from current `main` tip `a192856ada68e3275cec68544565b77ffd05b8a2` before substantial implementation.
 
 ## Current PR
-M2 draft PR opening is in progress. Codex must record the PR number/URL here once the draft PR exists and must not merge it.
+Draft PR #3 — `M2: real-device read-only GO/NO-GO prototype`
+
+- URL: https://github.com/vivekshukla12/Bambulab_Dashboard/pull/3
+- State: draft/open, unmerged.
+- Opened from branch `m2/real-device-readonly-prototype` targeting `main` before substantial implementation.
+- Merge is not authorized.
 
 ## Completed milestones
 
