@@ -49,6 +49,13 @@ The local validation script now emits sanitized pre-stop connection state, initi
 
 Not tested yet. Run `npm run m2:validate:real -- secrets/m2-printers.local.json` with both printers configured and paste only sanitized aggregate results here.
 
+## Product Owner Hands-On Feedback — 2026-08-25
+
+- The Product Owner reports that the current functional behavior works as expected in hands-on use.
+- Remaining feedback is primarily UI/frontend presentation and polish.
+- UI/frontend modernization remains intentionally deferred to a later milestone or small V1.1 follow-up; it is not requested as M2 scope and is not an M2 acceptance blocker.
+- This hands-on feedback does not by itself replace the remaining required real-device evidence or constitute an M2 GO/CONDITIONAL GO/NO-GO decision.
+
 ## Gate Recommendation
 
 Pending. No GO / CONDITIONAL GO / NO-GO recommendation can be made until real A1 Mini and X2D validation evidence is collected under the approved local-only process.
