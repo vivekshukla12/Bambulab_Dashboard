@@ -10,6 +10,7 @@ Owns the M2 real Bambu read-only adapter boundary for the approved standard-mode
 - Attempt bounded server-side mDNS discovery for sanitized onboarding candidates.
 - Subscribe only to printer-originated status report topics.
 - Parse and normalize observed status fields into `@bpd/domain` types.
+- Accumulate partial printer-originated report frames into one in-memory live snapshot so sparse updates do not flicker already observed capabilities back to unknown.
 - Represent missing data through capability support states instead of fabricated defaults.
 - Track connection, stale, unavailable and bounded reconnect semantics.
 - Keep LAN Access Codes, serial numbers, hostnames/IPs and raw payloads inside the adapter boundary.

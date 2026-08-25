@@ -103,6 +103,75 @@ describe("BambuReadonlyAdapter", () => {
     expect(devices[0]?.state.telemetry.print?.progressPercent).toBe(42);
   });
 
+  it("accumulates partial printer-originated reports without flickering observed fields to unknown", async () => {
+    const transports: MockTransport[] = [];
+    const adapter = createBambuReadonlyAdapter({
+      now: fixedNow,
+      transportFactory: () => {
+        const transport = new MockTransport();
+        transports.push(transport);
+        return transport;
+      }
+    });
+
+    await adapter.configurePrinter(realPrinterInput());
+    await adapter.start();
+    transports[0]?.emitStatus({
+      print: {
+        gcode_state: "RUNNING",
+        mc_percent: 12,
+        nozzle_temper: "57.8125"
+      }
+    });
+    transports[0]?.emitStatus(
+      {
+        print: {
+          wifi_signal: "-65dBm"
+        }
+      },
+      "2026-08-24T12:00:05.000Z"
+    );
+
+    const device = (await adapter.discoverDevices())[0];
+    expect(device?.state.lifecycle).toBe("printing");
+    expect(device?.state.telemetry.print?.progressPercent).toBe(12);
+    expect(device?.state.telemetry.temperatures?.nozzleC).toBe(57.8125);
+    expect(device?.capabilities.find((capability) => capability.key === "printer.status")?.support).toBe("supported");
+    expect(device?.capabilities.find((capability) => capability.key === "print.progress")?.support).toBe("supported");
+    expect(device?.capabilities.find((capability) => capability.key === "temperature.nozzle")?.support).toBe("supported");
+    expect(device?.capabilities.find((capability) => capability.key === "network.wifi")?.support).toBe("supported");
+  });
+
+  it("lets explicit idle reports end an accumulated print snapshot", async () => {
+    const transports: MockTransport[] = [];
+    const adapter = createBambuReadonlyAdapter({
+      now: fixedNow,
+      transportFactory: () => {
+        const transport = new MockTransport();
+        transports.push(transport);
+        return transport;
+      }
+    });
+
+    await adapter.configurePrinter(realPrinterInput());
+    await adapter.start();
+    transports[0]?.emitStatus(realStatusPayload());
+    transports[0]?.emitStatus(
+      {
+        print: {
+          gcode_state: "IDLE"
+        }
+      },
+      "2026-08-24T12:30:00.000Z"
+    );
+
+    const device = (await adapter.discoverDevices())[0];
+    expect(device?.state.lifecycle).toBe("connected");
+    expect(device?.state.telemetry.print).toBeUndefined();
+    expect(device?.state.telemetry.temperatures?.nozzleC).toBe(214.5);
+    expect(device?.capabilities.find((capability) => capability.key === "print.progress")?.support).toBe("supported");
+  });
+
   it("keeps configured-printer diagnostics credential-free", async () => {
     const adapter = createBambuReadonlyAdapter({
       now: fixedNow,

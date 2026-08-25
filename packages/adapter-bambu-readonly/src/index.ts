@@ -466,6 +466,7 @@ class PrinterSession {
   private sequence = 0;
   private reconnectDelayMs: number;
   private device: NormalizedDevice;
+  private observedStatusPayload: Record<string, unknown> | undefined;
   private lastObservationAt: string | undefined;
   private lastFailureCategory: BambuFailureCategory = "none";
   private recyclingTransport = false;
@@ -573,7 +574,8 @@ class PrinterSession {
       this.reconnectDelayMs = this.reconnectInitialMs;
       this.lastObservationAt = message.receivedAt;
       const payload = parseBambuStatusPayload(message.payload);
-      this.device = normalizeBambuStatusPayload(payload, {
+      this.observedStatusPayload = mergeBambuStatusPayload(this.observedStatusPayload, payload);
+      this.device = normalizeBambuStatusPayload(this.observedStatusPayload, {
         adapterId: this.adapterId,
         source: this.source,
         deviceId: this.config.id,
@@ -1075,12 +1077,11 @@ export function normalizeBambuStatusPayload(payload: Record<string, unknown>, co
   if (Object.keys(temperatures).length > 0) {
     telemetry.temperatures = temperatures;
   }
-  const printSnapshot = buildPrintSnapshot(print, context.deviceId, gcodeState, progress);
+  const lifecycle = lifecycleFromGcodeState(gcodeState, progress);
+  const printSnapshot = lifecycle === "printing" ? buildPrintSnapshot(print, context.deviceId, gcodeState, progress) : undefined;
   if (printSnapshot) {
     telemetry.print = printSnapshot;
   }
-
-  const lifecycle = lifecycleFromGcodeState(gcodeState, progress);
   const identity: NormalizedDevice["identity"] = {
     id: context.deviceId,
     displayName: context.displayName,
@@ -1110,6 +1111,25 @@ export function normalizeBambuStatusPayload(payload: Record<string, unknown>, co
       }
     }
   };
+}
+
+function mergeBambuStatusPayload(
+  previous: Record<string, unknown> | undefined,
+  incoming: Record<string, unknown>
+): Record<string, unknown> {
+  if (!previous) {
+    return mergeRecords({}, incoming);
+  }
+  return mergeRecords(previous, incoming);
+}
+
+function mergeRecords(previous: Record<string, unknown>, incoming: Record<string, unknown>): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...previous };
+  for (const [key, value] of Object.entries(incoming)) {
+    const existing = merged[key];
+    merged[key] = isRecord(existing) && isRecord(value) ? mergeRecords(existing, value) : value;
+  }
+  return merged;
 }
 
 class NodeMqttsStatusTransport implements BambuMqttsStatusTransport {
@@ -1535,6 +1555,9 @@ function lifecycleFromGcodeState(state: string, progress: number | undefined): D
   const normalized = state.toUpperCase();
   if (["RUNNING", "PRINTING", "PAUSE", "PAUSED", "PREPARE", "SLICING", "RESUME"].includes(normalized)) {
     return "printing";
+  }
+  if (["IDLE", "FINISH", "FINISHED", "COMPLETED", "FAILED", "CANCEL", "CANCELED", "CANCELLED"].includes(normalized)) {
+    return "connected";
   }
   if (progress !== undefined && progress > 0 && progress < 100) {
     return "printing";

@@ -98,14 +98,14 @@ No UI redesign is required or authorized in M2.
 - Added a bounded server-side mDNS discovery attempt through `packages/adapter-bambu-readonly`, a sanitized `GET /api/v1/real-printer-candidates` route, and candidate selection in the existing fleet onboarding UI. Raw endpoint details stay server-side and manual host fallback remains available.
 - Added optional `npm run m2:validate:real -- --interactive` local validation entry with hidden serial/Access Code prompts and sanitized JSON on stdout; the ignored JSON config path remains the engineering fallback.
 - Added an explicit `local-printer-chain` TLS trust profile for local/private printer certificates: the adapter probes certificate material before sending credentials, derives the local issuer/certificate identity in memory and still uses `rejectUnauthorized: true` for the credential-bearing MQTTS connection. Sanitized A1 Mini diagnostics showed the target port reachable but raw-IP strict TLS unsuitable without this profile.
-- Current repository evidence in `project-control/feedback/M2_REAL_DEVICE_VALIDATION_EVIDENCE.md` remains `not-tested` for real devices.
+- Product Owner hands-on A1 Mini validation on 2026-08-25 reached the printer through manual host fallback and observed live nozzle temperature plus Wi-Fi telemetry. The A1 Mini reported sparse/partial status frames, so the adapter now accumulates observed printer-originated fields in memory to avoid flickering previously observed capabilities back to `unknown`. A1 Mini status/progress/bed and all X2D real evidence still require follow-up validation.
 
 ## M2 validation status
 
 - `npm run validate` passed on 2026-08-24 in the Codex environment after the PR #3 review remediation.
 - `npm run test:e2e` passed on 2026-08-24 across desktop, tablet and mobile Playwright projects after the PR #3 review remediation.
 - GitHub Actions run `32767627648` passed both `Fresh checkout validation` and `Docker Compose validation` for remediation commit `5e111ec30c6638a2fecbc03ad28b10c7bf9dce59`. Local Docker remains unavailable in the Codex workstation (`docker` command not found), but Docker/Compose evidence is no longer outstanding solely because of that workstation limitation.
-- Real-device validation on the Product Owner LAN has not run; synthetic/offline evidence cannot satisfy M2.
+- Initial Product Owner LAN validation has begun for A1 Mini only. It proves connection plus live nozzle/Wi-Fi telemetry but does not satisfy the M2 gate: A1 Mini status/progress/bed, X2D validation, dual-device validation and freshness/reconnect evidence remain outstanding.
 
 ## Credential/evidence policy
 For M2 feasibility:

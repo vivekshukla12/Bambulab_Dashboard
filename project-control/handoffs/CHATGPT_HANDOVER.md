@@ -130,14 +130,14 @@ The adapter must preserve the existing normalized read-only contract, synthetic 
 - The latest PR #3 clarification required discovery-first onboarding before Product Owner real-device validation. The branch now has server-side mDNS candidate discovery, a sanitized candidate API, candidate selection in the existing UI, and manual host fallback if discovery is unavailable or unreliable.
 - The local validation script also supports `npm run m2:validate:real -- --interactive` for hands-on local entry with hidden serial/Access Code prompts while keeping stdout as sanitized JSON. The ignored JSON config path remains available.
 - A sanitized A1 Mini local diagnostic showed MQTTS TCP reachability but strict TLS failure by raw IP due to a local/private certificate identity and issuer chain. The branch now has an explicit `local-printer-chain` TLS trust profile that derives certificate trust material before credentials are sent and keeps TLS validation enabled for the credential-bearing connection.
-- `project-control/feedback/M2_REAL_DEVICE_VALIDATION_EVIDENCE.md` is prepared but remains `not-tested` for both real printers.
+- Product Owner hands-on A1 Mini testing on 2026-08-25 connected through manual host fallback with the local TLS profile and observed live nozzle temperature plus Wi-Fi telemetry. The printer reported sparse/partial frames, so the adapter now accumulates observed fields in memory to avoid capability flicker. A1 Mini status/progress/bed, X2D, dual-device and freshness/reconnect evidence remain outstanding.
 
 ## Current validation status
 
 - `npm run validate` passed on 2026-08-24 after the PR #3 review remediation.
 - `npm run test:e2e` passed on 2026-08-24 across desktop, tablet and mobile after the PR #3 review remediation.
 - GitHub Actions run `32767627648` passed both `Fresh checkout validation` and `Docker Compose validation` for remediation commit `5e111ec30c6638a2fecbc03ad28b10c7bf9dce59`. Docker is still unavailable in the Codex workstation (`docker` command not found), but that local limitation is not an outstanding Docker/Compose evidence blocker.
-- Product Owner LAN real-device validation has not run. M2 still has no GO / CONDITIONAL GO / NO-GO recommendation.
+- Product Owner LAN real-device validation has started for A1 Mini only. M2 still has no GO / CONDITIONAL GO / NO-GO recommendation because required A1 Mini fields, X2D, dual-device and freshness/reconnect evidence remain outstanding.
 
 ## M2 credential/evidence policy
 For M2 feasibility:
