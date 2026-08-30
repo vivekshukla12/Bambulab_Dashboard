@@ -1,4 +1,4 @@
-# M1 Development Runbook
+# Development Runbook
 
 ## Local Development
 
@@ -9,6 +9,10 @@
 5. Open `http://127.0.0.1:5173`.
 
 The Vite dev server proxies read-only API and SSE requests to the Fastify server at `http://127.0.0.1:3001`.
+
+For M2 real-printer onboarding, the Fleet setup panel automatically starts bounded server-side discovery when no configured real printer is present. Use the rescan action to refresh candidates; discovered entries return sanitized labels only and keep raw endpoint details on the server. Enter a real LAN Access Code in the browser form only from `localhost`/loopback on the same server machine or from an HTTPS-served dashboard. Use the local CLI validation config instead of the browser form when operating over remote LAN HTTP.
+
+The normal Fleet view hides deterministic synthetic devices by default. For development/regression checks, open `http://127.0.0.1:5173/?synthetic=1`.
 
 ## Production-Like Local Run
 
@@ -33,6 +37,54 @@ Run `npm run docker:validate` in a Docker-capable environment to build the image
 - `npm run licenses`
 - `npm run docker:validate`
 
+## M2 Local Real-Device Validation
+
+Real-device validation is local-only and must be run on the Product Owner's LAN. Do not run it in public/shared CI and do not commit the local config file or raw output containing private details.
+
+1. Build the TypeScript packages with `npm run build:ts`.
+2. Create `secrets/m2-printers.local.json`; the `secrets/` folder is ignored by Git.
+3. Use sanitized `id` and `displayName` values in that file.
+4. Optionally use the dashboard's automatic server-side discovery/rescan in the Fleet panel to identify candidates, then keep private hosts/serials/Access Codes only in the ignored local config.
+5. Run `npm run m2:validate:real -- secrets/m2-printers.local.json`.
+6. For hands-on local entry without writing a config file, run `npm run m2:validate:real -- --interactive`; prompts go to stderr, stdout remains the sanitized JSON report and serial/Access Code entry is hidden. File configs and interactive prompts default to the `local-printer-chain` TLS trust profile when the printer certificate is local/private and not trusted by the workstation.
+7. Copy only sanitized capability classifications, timing summaries and pass/fail rows into repository evidence.
+
+Template:
+
+```json
+{
+  "durationSeconds": 180,
+  "printers": [
+    {
+      "id": "a1-mini",
+      "displayName": "A1 Mini",
+      "modelHint": "A1 Mini",
+      "host": "LOCAL_HOST_OR_IP_NOT_FOR_COMMIT",
+      "port": 8883,
+      "tlsTrustProfile": "local-printer-chain",
+      "serialNumber": "LOCAL_SERIAL_NOT_FOR_COMMIT",
+      "accessCode": "LOCAL_ACCESS_CODE_NOT_FOR_COMMIT",
+      "caCertificatePath": "secrets/bambu-local-ca.pem"
+    },
+    {
+      "id": "x2d",
+      "displayName": "X2D",
+      "modelHint": "X2D",
+      "host": "LOCAL_HOST_OR_IP_NOT_FOR_COMMIT",
+      "port": 8883,
+      "tlsTrustProfile": "local-printer-chain",
+      "serialNumber": "LOCAL_SERIAL_NOT_FOR_COMMIT",
+      "accessCode": "LOCAL_ACCESS_CODE_NOT_FOR_COMMIT",
+      "caCertificatePath": "secrets/bambu-local-ca.pem"
+    }
+  ]
+}
+```
+
+The script prints sanitized JSON only: configured sanitized IDs/model hints, pre-stop connection state, credential mode, current quality/lifecycle, initial connection timing, update cadence/latency summaries, redacted failure categories and capability classifications. It does not print host, serial number, Access Code, TLS server identity, raw transport errors or raw MQTT payloads.
+
 ## Security Notes
 
-M1 is read-only and has no dashboard login. LAN reachability means read access to dashboard-visible synthetic data. HTTP is acceptable for this M1 read-only prototype, while the architecture remains HTTPS-capable for later sensitive or write/control capabilities.
+The current prototype is read-only and has no dashboard login. LAN reachability means read access to dashboard-visible data. HTTP is acceptable for the read-only prototype shell, while the architecture remains HTTPS-capable for later sensitive or write/control capabilities.
+
+M2 real-printer Access Codes are sensitive device credentials. The dashboard keeps them process-memory-only by default, never persists them, never stores them in browser storage and never returns them through diagnostics. The Access Code still passes from the browser form to the local server in a request body during onboarding, so browser credential entry is restricted to `localhost`/loopback on the server machine or HTTPS-served dashboards. Remote LAN HTTP is acceptable for read-only viewing only; use `npm run m2:validate:real -- secrets/m2-printers.local.json` for remote LAN HTTP feasibility validation.

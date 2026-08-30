@@ -2,7 +2,7 @@
 
 A local-first browser dashboard for monitoring and managing compatible Bambu Lab printers and related devices across a LAN.
 
-> **Project status:** M0 is complete. M1 — architecture foundation + synthetic dashboard prototype is implemented on draft PR #2 for review; merge is not authorized.
+> **Project status:** M0 and M1 are complete. M2 — real A1 Mini + X2D read-only GO/NO-GO prototype is in progress on draft PR #3; merge is not authorized.
 
 ## Unofficial project / trademark notice
 
@@ -37,7 +37,7 @@ GitHub is the authoritative project state. Read these files first when continuin
 
 Authoritative requirements and guardrails live under `project-control/specs/`. Prototype feedback is captured under `project-control/feedback/`.
 
-## M1 Prototype Run Path
+## Prototype Run Path
 
 Requirements:
 
@@ -53,6 +53,10 @@ npm run dev:web -- --host 127.0.0.1
 ```
 
 Open `http://127.0.0.1:5173`. The Vite web app proxies read-only REST/SSE traffic to the Fastify server on `http://127.0.0.1:3001`.
+
+M2 real-printer onboarding is available from the fleet page with automatic bounded server-side discovery, a visible rescan action, edit/remove lifecycle controls, local-printer-chain TLS trust profile support and manual host fallback. Real LAN Access Codes are process-memory-only by default, are cleared from the form after submit/reconfigure and are not returned through diagnostics. Enter a real Access Code in the browser only when the dashboard is opened on the server machine through `localhost`/loopback or when the dashboard is HTTPS-served. For remote LAN HTTP validation, use the local CLI config path instead. Use only the Product Owner's LAN and target printers for real validation.
+
+The normal Fleet view is real-printer focused and hides deterministic synthetic printer cards by default. Open `http://127.0.0.1:5173/?synthetic=1` when you need the explicit synthetic regression view.
 
 Production-like local run:
 
@@ -78,6 +82,14 @@ Validation:
 npm run validate
 npm run test:e2e
 ```
+
+M2 local-only real-device validation:
+
+```bash
+npm run m2:validate:real -- secrets/m2-printers.local.json
+```
+
+For local hands-on entry without writing a config file, run `npm run m2:validate:real -- --interactive`; serial and Access Code prompts are hidden. See [`docs/development/M2_REAL_DEVICE_VALIDATION.md`](docs/development/M2_REAL_DEVICE_VALIDATION.md). The `secrets/` directory is ignored by Git and must contain no committed material.
 
 ## Repository layout
 

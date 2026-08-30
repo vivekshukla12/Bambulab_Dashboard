@@ -86,6 +86,13 @@ export interface HealthDto {
     devices: number;
     currentStep: number;
   };
+  adapters: AdapterHealthDto[];
+  realPrinterOnboarding: {
+    status: "ok" | "degraded";
+    configuredPrinters: number;
+    credentialMode: "memory-only";
+    note: string;
+  };
   events: {
     status: "ok" | "degraded";
     subscribers: number;
@@ -98,6 +105,100 @@ export interface HealthDto {
     manualUrl: string;
     note: string;
   };
+}
+
+/**
+ * Credential-free adapter health DTO exposed in diagnostics.
+ */
+export interface AdapterHealthDto {
+  adapterId: string;
+  status: "ok" | "degraded";
+  scenario: string;
+  devices: number;
+  currentStep: number;
+  lastEventAt?: string;
+}
+
+/**
+ * Browser-safe real-printer discovery candidate. Private endpoint details stay server-side.
+ */
+export interface RealPrinterCandidateDto {
+  id: string;
+  displayName: string;
+  modelHint: string;
+  source: "mdns";
+  discoveredAt: string;
+  endpointHint: string;
+  requiresAccessCode: true;
+}
+
+/**
+ * Credential-free discovery result for the M2 onboarding flow.
+ */
+export interface RealPrinterDiscoveryDto {
+  status: "found" | "none" | "failed";
+  candidates: RealPrinterCandidateDto[];
+  discoveryMethod: "mdns";
+  manualFallbackAvailable: true;
+  note: string;
+}
+
+/**
+ * Browser-to-server request for configuring one real printer. Access Code must be sent only in the JSON body.
+ */
+export interface RealPrinterConnectionRequest {
+  candidateId?: string;
+  displayName: string;
+  modelHint: string;
+  host?: string;
+  serialNumber: string;
+  accessCode: string;
+  port?: number;
+  caCertificatePath?: string;
+  tlsServerName?: string;
+  tlsTrustProfile?: "system" | "local-printer-chain";
+}
+
+/**
+ * Browser-to-server request for safely reconfiguring one real printer. Omitted private fields reuse the current
+ * process-memory value; supplying a new Access Code replaces the in-memory credential.
+ */
+export interface RealPrinterReconfigurationRequest {
+  candidateId?: string;
+  displayName?: string;
+  modelHint?: string;
+  host?: string;
+  serialNumber?: string;
+  accessCode?: string;
+  port?: number;
+  caCertificatePath?: string;
+  tlsServerName?: string;
+  tlsTrustProfile?: "system" | "local-printer-chain";
+}
+
+/**
+ * Credential-free real-printer connection summary.
+ */
+export interface RealPrinterConnectionDto {
+  id: string;
+  displayName: string;
+  modelHint: string;
+  source: "bambu-readonly";
+  configuredAt: string;
+  connectionState: "configured" | "connecting" | "connected" | "stale" | "unavailable" | "reconnecting" | "stopped";
+  credentialMode: "memory-only";
+  lastObservationAt?: string;
+}
+
+/**
+ * Credential-free result for removing a process-memory real-printer configuration.
+ */
+export interface RealPrinterRemovalDto {
+  id: string;
+  removed: boolean;
+  credentialMaterialCleared: boolean;
+  historyDeleted: false;
+  note: string;
 }
 
 /**

@@ -1,7 +1,27 @@
 // SPDX-License-Identifier: MPL-2.0
 
+import {
+  createBambuReadonlyAdapter,
+  discoverBambuPrinters,
+  type BambuDiscoveredPrinterCandidate,
+  type BambuPrinterConnectionInput,
+  type BambuPrinterReconfigurationInput,
+  type BambuReadonlyAdapter,
+  type BambuTransportFactory
+} from "@bpd/adapter-bambu-readonly";
 import { createSyntheticAdapter } from "@bpd/adapter-synthetic";
-import { envelope, toDeviceDetailDto, toDeviceSummaryDto, toSseDeviceEventDto, type HealthDto } from "@bpd/contracts";
+import {
+  envelope,
+  toDeviceDetailDto,
+  toDeviceSummaryDto,
+  toSseDeviceEventDto,
+  type HealthDto,
+  type RealPrinterCandidateDto,
+  type RealPrinterConnectionRequest,
+  type RealPrinterDiscoveryDto,
+  type RealPrinterReconfigurationRequest,
+  type RealPrinterRemovalDto
+} from "@bpd/contracts";
 import { DeviceStateService } from "@bpd/device-core";
 import { getDashboardDiscoveryDescriptor } from "@bpd/discovery";
 import { createLogger, createRequestId } from "@bpd/observability";
@@ -17,20 +37,34 @@ export interface DashboardServer {
   server: FastifyInstance;
   deviceService: DeviceStateService;
   database: DashboardDatabase;
+  realAdapter: BambuReadonlyAdapter;
   close(): Promise<void>;
 }
 
 /**
- * Builds the M1 read-only dashboard server and starts synthetic observation.
+ * Test/runtime hooks for server-owned adapter wiring.
  */
-export async function buildDashboardServer(config: ServerConfig): Promise<DashboardServer> {
+export interface DashboardServerOptions {
+  realTransportFactory?: BambuTransportFactory;
+  realPrinterDiscovery?: () => Promise<BambuDiscoveredPrinterCandidate[]>;
+}
+
+/**
+ * Builds the read-only dashboard server and starts adapter observation.
+ */
+export async function buildDashboardServer(config: ServerConfig, options: DashboardServerOptions = {}): Promise<DashboardServer> {
   const logger = createLogger("server");
   const database = await DashboardDatabase.open({
     databasePath: config.databasePath,
     logger: logger.child({ component: "database" })
   });
   const syntheticAdapter = createSyntheticAdapter({ intervalMs: config.syntheticIntervalMs });
-  const deviceService = new DeviceStateService([syntheticAdapter], database, logger.child({ component: "device-core" }));
+  const realAdapter = createBambuReadonlyAdapter(
+    options.realTransportFactory ? { transportFactory: options.realTransportFactory } : {}
+  );
+  const discoverRealPrinters = options.realPrinterDiscovery ?? (() => discoverBambuPrinters());
+  const discoveredCandidates = new Map<string, BambuDiscoveredPrinterCandidate>();
+  const deviceService = new DeviceStateService([syntheticAdapter, realAdapter], database, logger.child({ component: "device-core" }));
   await deviceService.start();
 
   const server = Fastify({
@@ -66,7 +100,84 @@ export async function buildDashboardServer(config: ServerConfig): Promise<Dashbo
     return envelope({ state: device.state }, request.id);
   });
 
-  server.get("/api/v1/health", async (request) => envelope(await buildHealthDto(config, database, deviceService), request.id));
+  server.get("/api/v1/real-printers", async (request) =>
+    envelope({ printers: realAdapter.listConfiguredPrinters() }, request.id)
+  );
+
+  server.get("/api/v1/real-printer-candidates", async (request) => {
+    try {
+      const candidates = await discoverRealPrinters();
+      discoveredCandidates.clear();
+      for (const candidate of candidates) {
+        discoveredCandidates.set(candidate.id, candidate);
+      }
+      return envelope({ discovery: toRealPrinterDiscoveryDto(candidates) }, request.id);
+    } catch {
+      discoveredCandidates.clear();
+      return envelope(
+        {
+          discovery: {
+            status: "failed",
+            candidates: [],
+            discoveryMethod: "mdns",
+            manualFallbackAvailable: true,
+            note: "Server-side discovery failed; manual host fallback remains available."
+          } satisfies RealPrinterDiscoveryDto
+        },
+        request.id
+      );
+    }
+  });
+
+  server.post<{ Body: RealPrinterConnectionRequest }>("/api/v1/real-printers", async (request, reply) => {
+    try {
+      const printer = await realAdapter.configurePrinter(toBambuConnectionInput(request.body, discoveredCandidates));
+      return envelope({ printer }, request.id);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invalid real-printer configuration.";
+      return reply.code(400).send(envelope({ error: message }, request.id));
+    }
+  });
+
+  server.patch<{ Params: { id: string }; Body: RealPrinterReconfigurationRequest }>(
+    "/api/v1/real-printers/:id",
+    async (request, reply) => {
+      try {
+        const printer = await realAdapter.reconfigurePrinter(
+          request.params.id,
+          toBambuReconfigurationInput(request.body, discoveredCandidates)
+        );
+        if (!printer) {
+          return reply.code(404).send(envelope({ error: "Real printer not found" }, request.id));
+        }
+        return envelope({ printer }, request.id);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Invalid real-printer reconfiguration.";
+        return reply.code(400).send(envelope({ error: message }, request.id));
+      }
+    }
+  );
+
+  server.delete<{ Params: { id: string } }>("/api/v1/real-printers/:id", async (request, reply) => {
+    const removed = await realAdapter.forgetPrinter(request.params.id);
+    if (!removed) {
+      return reply.code(404).send(envelope({ error: "Real printer not found" }, request.id));
+    }
+    deviceService.removeDevice(request.params.id);
+    discoveredCandidates.clear();
+    const removal: RealPrinterRemovalDto = {
+      id: request.params.id,
+      removed: true,
+      credentialMaterialCleared: true,
+      historyDeleted: false,
+      note: "Removed active real-printer configuration and memory-only credential material; normalized history was not deleted."
+    };
+    return envelope({ removal }, request.id);
+  });
+
+  server.get("/api/v1/health", async (request) =>
+    envelope(await buildHealthDto(config, database, deviceService, realAdapter), request.id)
+  );
 
   server.get("/api/v1/events", async (_request, reply) => {
     reply.hijack();
@@ -103,6 +214,7 @@ export async function buildDashboardServer(config: ServerConfig): Promise<Dashbo
     server,
     deviceService,
     database,
+    realAdapter,
     close: async () => {
       await server.close();
       await deviceService.stop();
@@ -114,11 +226,13 @@ export async function buildDashboardServer(config: ServerConfig): Promise<Dashbo
 async function buildHealthDto(
   config: ServerConfig,
   database: DashboardDatabase,
-  deviceService: DeviceStateService
+  deviceService: DeviceStateService,
+  realAdapter: BambuReadonlyAdapter
 ): Promise<HealthDto> {
   const databaseHealth = await database.health();
   const deviceHealth = deviceService.health();
   const primaryAdapter = deviceHealth.adapters[0];
+  const configuredPrinters = realAdapter.listConfiguredPrinters();
   return {
     server: {
       status: "ok",
@@ -133,6 +247,13 @@ async function buildHealthDto(
       devices: primaryAdapter?.devices ?? 0,
       currentStep: primaryAdapter?.currentStep ?? 0
     },
+    adapters: deviceHealth.adapters,
+    realPrinterOnboarding: {
+      status: configuredPrinters.length === 0 ? "degraded" : "ok",
+      configuredPrinters: configuredPrinters.length,
+      credentialMode: "memory-only",
+      note: "Real printer Access Codes are process-memory-only for M2 and are not returned by diagnostics."
+    },
     events: deviceHealth.events,
     discovery: getDashboardDiscoveryDescriptor({
       host: config.host,
@@ -141,4 +262,110 @@ async function buildHealthDto(
       advertised: false
     })
   };
+}
+
+function toRealPrinterCandidateDto(candidate: BambuDiscoveredPrinterCandidate): RealPrinterCandidateDto {
+  return {
+    id: candidate.id,
+    displayName: candidate.displayName,
+    modelHint: candidate.modelHint,
+    source: candidate.source,
+    discoveredAt: candidate.discoveredAt,
+    endpointHint: candidate.endpointHint,
+    requiresAccessCode: true
+  };
+}
+
+function toRealPrinterDiscoveryDto(candidates: BambuDiscoveredPrinterCandidate[]): RealPrinterDiscoveryDto {
+  return {
+    status: candidates.length > 0 ? "found" : "none",
+    candidates: candidates.map(toRealPrinterCandidateDto),
+    discoveryMethod: "mdns",
+    manualFallbackAvailable: true,
+    note:
+      candidates.length > 0
+        ? "Server-side mDNS discovery found sanitized printer candidates; Access Codes remain memory-only."
+        : "No server-side mDNS candidates found; use the manual host fallback."
+  };
+}
+
+function toBambuConnectionInput(
+  body: RealPrinterConnectionRequest,
+  discoveredCandidates: Map<string, BambuDiscoveredPrinterCandidate>
+): BambuPrinterConnectionInput {
+  const candidate = body.candidateId ? discoveredCandidates.get(body.candidateId) : undefined;
+  if (body.candidateId && !candidate) {
+    throw new Error("Unknown real-printer discovery candidate. Run discovery again or use manual host fallback.");
+  }
+  const input: BambuPrinterConnectionInput = {
+    displayName: requireBodyString(body.displayName, "displayName"),
+    modelHint: requireBodyString(body.modelHint, "modelHint"),
+    host: candidate?.host ?? requireBodyString(body.host, "host"),
+    serialNumber: requireBodyString(body.serialNumber, "serialNumber"),
+    accessCode: requireBodyString(body.accessCode, "accessCode")
+  };
+  const port = body.port ?? candidate?.port;
+  if (port !== undefined) {
+    input.port = port;
+  }
+  if (body.caCertificatePath) {
+    input.caCertificatePath = body.caCertificatePath;
+  }
+  if (body.tlsServerName) {
+    input.tlsServerName = body.tlsServerName;
+  }
+  if (body.tlsTrustProfile) {
+    input.tlsTrustProfile = requireTlsTrustProfile(body.tlsTrustProfile);
+  }
+  return input;
+}
+
+function toBambuReconfigurationInput(
+  body: RealPrinterReconfigurationRequest,
+  discoveredCandidates: Map<string, BambuDiscoveredPrinterCandidate>
+): BambuPrinterReconfigurationInput {
+  const candidate = body.candidateId ? discoveredCandidates.get(body.candidateId) : undefined;
+  if (body.candidateId && !candidate) {
+    throw new Error("Unknown real-printer discovery candidate. Run discovery again or use manual host fallback.");
+  }
+  const input: BambuPrinterReconfigurationInput = {
+    displayName: optionalBodyString(body.displayName) ?? "",
+    modelHint: optionalBodyString(body.modelHint) ?? "",
+    host: candidate?.host ?? optionalBodyString(body.host) ?? "",
+    serialNumber: optionalBodyString(body.serialNumber) ?? "",
+    accessCode: optionalBodyString(body.accessCode) ?? ""
+  };
+  const port = body.port ?? candidate?.port;
+  if (port !== undefined) {
+    input.port = port;
+  }
+  if (body.caCertificatePath) {
+    input.caCertificatePath = body.caCertificatePath;
+  }
+  if (body.tlsServerName) {
+    input.tlsServerName = body.tlsServerName;
+  }
+  if (body.tlsTrustProfile) {
+    input.tlsTrustProfile = requireTlsTrustProfile(body.tlsTrustProfile);
+  }
+  return input;
+}
+
+function requireBodyString(value: string | undefined, field: string): string {
+  if (!value || value.trim() === "") {
+    throw new Error(`Missing required real-printer field: ${field}.`);
+  }
+  return value.trim();
+}
+
+function optionalBodyString(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : undefined;
+}
+
+function requireTlsTrustProfile(value: string): NonNullable<BambuPrinterConnectionInput["tlsTrustProfile"]> {
+  if (value === "system" || value === "local-printer-chain") {
+    return value;
+  }
+  throw new Error("Invalid real-printer TLS trust profile.");
 }

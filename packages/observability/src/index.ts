@@ -74,5 +74,7 @@ export function redactSensitiveFields(value: unknown): unknown {
 }
 
 function isSensitiveKey(key: string): boolean {
-  return /(authorization|access.?code|password|secret|token|api.?key|private.?key|credential)/i.test(key);
+  return /(authorization|access.?code|lan.?access.?code|password|secret|token|api.?key|private.?key|credential|serial.?number|mac.?address|ip.?address)/i.test(
+    key
+  );
 }
