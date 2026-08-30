@@ -6,136 +6,110 @@ M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype
 
 ## State
 
-**REMEDIATION IMPLEMENTED LOCALLY — detailed Product Owner M2 validation remains paused pending technical review and real-device retest.**
+**REMEDIATION REQUIRED — Product Owner M2 testing remains blocked by printer discovery. SSDP discovery remediation is QUEUED.**
 
-On 2026-08-30 the Product Owner reported that the current prototype was not ready for detailed M2 testing. The finding is classified **fix before M2 completion** under the operating model. The local remediation implementation now covers the requested onboarding/configuration lifecycle and an offline X2D active-print startup edge, but this is not M2 acceptance. Implementation remains on draft PR #3; M2 is not accepted, merge is not authorized, and M3 remains blocked.
+On 2026-08-30 the Product Owner retested PR #3 after the onboarding/configuration remediation. Automatic discovery / Rescan still returned no usable Bambu printer candidates, so the Product Owner considers the prototype not ready for detailed M2 testing.
 
-Authoritative remediation feedback:
+Research then verified that the current PR #3 adapter implements printer discovery using mDNS (`224.0.0.251:5353` and `_bambu/_bblp/_printer` service queries). Public Bambu Studio behavior/issues and mature independent integrations provide strong evidence that Bambu LAN printer discovery is SSDP-based rather than mDNS-based. Automatic LAN discovery remains technically feasible; the current discovery mechanism is the likely implementation error.
 
+Authoritative research:
+- `project-control/reviews/M2_DISCOVERY_INTERFACE_RESEARCH_2026-08-30.md`
+
+Authoritative Product Owner feedback:
 - `project-control/feedback/M2_PRODUCT_OWNER_FEEDBACK_2026-08-30.md`
 
 Executable Codex gate:
+- `prompts/codex/NEXT_PROMPT.md` — **QUEUED** for SSDP discovery remediation only.
 
-- `prompts/codex/NEXT_PROMPT.md` — HOLD after local M2 onboarding/configuration/X2D remediation; await technical review, PR-head CI evidence, and Product Owner retest direction.
+M2 is not accepted. PR #3 must remain draft/unmerged. M3 remains blocked.
 
 ## Repository / PR
 
 - Repository: `vivekshukla12/Bambulab_Dashboard`
 - Branch: `m2/real-device-readonly-prototype`
 - Draft PR: #3 — `M2: real-device read-only GO/NO-GO prototype`
-- PR state: open, draft, unmerged; merge remains Product Owner controlled.
-- Base branch: `main`
+- Base: `main`
+- Merge: not authorized
 
 ## Completed milestones
 
-### M0
-
-Complete and merged on 2026-08-22. Verified merge commit: `bad179a0f847f9a478e2c167e62dd94760baa105`.
-
-### M1
-
-Complete and merged on 2026-08-24. Verified merge commit: `42821596cc0bf80a302b12287063b3ee17f58f3a`.
-
-The Product Owner's M1 visual/UI modernization feedback remains deferred to later planning / possible V1.1 and is not part of the current M2 remediation except where functional onboarding UX is required.
+- M0 complete/merged 2026-08-22 — merge commit `bad179a0f847f9a478e2c167e62dd94760baa105`.
+- M1 complete/merged 2026-08-24 — merge commit `42821596cc0bf80a302b12287063b3ee17f58f3a`.
+- M1 visual/UI modernization feedback remains deferred to later planning / possible V1.1.
 
 ## M2 approved boundary
 
-M2 remains limited to the approved **standard-mode local MQTTS read-only status path** through the dedicated Bambu read-only adapter.
+M2 remains limited to the approved standard-mode local MQTTS **read-only** status path through the dedicated Bambu adapter.
 
-The implementation must not use:
-
+Do not use:
 - Developer Mode;
 - Fleet Hub dependency;
-- Bambu partner/private authorization;
-- Bambu cloud-client impersonation;
 - printer write/control commands;
-- weakened or disabled TLS/authentication/authorization/security checks;
-- proprietary implementation copying or security bypasses.
+- weakened TLS/authentication/authorization/security;
+- Bambu cloud-client impersonation;
+- undocumented/private Bambu Cloud APIs;
+- private/partner credentials;
+- proprietary implementation copying;
+- private live-device material in Git/public CI.
 
-Real LAN Access Codes and private device identifiers/content must never be committed or placed in public CI. Real-device debugging remains local to the Product Owner LAN and repository evidence remains sanitized.
+LAN Access Codes remain sensitive and process-memory-only by default.
 
-## Verified implementation baseline before 2026-08-30 feedback
+## Verified M2 implementation state
 
-PR #3 already contained:
-
-- `packages/adapter-bambu-readonly` with standard-mode read-only MQTTS transport and normalized telemetry;
-- bounded reconnect/freshness logic with mocked regression tests;
-- process-memory-only real Access Code handling by default;
-- local/private printer TLS trust handling that retains certificate verification for credential-bearing connections;
-- server-side bounded mDNS discovery endpoint and candidate-based onboarding;
+PR #3 currently contains:
+- `packages/adapter-bambu-readonly` with local MQTTS read-only transport;
+- strict credential-bearing TLS plus `local-printer-chain` handling for local/private printer certificates;
+- normalized telemetry, freshness, reconnect and partial-report accumulation;
+- current **mDNS-based** printer discovery — now identified as the likely wrong discovery mechanism;
+- automatic discovery initiation + Rescan UI;
 - manual host fallback;
-- optional interactive local validation command with hidden credential prompts;
-- permanent deterministic synthetic adapter/scenarios for regression testing;
-- successful prior build/test/E2E and Docker/Compose CI evidence on earlier remediation commits.
+- safe Edit/Reconfigure and Remove/Delete flows;
+- real-printer-focused normal Fleet UX;
+- deterministic synthetic adapter/scenarios retained for explicit development/regression use;
+- mocked X2D startup lifecycle hardening.
 
-Product Owner hands-on A1 Mini testing previously established limited real feasibility: the A1 Mini connected through the approved read-only path and exposed basic live telemetry including nozzle temperature and Wi-Fi/network data. This is limited evidence only, not full M2 acceptance.
+The prior remediation head `8a5a09ddabd548720b0da2500ab1e3fc078cc3c1` passed GitHub Actions run `33320803532`, including fresh-checkout/browser/Docker Compose validation. That CI success does not validate the real LAN discovery protocol.
 
-## Product Owner findings — 2026-08-30
+## Real-device evidence / Product Owner findings
 
-### 1. X2D connection blocker
+### A1 Mini
 
-The Product Owner could not connect the X2D while the printer was actively printing. This is a locally reported real-device finding; the root cause is not yet independently verified and no private connection details are recorded in GitHub.
+Earlier Product Owner testing established limited feasibility: A1 Mini connected through the approved read-only path and basic live telemetry including nozzle temperature and Wi-Fi/network data was observed. This is limited evidence only, not full M2 validation.
 
-This materially reinforces R-014 (model/firmware variability) until real retest proves the approved path is reliable or the limitation is documented as M2 feasibility evidence. Offline remediation on 2026-08-30 fixed a mocked startup edge where an active-print status frame arriving before the transport-connected signal could be overwritten by the later connected transition; this does not by itself prove real X2D connectivity.
+### X2D
 
-### 2. Discovery UX is not automatic enough
+The Product Owner reported inability to connect X2D while it was actively printing. Root cause remains unresolved. Ecosystem research indicates X2D read-only monitoring is technically feasible, so this remains an implementation/model/firmware validation issue rather than proof that X2D monitoring is impossible.
 
-The current implementation has server-side discovery, but the normal UI still requires the user to press **Discover**. The Product Owner expects discovery to initiate automatically in the onboarding/fleet experience, show sanitized candidates, and request only the remaining information needed from the user (for example LAN Access Code). Manual host/metadata entry should remain fallback behavior.
+### Discovery — current blocker
 
-### 3. Missing edit/reconfigure lifecycle
+The Product Owner's 2026-08-30 retest showed the Rescan flow still does not discover usable printers.
 
-The current real-printer onboarding UI does not provide a suitable way to correct a configured printer after incorrect details are entered. M2 remediation must add safe Edit/Reconfigure behavior without displaying stored credentials.
+The current implementation queries mDNS. Research found:
+- Bambu Studio uses/depends on automatic LAN discovery, with known failures when multicast/network topology interferes;
+- Bambu Studio public issue reports/logs explicitly reference SSDP;
+- mature Home Assistant Bambu integration registers SSDP discovery for `urn:bambulab-com:device:3dprinter:1`;
+- therefore M2 should replace printer mDNS discovery with independently implemented server-side SSDP discovery and retain manual fallback.
 
-### 4. Missing remove lifecycle
+Perfect zero-config discovery is still not guaranteed across VLANs, guest Wi-Fi, AP isolation, VPNs, firewalls, containers or multicast-suppressed networks.
 
-The current prototype does not provide a suitable Remove/Delete action for configured real printers. M2 remediation must allow a configured real printer to be disconnected, cleared from active configuration, and re-added without leaking credentials or silently deleting normalized history.
+## Network Plugin / Cloud disposition
 
-### 5. Synthetic devices should not clutter normal product UX
+The Product Owner is open to broader Bambu integration if legally/contractually appropriate. Research disposition for M2:
 
-The Product Owner no longer finds synthetic printer simulation useful in the ordinary product workflow now that real-printer connectivity exists.
-
-This does **not** delete the approved deterministic synthetic regression infrastructure. DEC-012/M1 architecture and the current M2 contract require synthetic mode for repeatable automated/offline testing. The remediation target is therefore:
-
-- real-printer-focused normal fleet UX by default;
-- synthetic cards hidden/disabled from normal user operation once real onboarding is being used;
-- explicit internal/development/test access to synthetic scenarios retained;
-- synthetic automated regression coverage preserved.
-
-Removing the underlying synthetic adapter/test framework would require a separate architecture decision and is not authorized by this UX feedback.
-
-## M2 readiness decision
-
-The Product Owner explicitly considered the previous prototype **not ready for detailed M2 testing**. Do not ask the Product Owner to execute the full M2 Excel test matrix until the remediation is independently reviewed and PR-head CI is checked.
-
-## Remediation implemented on 2026-08-30
-
-Local remediation implemented on branch `m2/real-device-readonly-prototype`:
-
-- automatic server-side discovery initiation on normal fleet/onboarding entry when no configured real-printer state makes a scan unnecessary;
-- visible rescan/manual fallback and explicit sanitized discovery `found`/`none`/`failed` states;
-- Edit/Reconfigure configured real printers without displaying existing Access Codes; supplied replacement Access Codes replace only process-memory credential material;
-- Remove/Delete configured real printers with adapter stop/cleanup, live-registry removal and non-destructive normalized-history semantics;
-- real-printer-focused default Fleet UX, with deterministic synthetic scenarios retained through explicit `?synthetic=1` development/regression view and automated tests;
-- X2D-relevant mocked lifecycle hardening so a late transport-connected signal no longer overwrites an already observed active-print status frame;
-- focused adapter/server/Playwright coverage plus module docs/runbook/project-control evidence updates.
-
-Local validation:
-
-- `npm run validate` — passed on 2026-08-30, including TypeScript build, web build, Vitest `31` tests, TypeDoc generation and dependency-license inventory.
-- `npm run test:e2e` — passed on 2026-08-30: Playwright `15` tests across desktop, tablet and mobile.
-- `npm run docker:validate` — not runnable locally because Docker is unavailable on the Codex workstation; PR-head GitHub Actions Docker/Compose evidence must be checked after push.
-- Local real-device validation was not run because `secrets/m2-printers.local.json` is absent in this checkout and detailed Product Owner real-device validation remains paused pending review.
+- **Bambu Network Plugin / Bambu Connect:** Bambu officially supports these as part of third-party/control integration, but the stock Network Plugin is proprietary/closed-source and introducing it would be a material dependency/licensing/architecture decision. It is not required merely to solve LAN discovery/read-only monitoring. **Not authorized for current M2 remediation.**
+- **Direct Bambu Cloud login/API:** Bambu states its cloud is private infrastructure governed by its user agreement and explicitly objects to unofficial clients impersonating official clients. No general public cloud API for this dashboard use case was established. **Direct reverse-engineered cloud integration is not authorized.**
+- If local SSDP + approved read-only MQTTS ultimately proves insufficient, return for a separate Product Owner decision on an official Bambu partnership/supported integration route rather than silently expanding scope.
 
 ## Next authorized action
 
-Next step is technical review and PR-head CI verification for the remediation commit, then controlled Product Owner retest of:
+Codex may execute only the SSDP discovery remediation queued in `prompts/codex/NEXT_PROMPT.md` on existing PR #3:
 
-1. automatic discovery/rescan/manual fallback;
-2. candidate-based connection with minimum remaining details/Access Code;
-3. edit/reconfigure;
-4. remove/re-add;
-5. real-printer-focused normal fleet UX with synthetic regression retained outside ordinary use;
-6. A1 Mini reconnect/basic telemetry;
-7. X2D active-print connection behavior, or sanitized documentation of an approved-path limitation.
+1. replace Bambu printer mDNS discovery with independently implemented server-side SSDP discovery;
+2. keep automatic scan + Rescan + sanitized candidates;
+3. keep manual fallback;
+4. preserve Edit/Reconfigure, Remove/Delete and real-printer-focused UX;
+5. preserve deterministic synthetic regression internally;
+6. add mocked/sanitized SSDP tests and run full automated/CI validation;
+7. return `NEXT_PROMPT.md` to HOLD after implementation for technical review / Product Owner retest.
 
-Do not begin M3 and do not merge PR #3 without explicit Product Owner authorization.
+Do not resume the full M2 Excel test matrix until the SSDP remediation is independently reviewed and Product Owner discovery retest succeeds or the network-specific limitation is clearly established. Do not begin M3 and do not merge PR #3 without explicit Product Owner authorization.
