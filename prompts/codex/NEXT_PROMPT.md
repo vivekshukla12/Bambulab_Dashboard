@@ -1,13 +1,15 @@
 # Next Codex Task
 
 ## Status
-QUEUED — M2 remediation required before further Product Owner real-device validation.
+HOLD — M2 remediation implemented locally; await technical review, PR-head CI evidence and Product Owner retest direction.
 
 ## Milestone
 M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype
 
 ## Objective
 Remediate the Product Owner's 2026-08-30 M2 readiness findings on draft PR #3 before asking for further detailed real-device validation.
+
+Implementation note: local remediation on 2026-08-30 added automatic discovery initiation/rescan, safe edit/reconfigure, safe remove/delete, real-printer-focused default Fleet UX with explicit synthetic regression mode, mocked X2D active-print startup hardening, focused tests and docs/project-control updates. M2 remains unaccepted and PR #3 remains draft/unmerged.
 
 The authoritative feedback for this task is:
 

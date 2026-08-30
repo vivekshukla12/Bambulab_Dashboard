@@ -16,7 +16,9 @@ If the printer's certificate chain is not trusted by the local machine, use `tls
 
 Enter a real LAN Access Code through the browser form only from `localhost`/loopback on the same server machine or from an HTTPS-served dashboard. For remote LAN HTTP validation, use this CLI config path instead of browser credential entry.
 
-The dashboard also exposes a server-side discovery attempt in the Fleet onboarding panel. Discovery uses bounded local mDNS from the server process, returns sanitized candidates to the browser and preserves manual host entry as fallback when discovery is unavailable or unreliable.
+The dashboard automatically starts bounded server-side discovery from the Fleet onboarding panel when no configured real printer makes that scan unnecessary. Discovery uses local mDNS from the server process, returns sanitized candidates to the browser and preserves manual host entry as fallback when discovery is unavailable or unreliable. Use the visible rescan action to refresh discovery. Configured real printers can be edited/reconfigured or removed from the same panel; existing Access Codes are never displayed back, and entering a new Access Code replaces the in-memory credential.
+
+The normal Fleet view is real-printer focused and hides deterministic synthetic cards by default. Use `/?synthetic=1` only for development/regression validation of synthetic scenarios.
 
 ## Commands
 

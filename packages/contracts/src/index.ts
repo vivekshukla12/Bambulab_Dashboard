@@ -136,6 +136,7 @@ export interface RealPrinterCandidateDto {
  * Credential-free discovery result for the M2 onboarding flow.
  */
 export interface RealPrinterDiscoveryDto {
+  status: "found" | "none" | "failed";
   candidates: RealPrinterCandidateDto[];
   discoveryMethod: "mdns";
   manualFallbackAvailable: true;
@@ -159,6 +160,23 @@ export interface RealPrinterConnectionRequest {
 }
 
 /**
+ * Browser-to-server request for safely reconfiguring one real printer. Omitted private fields reuse the current
+ * process-memory value; supplying a new Access Code replaces the in-memory credential.
+ */
+export interface RealPrinterReconfigurationRequest {
+  candidateId?: string;
+  displayName?: string;
+  modelHint?: string;
+  host?: string;
+  serialNumber?: string;
+  accessCode?: string;
+  port?: number;
+  caCertificatePath?: string;
+  tlsServerName?: string;
+  tlsTrustProfile?: "system" | "local-printer-chain";
+}
+
+/**
  * Credential-free real-printer connection summary.
  */
 export interface RealPrinterConnectionDto {
@@ -170,6 +188,17 @@ export interface RealPrinterConnectionDto {
   connectionState: "configured" | "connecting" | "connected" | "stale" | "unavailable" | "reconnecting" | "stopped";
   credentialMode: "memory-only";
   lastObservationAt?: string;
+}
+
+/**
+ * Credential-free result for removing a process-memory real-printer configuration.
+ */
+export interface RealPrinterRemovalDto {
+  id: string;
+  removed: boolean;
+  credentialMaterialCleared: boolean;
+  historyDeleted: false;
+  note: string;
 }
 
 /**

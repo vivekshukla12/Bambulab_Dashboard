@@ -13,11 +13,13 @@ Owns the M2 real Bambu read-only adapter boundary for the approved standard-mode
 - Accumulate partial printer-originated report frames into one in-memory live snapshot so sparse updates do not flicker already observed capabilities back to unknown.
 - Represent missing data through capability support states instead of fabricated defaults.
 - Track connection, stale, unavailable and bounded reconnect semantics.
+- Reconfigure or forget process-memory printer sessions while stopping old transports before replacement/removal.
+- Preserve already observed active-print telemetry if status arrives during connection startup before the transport reports fully connected.
 - Keep LAN Access Codes, serial numbers, hostnames/IPs and raw payloads inside the adapter boundary.
 
 ## Public Contracts
 
-Exports `BambuReadonlyAdapter`, `createBambuReadonlyAdapter`, `discoverBambuPrinters`, parser/normalizer helpers and transport/discovery interfaces for mocked offline tests.
+Exports `BambuReadonlyAdapter`, `createBambuReadonlyAdapter`, `discoverBambuPrinters`, parser/normalizer helpers and transport/discovery/configuration interfaces for mocked offline tests.
 
 ## Owned Data
 
@@ -33,7 +35,8 @@ Emits normalized read-only device events through the `@bpd/adapter-api` contract
 - The production transport never publishes MQTT messages.
 - TLS certificate validation remains enabled; callers may provide a local CA certificate path when needed.
 - The M2 `local-printer-chain` TLS profile may derive a local issuer and certificate identity from the printer before credentials are sent, then uses that profile for the credential-bearing connection with certificate validation still enabled.
-- Health and configured-printer summaries are credential-free and do not expose host/IP, serial or raw payload values.
+- Health and configured-printer summaries are credential-free and do not expose host/IP, serial, Access Code, TLS identity or raw payload values.
+- Reconfiguration may reuse private process-memory fields when omitted; supplying a new Access Code replaces the old in-memory credential without returning either value.
 
 ## Dependencies
 

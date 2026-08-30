@@ -10,7 +10,9 @@
 
 The Vite dev server proxies read-only API and SSE requests to the Fastify server at `http://127.0.0.1:3001`.
 
-For M2 real-printer onboarding, use the Fleet setup panel's server-side discovery button first where available; it returns sanitized candidates only and keeps raw endpoint details on the server. Enter a real LAN Access Code in the browser form only from `localhost`/loopback on the same server machine or from an HTTPS-served dashboard. Use the local CLI validation config instead of the browser form when operating over remote LAN HTTP.
+For M2 real-printer onboarding, the Fleet setup panel automatically starts bounded server-side discovery when no configured real printer is present. Use the rescan action to refresh candidates; discovered entries return sanitized labels only and keep raw endpoint details on the server. Enter a real LAN Access Code in the browser form only from `localhost`/loopback on the same server machine or from an HTTPS-served dashboard. Use the local CLI validation config instead of the browser form when operating over remote LAN HTTP.
+
+The normal Fleet view hides deterministic synthetic devices by default. For development/regression checks, open `http://127.0.0.1:5173/?synthetic=1`.
 
 ## Production-Like Local Run
 
@@ -42,7 +44,7 @@ Real-device validation is local-only and must be run on the Product Owner's LAN.
 1. Build the TypeScript packages with `npm run build:ts`.
 2. Create `secrets/m2-printers.local.json`; the `secrets/` folder is ignored by Git.
 3. Use sanitized `id` and `displayName` values in that file.
-4. Optionally use the dashboard's server-side discovery in the Fleet panel to identify candidates, then keep private hosts/serials/Access Codes only in the ignored local config.
+4. Optionally use the dashboard's automatic server-side discovery/rescan in the Fleet panel to identify candidates, then keep private hosts/serials/Access Codes only in the ignored local config.
 5. Run `npm run m2:validate:real -- secrets/m2-printers.local.json`.
 6. For hands-on local entry without writing a config file, run `npm run m2:validate:real -- --interactive`; prompts go to stderr, stdout remains the sanitized JSON report and serial/Access Code entry is hidden. File configs and interactive prompts default to the `local-printer-chain` TLS trust profile when the printer certificate is local/private and not trusted by the workstation.
 7. Copy only sanitized capability classifications, timing summaries and pass/fail rows into repository evidence.

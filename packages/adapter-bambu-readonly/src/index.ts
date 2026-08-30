@@ -89,6 +89,26 @@ export interface BambuPrinterConnectionInput {
 }
 
 /**
+ * Safe reconfiguration patch for an existing process-memory printer connection. Omitted private fields reuse the
+ * current in-memory values; a supplied Access Code replaces the old credential.
+ */
+export interface BambuPrinterReconfigurationInput {
+  candidateId?: string;
+  displayName?: string;
+  modelHint?: string;
+  host?: string;
+  serialNumber?: string;
+  accessCode?: string;
+  port?: number;
+  username?: string;
+  caCertificatePath?: string;
+  tlsServerName?: string;
+  tlsTrustProfile?: BambuTlsTrustProfile;
+  staleAfterMs?: number;
+  offlineAfterMs?: number;
+}
+
+/**
  * Credential-free connection summary safe for API and diagnostics.
  */
 export interface SanitizedBambuPrinterConnection {
@@ -311,6 +331,20 @@ export class BambuReadonlyAdapter implements ReadOnlyDeviceAdapter {
   }
 
   /**
+   * Reconfigures one existing printer without returning or exposing previous process-memory credentials.
+   */
+  async reconfigurePrinter(
+    deviceId: DeviceId,
+    input: BambuPrinterReconfigurationInput
+  ): Promise<SanitizedBambuPrinterConnection | undefined> {
+    const current = this.sessions.get(deviceId);
+    if (!current) {
+      return undefined;
+    }
+    return this.configurePrinter(current.toReconfiguredConnectionInput(input));
+  }
+
+  /**
    * Returns configured real-printer summaries without host, serial, access code or raw payload data.
    */
   listConfiguredPrinters(): SanitizedBambuPrinterConnection[] {
@@ -528,6 +562,31 @@ class PrinterSession {
     };
   }
 
+  toReconfiguredConnectionInput(input: BambuPrinterReconfigurationInput): BambuPrinterConnectionInput {
+    const next: BambuPrinterConnectionInput = {
+      id: this.config.id,
+      displayName: optionalNonBlank(input.displayName) ?? this.config.displayName,
+      modelHint: optionalNonBlank(input.modelHint) ?? this.config.modelHint,
+      host: optionalNonBlank(input.host) ?? this.config.host,
+      serialNumber: optionalNonBlank(input.serialNumber) ?? this.config.serialNumber,
+      accessCode: optionalNonBlank(input.accessCode) ?? this.config.accessCode,
+      port: input.port ?? this.config.port,
+      username: optionalNonBlank(input.username) ?? this.config.username,
+      staleAfterMs: input.staleAfterMs ?? this.config.staleAfterMs,
+      offlineAfterMs: input.offlineAfterMs ?? this.config.offlineAfterMs,
+      tlsTrustProfile: input.tlsTrustProfile ?? this.config.tlsTrustProfile
+    };
+    const caCertificatePath = optionalNonBlank(input.caCertificatePath) ?? this.config.caCertificatePath;
+    const tlsServerName = optionalNonBlank(input.tlsServerName) ?? this.config.tlsServerName;
+    if (caCertificatePath) {
+      next.caCertificatePath = caCertificatePath;
+    }
+    if (tlsServerName) {
+      next.tlsServerName = tlsServerName;
+    }
+    return next;
+  }
+
   private async connect(): Promise<void> {
     if (this.stopped) {
       return;
@@ -599,8 +658,10 @@ class PrinterSession {
     }
     if (state === "connected") {
       this.phase = "connected";
-      this.publishTransition("degraded", "Connected to read-only status stream; waiting for printer status payload.");
       this.scheduleFreshnessTimers();
+      if (!this.lastObservationAt) {
+        this.publishTransition("degraded", "Connected to read-only status stream; waiting for printer status payload.");
+      }
       return;
     }
     if (state === "closed") {
@@ -1627,6 +1688,11 @@ function requireNonBlank(value: string | undefined, field: string): string {
     throw new Error(`Missing required Bambu printer field: ${field}.`);
   }
   return value.trim();
+}
+
+function optionalNonBlank(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : undefined;
 }
 
 function positiveInteger(value: number | undefined, fallback: number): number {

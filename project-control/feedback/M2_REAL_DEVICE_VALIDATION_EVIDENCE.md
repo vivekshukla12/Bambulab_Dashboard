@@ -21,6 +21,17 @@ Validated in the Codex environment on 2026-08-24:
 
 The local validation script now emits sanitized pre-stop connection state, initial connection result/timing, update cadence/latency summaries and redacted failure categories. It also supports optional local `--interactive` entry with hidden serial/Access Code prompts while retaining the ignored JSON config path. The dashboard attempts bounded server-side mDNS discovery for sanitized onboarding candidates while retaining manual fallback. Real-printer capability rows below remain `not-tested` until Product Owner LAN validation runs.
 
+Validated in the Codex environment on 2026-08-30 after Product Owner remediation feedback:
+
+- `npm run validate` — passed: TypeScript build, web build, Vitest `31` tests, TypeDoc generation and dependency-license inventory.
+- `npm run test:e2e` — passed: Playwright `15` tests across desktop, tablet and mobile.
+- Focused adapter regression: `npm run test -- packages/adapter-bambu-readonly/src/bambu-readonly-adapter.test.ts` — passed, including mocked X2D-shaped active-print startup, reconfiguration transport replacement, credential replacement redaction and forget/remove cleanup.
+- Mocked server regression: `npm run test -- apps/server/src/app.test.ts` — passed, including sanitized discovery `found`/`none`/`failed` states, candidate-based onboarding, edit/reconfigure, remove and live-registry cleanup.
+- Browser E2E now verifies automatic discovery initiation on fleet entry when no configured real printer is present, explicit rescan, edit/reconfigure, remove confirmation, real-printer-focused normal fleet rendering and explicit `?synthetic=1` synthetic regression mode.
+- A mocked lifecycle bug was found and fixed: if a printer-originated active-print status frame arrives during connection startup before the transport reports fully connected, the later transport-connected signal no longer overwrites the already observed live print state with a degraded waiting state.
+- Local `npm run docker:validate` — not runnable in the Codex workstation because Docker is unavailable (`docker` command not found); GitHub Actions Docker/Compose evidence must be checked after this remediation is pushed.
+- Local real-device validation was not run because `secrets/m2-printers.local.json` is absent in this checkout and Product Owner detailed real-device validation remains paused until remediation review.
+
 ## A1 Mini Capability Matrix
 
 | Capability | Classification | Notes |
@@ -38,9 +49,9 @@ The local validation script now emits sanitized pre-stop connection state, initi
 | Capability | Classification | Notes |
 |---|---|---|
 | Device reachable / online status | not-tested | Requires Product Owner LAN validation. |
-| Printer lifecycle / active state | not-tested | Requires Product Owner LAN validation. |
-| Printing vs idle | not-tested | Requires Product Owner LAN validation. |
-| Print progress | not-tested | Requires a real active print where practical. |
+| Printer lifecycle / active state | not-tested | Requires Product Owner LAN validation; mocked active-print startup path now preserves early live status frames. |
+| Printing vs idle | not-tested | Product Owner reported a current prototype connection failure while X2D was actively printing; root cause still requires sanitized real retest. |
+| Print progress | not-tested | Requires a real active print where practical; mocked X2D-shaped active-print progress is covered offline only. |
 | Nozzle temperature | not-tested | Requires Product Owner LAN validation. |
 | Bed temperature | not-tested | Requires Product Owner LAN validation. |
 | Stale/offline/reconnect | not-tested | Requires controlled local interruption/recovery validation. |

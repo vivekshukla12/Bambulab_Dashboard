@@ -73,7 +73,7 @@ M2 may evaluate only the approved standard-mode local MQTTS read-only path. If u
 
 M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype.
 
-**Current state: REMEDIATION REQUIRED; detailed Product Owner validation is paused.**
+**Current state: REMEDIATION IMPLEMENTED LOCALLY; detailed Product Owner validation remains paused pending technical review, PR-head CI evidence and retest direction.**
 
 Draft PR #3 remains open/unmerged on branch `m2/real-device-readonly-prototype`. Merge is not authorized. M3 remains blocked.
 
@@ -83,7 +83,7 @@ Authoritative latest Product Owner feedback:
 
 Executable Codex gate:
 
-- `prompts/codex/NEXT_PROMPT.md` — QUEUED for M2 remediation before further detailed Product Owner testing.
+- `prompts/codex/NEXT_PROMPT.md` — HOLD after local M2 remediation; do not begin M3 or merge.
 
 ## Verified M2 implementation before latest feedback
 
@@ -108,33 +108,33 @@ The Product Owner considers the prototype not ready for detailed M2 testing.
 
 ### X2D
 
-The Product Owner reports that X2D could not be connected while it was actively printing. This is a local hands-on finding; root cause is unverified. R-014 has been updated to reflect the observed device/firmware variability risk.
+The Product Owner reports that X2D could not be connected while it was actively printing. This is a local hands-on finding; root cause is unverified. R-014 has been updated to reflect the observed device/firmware variability risk. Offline remediation on 2026-08-30 fixed a mocked active-print startup edge where a status frame arriving before the transport-connected signal could be overwritten by the later connected transition; this does not prove the real X2D case and still requires Product Owner retest.
 
 ### Discovery/onboarding
 
-Server-side discovery exists, but current UI requires the user to press **Discover**. Product Owner expects automatic server-side discovery when onboarding/fleet is entered, then selection of a sanitized candidate and entry only of required remaining details such as Access Code. Manual IP/host metadata remains fallback.
+Server-side discovery now starts automatically when the normal fleet/onboarding view is entered and no configured real-printer state makes the scan unnecessary. A visible rescan action remains. Discovery returns explicit sanitized `found`/`none`/`failed` states and manual IP/host metadata remains fallback.
 
 ### Edit/reconfigure
 
-Current prototype lacks a usable way to correct an already configured printer after wrong details are entered. M2 remediation must add safe Edit/Reconfigure behavior. Existing credentials must never be displayed back; replacing an Access Code requires a new value.
+The prototype now has a safe Edit/Reconfigure flow for configured real printers. Existing credentials and private endpoint values are not displayed back. Omitted private fields reuse current process-memory values; supplying a new Access Code replaces the in-memory credential.
 
 ### Remove printer
 
-Current prototype lacks a Remove/Delete configured-printer action. Remediation must cleanly disconnect/remove active configuration and clear memory-only credential material while not silently deleting normalized history.
+The prototype now has a Remove/Delete action with confirmation. Removal stops the adapter session, removes active process-memory configuration/credentials, clears transient discovery/onboarding state and removes the live registry entry without deleting normalized history.
 
 ### Synthetic printer UX
 
 Product Owner no longer wants synthetic printers mixed into the ordinary product fleet experience now that real printer connectivity exists.
 
-Do **not** delete the deterministic synthetic adapter/testing infrastructure: that remains an approved architecture/regression requirement. The intended remediation is to make the normal product UX real-printer focused and hide/disable synthetic devices by default, while retaining explicit dev/test/diagnostic synthetic access and automated regression coverage.
+The normal Fleet view is now real-printer focused and hides synthetic cards by default. Do **not** delete the deterministic synthetic adapter/testing infrastructure: it remains an approved architecture/regression requirement. Use `/?synthetic=1` for explicit dev/test/diagnostic synthetic access and automated regression coverage.
 
 ### UI modernization
 
 Broad frontend visual redesign remains deferred. Current remediation is functional onboarding/configuration readiness only.
 
-## Current Codex remediation task
+## Current Codex remediation result
 
-`prompts/codex/NEXT_PROMPT.md` authorizes only M2 remediation on existing PR #3:
+The 2026-08-30 local remediation on existing PR #3 implemented:
 
 1. automatic server-side discovery initiation + visible rescan/manual fallback;
 2. minimal-details discovered-printer onboarding;
@@ -145,7 +145,14 @@ Broad frontend visual redesign remains deferred. Current remediation is function
 7. add focused automated/E2E tests and documentation/project-control updates;
 8. return for technical review and Product Owner retest.
 
-Do not ask Product Owner to run the full M2 Excel validation matrix until this remediation is implemented and reviewed.
+Local validation passed:
+
+- `npm run validate` — TypeScript build, web build, Vitest `31` tests, TypeDoc and license inventory.
+- `npm run test:e2e` — Playwright `15` tests across desktop, tablet and mobile.
+- `npm run docker:validate` could not run locally because Docker is unavailable; check PR-head GitHub Actions Docker/Compose after push.
+- Local real-device validation did not run because `secrets/m2-printers.local.json` is absent and detailed Product Owner real-device validation is paused pending review.
+
+Do not ask Product Owner to run the full M2 Excel validation matrix until this remediation is reviewed and PR-head CI evidence is checked.
 
 ## M2 gate / next milestone
 

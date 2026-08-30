@@ -10,6 +10,8 @@ import type {
   RealPrinterDiscoveryDto,
   RealPrinterConnectionDto,
   RealPrinterConnectionRequest,
+  RealPrinterReconfigurationRequest,
+  RealPrinterRemovalDto,
   SseEventDto
 } from "@bpd/contracts";
 
@@ -62,6 +64,18 @@ export async function fetchRealPrinterCandidates(): Promise<RealPrinterDiscovery
 }
 
 /**
+ * Loads configured real printers without private host, serial, Access Code or TLS identity fields.
+ */
+export async function fetchRealPrinters(): Promise<RealPrinterConnectionDto[]> {
+  const response = await fetch("/api/v1/real-printers");
+  if (!response.ok) {
+    throw new Error(`Configured real-printer request failed with ${response.status}`);
+  }
+  const body = (await response.json()) as ApiEnvelope<{ printers: RealPrinterConnectionDto[] }>;
+  return body.data.printers;
+}
+
+/**
  * Configures one real printer through the server-side memory-only M2 onboarding boundary.
  */
 export async function connectRealPrinter(request: RealPrinterConnectionRequest): Promise<RealPrinterConnectionDto> {
@@ -77,6 +91,41 @@ export async function connectRealPrinter(request: RealPrinterConnectionRequest):
   }
   const body = (await response.json()) as ApiEnvelope<{ printer: RealPrinterConnectionDto }>;
   return body.data.printer;
+}
+
+/**
+ * Reconfigures one existing real printer; omitted private fields reuse server process-memory values.
+ */
+export async function reconfigureRealPrinter(
+  printerId: string,
+  request: RealPrinterReconfigurationRequest
+): Promise<RealPrinterConnectionDto> {
+  const response = await fetch(`/api/v1/real-printers/${encodeURIComponent(printerId)}`, {
+    method: "PATCH",
+    headers: {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+  if (!response.ok) {
+    throw new Error(`Real-printer reconfiguration failed with ${response.status}`);
+  }
+  const body = (await response.json()) as ApiEnvelope<{ printer: RealPrinterConnectionDto }>;
+  return body.data.printer;
+}
+
+/**
+ * Removes one process-memory real-printer configuration without deleting normalized history.
+ */
+export async function removeRealPrinter(printerId: string): Promise<RealPrinterRemovalDto> {
+  const response = await fetch(`/api/v1/real-printers/${encodeURIComponent(printerId)}`, {
+    method: "DELETE"
+  });
+  if (!response.ok) {
+    throw new Error(`Real-printer removal failed with ${response.status}`);
+  }
+  const body = (await response.json()) as ApiEnvelope<{ removal: RealPrinterRemovalDto }>;
+  return body.data.removal;
 }
 
 /**

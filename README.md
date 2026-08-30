@@ -54,7 +54,9 @@ npm run dev:web -- --host 127.0.0.1
 
 Open `http://127.0.0.1:5173`. The Vite web app proxies read-only REST/SSE traffic to the Fastify server on `http://127.0.0.1:3001`.
 
-M2 real-printer onboarding is available from the fleet page with server-side discovery candidates, local-printer-chain TLS trust profile support and manual host fallback. Real LAN Access Codes are process-memory-only by default, are cleared from the form after submit and are not returned through diagnostics. Enter a real Access Code in the browser only when the dashboard is opened on the server machine through `localhost`/loopback or when the dashboard is HTTPS-served. For remote LAN HTTP validation, use the local CLI config path instead. Use only the Product Owner's LAN and target printers for real validation.
+M2 real-printer onboarding is available from the fleet page with automatic bounded server-side discovery, a visible rescan action, edit/remove lifecycle controls, local-printer-chain TLS trust profile support and manual host fallback. Real LAN Access Codes are process-memory-only by default, are cleared from the form after submit/reconfigure and are not returned through diagnostics. Enter a real Access Code in the browser only when the dashboard is opened on the server machine through `localhost`/loopback or when the dashboard is HTTPS-served. For remote LAN HTTP validation, use the local CLI config path instead. Use only the Product Owner's LAN and target printers for real validation.
+
+The normal Fleet view is real-printer focused and hides deterministic synthetic printer cards by default. Open `http://127.0.0.1:5173/?synthetic=1` when you need the explicit synthetic regression view.
 
 Production-like local run:
 

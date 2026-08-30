@@ -6,8 +6,9 @@ Provides the React/Vite read-only dashboard shell for fleet, device views and mi
 
 ## Responsibilities
 
-- Render the synthetic fleet and minimal capability-driven device detail views.
-- Provide a minimum real-printer setup form with server-side discovery candidate selection and manual fallback for local Product Owner validation.
+- Render the normal fleet as a real-printer-focused view by default, with synthetic scenarios available through an explicit diagnostic/regression query.
+- Provide a minimum real-printer setup form with automatic server-side discovery, rescan, candidate selection and manual fallback for local Product Owner validation.
+- Provide edit/reconfigure and remove actions for process-memory real-printer entries without displaying credentials.
 - Consume only `@bpd/contracts` API/SSE DTOs.
 - Present live, stale, unavailable, reconnecting and recovered states explicitly.
 - Provide the PWA manifest, service worker registration and offline indication.
@@ -19,7 +20,7 @@ The web app has no public package API. Its network contract is the versioned rea
 
 ## Owned Data
 
-Only transient browser presentation state is owned here. No credentials or printer secrets are stored in browser storage; the LAN Access Code field is cleared after submit. Discovery candidates are sanitized DTOs; endpoint details and local TLS profile material remain server-side. Real Access Code entry through the browser form is limited to `localhost`/loopback on the server machine or HTTPS-served dashboards; remote LAN HTTP validation uses the local CLI config path instead.
+Only transient browser presentation state is owned here. No credentials or printer secrets are stored in browser storage; the LAN Access Code field is cleared after submit and after reconfiguration attempts. Discovery candidates are sanitized DTOs; endpoint details and local TLS profile material remain server-side. Real Access Code entry through the browser form is limited to `localhost`/loopback on the server machine or HTTPS-served dashboards; remote LAN HTTP validation uses the local CLI config path instead.
 
 ## Events
 
@@ -30,6 +31,7 @@ Consumes `device.snapshot` and `device.state.changed` SSE events.
 - No queued offline writes.
 - No direct printer or vendor-protocol access.
 - No model-name feature branching; capability rendering is data-driven.
+- Normal product fleet rendering hides synthetic devices unless the explicit `?synthetic=1` diagnostic/regression view is requested.
 
 ## Dependencies
 

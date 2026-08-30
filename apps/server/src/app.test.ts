@@ -188,12 +188,157 @@ describe("Fastify API", () => {
     expect(connectResponse.body).not.toContain("SYNTHETIC_ACCESS_CODE");
     expect(connectResponse.body).not.toContain("SYNTHETIC_SERIAL_FOR_TEST");
   });
+
+  it("reports no-candidate and failed discovery states with manual fallback", async () => {
+    temp = await createTempDatabase();
+    dashboard = await buildDashboardServer(
+      {
+        ...loadServerConfig({}),
+        databasePath: temp.databasePath,
+        syntheticIntervalMs: 1000
+      },
+      { realPrinterDiscovery: async () => [] }
+    );
+
+    const noneResponse = await dashboard.server.inject({ method: "GET", url: "/api/v1/real-printer-candidates" });
+    expect(noneResponse.statusCode).toBe(200);
+    expect(noneResponse.json().data.discovery.status).toBe("none");
+    expect(noneResponse.json().data.discovery.manualFallbackAvailable).toBe(true);
+
+    await dashboard.close();
+    dashboard = await buildDashboardServer(
+      {
+        ...loadServerConfig({}),
+        databasePath: temp.databasePath,
+        syntheticIntervalMs: 1000
+      },
+      {
+        realPrinterDiscovery: async () => {
+          throw new Error("private host specific discovery failure");
+        }
+      }
+    );
+
+    const failedResponse = await dashboard.server.inject({ method: "GET", url: "/api/v1/real-printer-candidates" });
+    expect(failedResponse.statusCode).toBe(200);
+    expect(failedResponse.json().data.discovery.status).toBe("failed");
+    expect(failedResponse.json().data.discovery.manualFallbackAvailable).toBe(true);
+    expect(failedResponse.body).not.toContain("private host specific discovery failure");
+  });
+
+  it("reconfigures an existing real printer without exposing previous or replacement credentials", async () => {
+    temp = await createTempDatabase();
+    const transportConfigs: BambuMqttsTransportConfig[] = [];
+    const transports: MockRealTransport[] = [];
+    dashboard = await buildDashboardServer({
+      ...loadServerConfig({}),
+      databasePath: temp.databasePath,
+      syntheticIntervalMs: 1000
+    }, { realTransportFactory: (config) => {
+      transportConfigs.push(config);
+      const transport = new MockRealTransport();
+      transports.push(transport);
+      return transport;
+    } });
+
+    const createResponse = await dashboard.server.inject({
+      method: "POST",
+      url: "/api/v1/real-printers",
+      payload: {
+        displayName: "Product Owner X2D",
+        modelHint: "X2D",
+        host: "old-private-printer.local",
+        serialNumber: "OLD_SYNTHETIC_SERIAL",
+        accessCode: "OLD_SYNTHETIC_ACCESS_CODE",
+        tlsTrustProfile: "local-printer-chain"
+      }
+    });
+    const printerId = createResponse.json().data.printer.id as string;
+
+    const patchResponse = await dashboard.server.inject({
+      method: "PATCH",
+      url: `/api/v1/real-printers/${printerId}`,
+      payload: {
+        displayName: "Corrected Product Owner X2D",
+        modelHint: "X2D",
+        host: "new-private-printer.local",
+        serialNumber: "NEW_SYNTHETIC_SERIAL",
+        accessCode: "NEW_SYNTHETIC_ACCESS_CODE",
+        tlsTrustProfile: "system"
+      }
+    });
+
+    expect(patchResponse.statusCode).toBe(200);
+    expect(transports[0]?.stops).toBe(1);
+    expect(transportConfigs[1]?.host).toBe("new-private-printer.local");
+    expect(transportConfigs[1]?.serialNumber).toBe("NEW_SYNTHETIC_SERIAL");
+    expect(transportConfigs[1]?.accessCode).toBe("NEW_SYNTHETIC_ACCESS_CODE");
+    expect(transportConfigs[1]?.tlsTrustProfile).toBe("system");
+    expect(patchResponse.body).toContain("Corrected Product Owner X2D");
+    expect(patchResponse.body).not.toContain("OLD_SYNTHETIC_ACCESS_CODE");
+    expect(patchResponse.body).not.toContain("NEW_SYNTHETIC_ACCESS_CODE");
+    expect(patchResponse.body).not.toContain("OLD_SYNTHETIC_SERIAL");
+    expect(patchResponse.body).not.toContain("NEW_SYNTHETIC_SERIAL");
+    expect(patchResponse.body).not.toContain("new-private-printer.local");
+  });
+
+  it("removes a configured real printer and clears the live registry without deleting history", async () => {
+    temp = await createTempDatabase();
+    const transports: MockRealTransport[] = [];
+    dashboard = await buildDashboardServer({
+      ...loadServerConfig({}),
+      databasePath: temp.databasePath,
+      syntheticIntervalMs: 1000
+    }, { realTransportFactory: () => {
+      const transport = new MockRealTransport();
+      transports.push(transport);
+      return transport;
+    } });
+
+    const createResponse = await dashboard.server.inject({
+      method: "POST",
+      url: "/api/v1/real-printers",
+      payload: {
+        displayName: "Removable X2D",
+        modelHint: "X2D",
+        host: "private-printer.local",
+        serialNumber: "SYNTHETIC_SERIAL_FOR_TEST",
+        accessCode: "SYNTHETIC_ACCESS_CODE",
+        tlsTrustProfile: "local-printer-chain"
+      }
+    });
+    const printerId = createResponse.json().data.printer.id as string;
+    expect((await dashboard.server.inject({ method: "GET", url: "/api/v1/devices" })).body).toContain("Removable X2D");
+
+    const deleteResponse = await dashboard.server.inject({ method: "DELETE", url: `/api/v1/real-printers/${printerId}` });
+    expect(deleteResponse.statusCode).toBe(200);
+    expect(deleteResponse.json().data.removal).toMatchObject({
+      removed: true,
+      credentialMaterialCleared: true,
+      historyDeleted: false
+    });
+    expect(deleteResponse.body).not.toContain("SYNTHETIC_ACCESS_CODE");
+    expect(deleteResponse.body).not.toContain("SYNTHETIC_SERIAL_FOR_TEST");
+    expect(transports[0]?.stops).toBe(1);
+
+    const printersResponse = await dashboard.server.inject({ method: "GET", url: "/api/v1/real-printers" });
+    expect(printersResponse.json().data.printers).toHaveLength(0);
+    const devicesResponse = await dashboard.server.inject({ method: "GET", url: "/api/v1/devices" });
+    expect(devicesResponse.body).not.toContain("Removable X2D");
+  });
 });
 
 class MockRealTransport implements BambuMqttsStatusTransport {
-  async start(): Promise<void> {}
+  starts = 0;
+  stops = 0;
 
-  async stop(): Promise<void> {}
+  async start(): Promise<void> {
+    this.starts += 1;
+  }
+
+  async stop(): Promise<void> {
+    this.stops += 1;
+  }
 
   onStatus(_listener: (message: BambuStatusMessage) => void): () => void {
     return () => undefined;

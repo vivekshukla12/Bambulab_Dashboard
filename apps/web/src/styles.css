@@ -162,7 +162,8 @@ h2 {
 .detail-header,
 .capability-table,
 .offline-banner,
-.real-printer-panel {
+.real-printer-panel,
+.empty-state {
   background: #ffffff;
   border: 1px solid #d9e2ec;
   border-radius: 8px;
@@ -405,9 +406,44 @@ h2 {
   gap: 12px;
 }
 
+.configured-printer-list {
+  display: grid;
+  gap: 8px;
+}
+
+.configured-printer-row {
+  min-height: 58px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.configured-printer-row strong,
+.configured-printer-row span {
+  display: block;
+}
+
+.configured-printer-row span {
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.configured-printer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .candidate-actions {
   display: grid;
-  grid-template-columns: minmax(130px, 0.4fr) minmax(220px, 1fr);
+  grid-template-columns: minmax(130px, 0.35fr) minmax(220px, 1fr) auto;
   gap: 10px;
   align-items: end;
 }
@@ -456,6 +492,7 @@ h2 {
 }
 
 .candidate-actions button,
+.configured-printer-actions button,
 .real-printer-form button {
   min-height: 40px;
   border: 0;
@@ -477,15 +514,40 @@ h2 {
 }
 
 .candidate-actions button:disabled,
+.configured-printer-actions button:disabled,
 .real-printer-form button:disabled {
   cursor: wait;
   background: #64748b;
+}
+
+.configured-printer-actions .danger-button {
+  background: #991b1b;
+}
+
+.real-printer-form .secondary-button {
+  color: #18212f;
+  background: #e2e8f0;
 }
 
 .onboarding-status {
   margin-bottom: 0;
   color: #475569;
   font-size: 0.86rem;
+}
+
+.empty-state {
+  min-height: 150px;
+  padding: 20px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 6px;
+  color: #475569;
+}
+
+.empty-state strong {
+  color: #18212f;
+  font-size: 1.05rem;
 }
 
 .diagnostic-note {
@@ -555,5 +617,13 @@ h2 {
   .candidate-actions,
   .real-printer-form {
     grid-template-columns: 1fr;
+  }
+
+  .configured-printer-row {
+    grid-template-columns: 1fr;
+  }
+
+  .configured-printer-actions {
+    justify-content: flex-start;
   }
 }

@@ -77,6 +77,14 @@ class MockTransport implements BambuMqttsStatusTransport {
   }
 }
 
+class ActivePrintFirstTransport extends MockTransport {
+  override async start(): Promise<void> {
+    this.starts += 1;
+    this.emitStatus(x2dActivePrintPayload());
+    this.emitState("connected");
+  }
+}
+
 afterEach(() => {
   vi.useRealTimers();
 });
@@ -218,6 +226,87 @@ describe("BambuReadonlyAdapter", () => {
     expect(serialized).not.toContain("SYNTHETIC_TLS_SERVER_NAME");
     expect(serialized).not.toContain("SYNTHETIC_ACCESS_CODE");
     expect(serialized).not.toContain("SYNTHETIC_SERIAL_FOR_TEST");
+  });
+
+  it("handles an X2D-shaped active-print status frame during connection startup", async () => {
+    const adapter = createBambuReadonlyAdapter({
+      now: fixedNow,
+      transportFactory: () => new ActivePrintFirstTransport()
+    });
+
+    await adapter.configurePrinter(realPrinterInput({ id: "x2d", displayName: "X2D", modelHint: "X2D" }));
+    await adapter.start();
+
+    const device = (await adapter.discoverDevices())[0];
+    expect(device?.identity.modelHint).toBe("X2D");
+    expect(device?.state.lifecycle).toBe("printing");
+    expect(device?.state.telemetry.print?.progressPercent).toBe(64);
+    expect(device?.state.telemetry.temperatures?.bedC).toBe(61);
+  });
+
+  it("reconfigures an active X2D session by replacing the transport and credential material", async () => {
+    const transports: MockTransport[] = [];
+    const transportConfigs: BambuMqttsTransportConfig[] = [];
+    const adapter = createBambuReadonlyAdapter({
+      now: fixedNow,
+      transportFactory: (config) => {
+        transportConfigs.push(config);
+        const transport = new MockTransport();
+        transports.push(transport);
+        return transport;
+      }
+    });
+
+    await adapter.configurePrinter(realPrinterInput({ id: "x2d", displayName: "X2D", modelHint: "X2D" }));
+    await adapter.start();
+    transports[0]?.emitStatus(x2dActivePrintPayload());
+
+    const reconfigured = await adapter.reconfigurePrinter("x2d", {
+      displayName: "Corrected X2D",
+      modelHint: "X2D",
+      host: "corrected-printer.local",
+      serialNumber: "NEW_SYNTHETIC_SERIAL",
+      accessCode: "NEW_SYNTHETIC_ACCESS_CODE",
+      tlsTrustProfile: "local-printer-chain"
+    });
+    transports[0]?.emitStatus({ print: { mc_percent: 99 } }, "2026-08-24T12:05:00.000Z");
+    transports[1]?.emitStatus({ print: { print_status: "RUNNING", print_progress: 71 } }, "2026-08-24T12:05:01.000Z");
+
+    const device = (await adapter.discoverDevices())[0];
+    expect(reconfigured?.displayName).toBe("Corrected X2D");
+    expect(transports[0]?.stops).toBe(1);
+    expect(transportConfigs[1]?.host).toBe("corrected-printer.local");
+    expect(transportConfigs[1]?.serialNumber).toBe("NEW_SYNTHETIC_SERIAL");
+    expect(transportConfigs[1]?.accessCode).toBe("NEW_SYNTHETIC_ACCESS_CODE");
+    expect(device?.identity.displayName).toBe("Corrected X2D");
+    expect(device?.state.telemetry.print?.progressPercent).toBe(71);
+    const serialized = JSON.stringify(adapter.listConfiguredPrinters());
+    expect(serialized).not.toContain("NEW_SYNTHETIC_ACCESS_CODE");
+    expect(serialized).not.toContain("NEW_SYNTHETIC_SERIAL");
+    expect(serialized).not.toContain("corrected-printer.local");
+  });
+
+  it("forgets a configured printer and ignores later events from the old transport", async () => {
+    const transports: MockTransport[] = [];
+    const adapter = createBambuReadonlyAdapter({
+      now: fixedNow,
+      transportFactory: () => {
+        const transport = new MockTransport();
+        transports.push(transport);
+        return transport;
+      }
+    });
+
+    await adapter.configurePrinter(realPrinterInput({ id: "x2d", displayName: "X2D", modelHint: "X2D" }));
+    await adapter.start();
+    transports[0]?.emitStatus(x2dActivePrintPayload());
+
+    await expect(adapter.forgetPrinter("x2d")).resolves.toBe(true);
+    expect(transports[0]?.stops).toBe(1);
+    transports[0]?.emitStatus({ print: { print_status: "RUNNING", print_progress: 88 } }, "2026-08-24T12:10:00.000Z");
+
+    expect(await adapter.discoverDevices()).toHaveLength(0);
+    expect(adapter.listConfiguredPrinters()).toHaveLength(0);
   });
 
   it("marks stale and unavailable states without presenting stale data as live", async () => {
@@ -397,6 +486,19 @@ function realStatusPayload() {
       subtask_name: "sanitized cube",
       task_id: "sanitized-task",
       firmware_version: "sanitized-fw"
+    }
+  };
+}
+
+function x2dActivePrintPayload() {
+  return {
+    print: {
+      print_status: "RUNNING",
+      print_progress: 64,
+      nozzle_temp: 215,
+      bed_temp: 61,
+      remaining_seconds: 1200,
+      project_name: "sanitized active print"
     }
   };
 }

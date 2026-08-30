@@ -5,6 +5,7 @@ import {
   discoverBambuPrinters,
   type BambuDiscoveredPrinterCandidate,
   type BambuPrinterConnectionInput,
+  type BambuPrinterReconfigurationInput,
   type BambuReadonlyAdapter,
   type BambuTransportFactory
 } from "@bpd/adapter-bambu-readonly";
@@ -16,7 +17,10 @@ import {
   toSseDeviceEventDto,
   type HealthDto,
   type RealPrinterCandidateDto,
-  type RealPrinterConnectionRequest
+  type RealPrinterConnectionRequest,
+  type RealPrinterDiscoveryDto,
+  type RealPrinterReconfigurationRequest,
+  type RealPrinterRemovalDto
 } from "@bpd/contracts";
 import { DeviceStateService } from "@bpd/device-core";
 import { getDashboardDiscoveryDescriptor } from "@bpd/discovery";
@@ -101,25 +105,28 @@ export async function buildDashboardServer(config: ServerConfig, options: Dashbo
   );
 
   server.get("/api/v1/real-printer-candidates", async (request) => {
-    const candidates = await discoverRealPrinters().catch(() => []);
-    discoveredCandidates.clear();
-    for (const candidate of candidates) {
-      discoveredCandidates.set(candidate.id, candidate);
+    try {
+      const candidates = await discoverRealPrinters();
+      discoveredCandidates.clear();
+      for (const candidate of candidates) {
+        discoveredCandidates.set(candidate.id, candidate);
+      }
+      return envelope({ discovery: toRealPrinterDiscoveryDto(candidates) }, request.id);
+    } catch {
+      discoveredCandidates.clear();
+      return envelope(
+        {
+          discovery: {
+            status: "failed",
+            candidates: [],
+            discoveryMethod: "mdns",
+            manualFallbackAvailable: true,
+            note: "Server-side discovery failed; manual host fallback remains available."
+          } satisfies RealPrinterDiscoveryDto
+        },
+        request.id
+      );
     }
-    return envelope(
-      {
-        discovery: {
-          candidates: candidates.map(toRealPrinterCandidateDto),
-          discoveryMethod: "mdns",
-          manualFallbackAvailable: true,
-          note:
-            candidates.length > 0
-              ? "Server-side mDNS discovery found sanitized printer candidates; Access Codes remain memory-only."
-              : "No server-side mDNS candidates found; use the manual host fallback."
-        }
-      },
-      request.id
-    );
   });
 
   server.post<{ Body: RealPrinterConnectionRequest }>("/api/v1/real-printers", async (request, reply) => {
@@ -130,6 +137,42 @@ export async function buildDashboardServer(config: ServerConfig, options: Dashbo
       const message = error instanceof Error ? error.message : "Invalid real-printer configuration.";
       return reply.code(400).send(envelope({ error: message }, request.id));
     }
+  });
+
+  server.patch<{ Params: { id: string }; Body: RealPrinterReconfigurationRequest }>(
+    "/api/v1/real-printers/:id",
+    async (request, reply) => {
+      try {
+        const printer = await realAdapter.reconfigurePrinter(
+          request.params.id,
+          toBambuReconfigurationInput(request.body, discoveredCandidates)
+        );
+        if (!printer) {
+          return reply.code(404).send(envelope({ error: "Real printer not found" }, request.id));
+        }
+        return envelope({ printer }, request.id);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Invalid real-printer reconfiguration.";
+        return reply.code(400).send(envelope({ error: message }, request.id));
+      }
+    }
+  );
+
+  server.delete<{ Params: { id: string } }>("/api/v1/real-printers/:id", async (request, reply) => {
+    const removed = await realAdapter.forgetPrinter(request.params.id);
+    if (!removed) {
+      return reply.code(404).send(envelope({ error: "Real printer not found" }, request.id));
+    }
+    deviceService.removeDevice(request.params.id);
+    discoveredCandidates.clear();
+    const removal: RealPrinterRemovalDto = {
+      id: request.params.id,
+      removed: true,
+      credentialMaterialCleared: true,
+      historyDeleted: false,
+      note: "Removed active real-printer configuration and memory-only credential material; normalized history was not deleted."
+    };
+    return envelope({ removal }, request.id);
   });
 
   server.get("/api/v1/health", async (request) =>
@@ -233,6 +276,19 @@ function toRealPrinterCandidateDto(candidate: BambuDiscoveredPrinterCandidate): 
   };
 }
 
+function toRealPrinterDiscoveryDto(candidates: BambuDiscoveredPrinterCandidate[]): RealPrinterDiscoveryDto {
+  return {
+    status: candidates.length > 0 ? "found" : "none",
+    candidates: candidates.map(toRealPrinterCandidateDto),
+    discoveryMethod: "mdns",
+    manualFallbackAvailable: true,
+    note:
+      candidates.length > 0
+        ? "Server-side mDNS discovery found sanitized printer candidates; Access Codes remain memory-only."
+        : "No server-side mDNS candidates found; use the manual host fallback."
+  };
+}
+
 function toBambuConnectionInput(
   body: RealPrinterConnectionRequest,
   discoveredCandidates: Map<string, BambuDiscoveredPrinterCandidate>
@@ -264,11 +320,47 @@ function toBambuConnectionInput(
   return input;
 }
 
+function toBambuReconfigurationInput(
+  body: RealPrinterReconfigurationRequest,
+  discoveredCandidates: Map<string, BambuDiscoveredPrinterCandidate>
+): BambuPrinterReconfigurationInput {
+  const candidate = body.candidateId ? discoveredCandidates.get(body.candidateId) : undefined;
+  if (body.candidateId && !candidate) {
+    throw new Error("Unknown real-printer discovery candidate. Run discovery again or use manual host fallback.");
+  }
+  const input: BambuPrinterReconfigurationInput = {
+    displayName: optionalBodyString(body.displayName) ?? "",
+    modelHint: optionalBodyString(body.modelHint) ?? "",
+    host: candidate?.host ?? optionalBodyString(body.host) ?? "",
+    serialNumber: optionalBodyString(body.serialNumber) ?? "",
+    accessCode: optionalBodyString(body.accessCode) ?? ""
+  };
+  const port = body.port ?? candidate?.port;
+  if (port !== undefined) {
+    input.port = port;
+  }
+  if (body.caCertificatePath) {
+    input.caCertificatePath = body.caCertificatePath;
+  }
+  if (body.tlsServerName) {
+    input.tlsServerName = body.tlsServerName;
+  }
+  if (body.tlsTrustProfile) {
+    input.tlsTrustProfile = requireTlsTrustProfile(body.tlsTrustProfile);
+  }
+  return input;
+}
+
 function requireBodyString(value: string | undefined, field: string): string {
   if (!value || value.trim() === "") {
     throw new Error(`Missing required real-printer field: ${field}.`);
   }
   return value.trim();
+}
+
+function optionalBodyString(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : undefined;
 }
 
 function requireTlsTrustProfile(value: string): NonNullable<BambuPrinterConnectionInput["tlsTrustProfile"]> {
