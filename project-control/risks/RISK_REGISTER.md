@@ -45,12 +45,12 @@
 
 ## R-014 — Standard-mode read-only status path may vary by firmware/model or become less accessible
 
-- **Description:** Although Bambu publicly states that printer status pushes remain available to third-party monitoring, the exact field set, authentication behavior, cadence, reconnect behavior or firmware enforcement may differ between A1 Mini and X2D or change over time. A technically successful connection may still expose too little stable data for a useful product.
+- **Description:** Although Bambu publicly states that printer status pushes remain available to third-party monitoring, the exact field set, authentication behavior, cadence, reconnect behavior or firmware enforcement may differ between A1 Mini and X2D or change over time. A technically successful connection may still expose too little stable data for a useful product. On 2026-08-30 the Product Owner reported that the current prototype could not connect to the X2D while that printer was actively printing; the cause is not yet verified and the finding must be investigated without collecting private evidence in the repository.
 - **Likelihood:** High
 - **Impact:** Critical
-- **Mitigation:** Treat M2 as a hard dual-device GO/NO-GO gate; test the Product Owner's current firmware on both devices; record a sanitized capability matrix and timing/reliability evidence; isolate the transport behind `adapter-bambu-readonly`; retain synthetic regression; stop before M3 if either device cannot meet the usefulness threshold without prohibited mechanisms.
+- **Mitigation:** Keep M2 blocked from acceptance while the X2D finding is unresolved; investigate only the approved standard-mode local read-only path; use sanitized/mock regression tests for code changes; validate the Product Owner's current firmware on both devices; record a sanitized capability matrix and timing/reliability evidence; isolate the transport behind `adapter-bambu-readonly`; retain synthetic regression internally; stop before M3 if either device cannot meet the usefulness threshold without prohibited mechanisms.
 - **Owner:** Architecture / Product owner
-- **Status:** Open — primary M2 feasibility risk
+- **Status:** Open — observed X2D active-print connection failure; remediation/verification pending
 - **Related milestone:** M2
 
 ## R-015 — Real LAN Access Code or private device evidence could leak during M2 debugging
