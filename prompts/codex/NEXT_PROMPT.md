@@ -1,274 +1,147 @@
 # Next Codex Task
 
 ## Status
-QUEUED — Product Owner authorized M2 implementation on 2026-08-24. This is the executable M2 contract.
+QUEUED — M2 remediation required before further Product Owner real-device validation.
 
 ## Milestone
 M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype
 
 ## Objective
-Extend the accepted M1 architecture with a dedicated real Bambu read-only adapter and controlled local onboarding so the dashboard can prove or disprove useful, stable monitoring on the Product Owner's A1 Mini and X2D under `project-control/specs/M2_REAL_DEVICE_VALIDATION.md`.
+Remediate the Product Owner's 2026-08-30 M2 readiness findings on draft PR #3 before asking for further detailed real-device validation.
 
-M2 is a hard real-device gate. Synthetic evidence alone cannot pass the milestone.
+The authoritative feedback for this task is:
+
+- `project-control/feedback/M2_PRODUCT_OWNER_FEEDBACK_2026-08-30.md`
+
+M2 remains a real-device gate. This task does not authorize M2 acceptance, merge, M3 work, frontend modernization, printer control, or any security/interface expansion.
 
 ## Read first
-Read only the minimum authoritative context needed for this task:
+Read only the minimum context required:
 
 1. `project-control/status/CURRENT_STATUS.md`
-2. `project-control/specs/M2_REAL_DEVICE_VALIDATION.md`
-3. `project-control/reviews/M2_PLANNING_REVIEW.md`
-4. `prompts/codex/M2_IMPLEMENTATION_PROPOSAL.md`
+2. `project-control/feedback/M2_PRODUCT_OWNER_FEEDBACK_2026-08-30.md`
+3. `project-control/specs/M2_REAL_DEVICE_VALIDATION.md`
+4. `project-control/specs/OPERATING_MODEL.md`
 5. `project-control/specs/M1_ARCHITECTURE.md`
-6. `project-control/specs/V1_FEATURE_SCOPE.md`
-7. `project-control/specs/OPERATING_MODEL.md`
-8. `project-control/specs/SECURITY_PRIVACY_GUARDRAILS.md`
-9. `project-control/specs/MILESTONE_PLAN.md`
-10. `project-control/decisions/DECISION_LOG.md` — especially DEC-006 and DEC-010 through DEC-016
-11. `project-control/risks/RISK_REGISTER.md` — especially R-013 through R-016
-12. `docs/architecture/MODULE_MAP.md` and affected module-local README/contracts/tests only as needed.
+6. `project-control/decisions/DECISION_LOG.md` — especially DEC-006, DEC-010 through DEC-015
+7. `project-control/risks/RISK_REGISTER.md` — especially R-014 through R-016
+8. affected onboarding/adapter/server/web module documentation, contracts, and focused tests.
 
-Do not recursively ingest unrelated implementation areas.
+Do not recursively ingest unrelated M3+ implementation areas.
 
-## Branch / PR first
-Before substantial implementation:
+## Required remediation
 
-1. Start from the current `main` tip.
-2. Create a dedicated M2 milestone branch using the repository's existing naming conventions.
-3. Open a **draft PR** targeting `main`.
-4. Keep the PR unmerged. Product Owner acceptance and merge authorization are separate future decisions.
+### 1. Automatic server-side discovery in normal onboarding
 
-Record the branch and draft PR in project-control state once they exist.
+The current user-triggered Discover button is insufficient as the primary UX.
 
-## Authorized interface
-Implement/evaluate only the approved **standard-mode local MQTTS read-only status path** for printer-originated status information that can be consumed under the project's approved constraints.
+Implement bounded **automatic server-side printer discovery** when the fleet/onboarding experience is entered and no suitable configured real-printer state makes a scan unnecessary. Provide a visible **rescan/refresh** action as a secondary control.
 
-The M2 implementation must operate without:
-- printer Developer Mode;
-- Fleet Hub hardware;
-- Bambu partner/private authorization;
-- Bambu cloud-client impersonation;
-- printer write/control commands;
-- disabled or weakened TLS/certificate/security checks;
-- authorization/signature bypasses;
-- copied proprietary Bambu network-plugin implementation.
+The UI must expose clear sanitized states for:
+- searching;
+- candidates found;
+- no candidates found;
+- discovery failed/manual fallback available.
 
-If useful read monitoring cannot be established without a prohibited mechanism, stop and report the boundary. Do not improvise around vendor security or authorization controls.
+Do not implement browser-side LAN scanning.
 
-## Required implementation
+For a discovered candidate, prefill/use only sanitized candidate data and ask the Product Owner for the minimum additional information required for the approved local read connection, such as the LAN Access Code and any unavoidable metadata discovery does not safely/reliably provide.
 
-### 1. Dedicated real read-only adapter
-Create a bounded package equivalent to `packages/adapter-bambu-readonly` implementing the existing read-only adapter/domain contracts.
+Preserve reliable manual IP/hostname + minimum required access metadata fallback.
 
-It owns:
-- local MQTTS status-consumption transport;
-- connection lifecycle, bounded reconnect and backoff;
-- parser/normalizer for required observed status fields;
-- capability discovery/mapping;
-- source timestamps, freshness and quality;
-- credential-free health diagnostics;
-- no write/control contract or arbitrary passthrough.
+### 2. Edit / reconfigure configured real printers
 
-Vendor/raw payload shapes remain adapter-internal and must not leak into product-domain, persistence, API or UI contracts.
+Add a safe user-facing flow to edit/reconfigure an existing real-printer onboarding entry when details were entered incorrectly or changed.
 
-### 2. M2 onboarding/configuration
-Add only the minimum onboarding needed to connect the Product Owner's real printers.
+Requirements:
+- allow non-secret configuration fields to be corrected;
+- never return/display the existing LAN Access Code;
+- changing credentials requires the user to supply a new Access Code;
+- preserve process-memory-only credential policy unless separately authorized;
+- reconnect cleanly using the corrected configuration;
+- no raw/private connection details in normal diagnostics.
 
-Preferred flow:
-- server-side LAN discovery where safely feasible;
-- user selects a sanitized candidate;
-- request LAN Access Code only when required;
-- reliable manual IP/hostname plus minimum required access metadata fallback.
+### 3. Remove configured real printers
 
-Perfect zero-configuration discovery is not an M2 acceptance requirement. A reliable manual fallback is mandatory.
+Add a clear remove/delete action for configured real printers with an appropriate confirmation.
 
-### 3. Credential handling
-For M2 real-device validation, default real LAN Access Codes to **process-memory-only / never persisted**.
+Removal must:
+- disconnect/stop the adapter cleanly;
+- remove the printer from active onboarding/runtime configuration;
+- clear associated process-memory credential material and transient discovery/onboarding state;
+- remove or safely reconcile associated current-state registration without leaking private values;
+- not introduce destructive history deletion unless separately required/authorized. Historical normalized observations, if retained, must remain credential-free and clearly attributable without requiring private identifiers.
+
+### 4. Real-printer-focused product UX; preserve synthetic regression internally
+
+The Product Owner no longer wants synthetic printer cards mixed into the normal real-printer product experience.
+
+Do **not** delete the deterministic synthetic adapter/scenario infrastructure: it remains an approved permanent regression/test path under the existing architecture and M2 contract.
+
+Instead:
+- normal product/fleet view should default to real-printer operation once real onboarding is in use;
+- synthetic devices should be hidden/disabled from the ordinary user-facing fleet by default;
+- keep an explicit development/test/diagnostic mechanism for synthetic scenarios and automated tests;
+- preserve all existing deterministic synthetic regression coverage.
+
+This is not authorization for broad UI modernization.
+
+### 5. X2D connection while actively printing
+
+The Product Owner reports a local real-device finding: the X2D could not be connected while the printer was actively printing. A1 Mini basic telemetry had connected successfully in earlier testing.
+
+Investigate and harden the connection lifecycle using only the already-approved **standard-mode local MQTTS read-only** interface.
 
 Rules:
-- server-side only;
-- never browser storage;
-- never URLs/query strings;
-- never logs or normal diagnostics;
-- never repository content, issue/PR text, generated docs, committed fixtures or public CI secrets;
-- never echoed by local validation commands.
+- do not request or commit private printer identifiers/credentials/raw payloads;
+- do not use Developer Mode;
+- do not use Fleet Hub;
+- do not impersonate Bambu cloud clients;
+- do not use private/partner authorization;
+- do not execute printer write/control commands;
+- do not weaken/disable TLS, authentication, authorization, signatures, or other security controls;
+- do not copy proprietary Bambu implementation code.
 
-Do not persist a real Access Code unless the Product Owner separately requests it and the already-approved `SecretStore` boundary can be used without inventing new key-management architecture.
+Use mocked/sanitized tests to cover any code-path remediation. If reliable X2D connection during printing cannot be achieved under the approved path, document the sanitized technical boundary and stop rather than bypassing it.
 
-### 4. Normalized real telemetry
-Attempt and classify the M2 capability matrix for **both** A1 Mini and X2D.
+### 6. Tests and documentation
 
-Core target evidence:
-- availability/connectivity;
-- printer lifecycle / active state;
-- printing versus idle;
-- useful print progress during a real print;
-- nozzle temperature where exposed;
-- bed temperature where exposed;
-- timestamps/freshness/quality;
-- state transitions sufficient to support future observed print-session history.
+Add or update focused automated tests for at least:
+- automatic discovery initiation;
+- rescan/refresh;
+- no-candidate and discovery-failure fallback states;
+- edit/reconfigure flow;
+- credential replacement/redaction behavior;
+- remove printer and adapter cleanup;
+- synthetic-device suppression/default product behavior while preserving synthetic regression mode;
+- X2D-relevant connection lifecycle behavior that can be represented with mocked/sanitized transports;
+- absence of printer write/control surface.
 
-Additional fields such as chamber temperature, ETA, layer counts, motion/speed, fans, HMS, AMS/filament/RFID, network telemetry and job metadata may be normalized only when reliably observed. Do not fabricate defaults for unsupported or missing data.
+Run the repository's existing validation suite including build/tests, Playwright E2E, documentation/license checks, and Docker/Compose CI validation as applicable.
 
-### 5. Freshness and reliability
-Implement and validate:
-- initial connection;
-- observed normal update cadence;
-- stale detection;
-- offline/unavailable detection;
-- bounded reconnect/recovery;
-- recovery without manual dashboard-process restart after ordinary interruption;
-- dashboard server restart/reconnect behavior;
-- simultaneous A1 Mini + X2D monitoring;
-- no presentation of stale data as live.
+Update affected module docs/runbooks/contracts and reconcile:
+- `project-control/feedback/M2_REAL_DEVICE_VALIDATION_EVIDENCE.md`;
+- `project-control/status/CURRENT_STATUS.md`;
+- `project-control/handoffs/CHATGPT_HANDOVER.md`;
+- `project-control/risks/RISK_REGISTER.md` if the X2D finding changes R-014/R-016 assessment;
+- PR #3 description/evidence if stale.
 
-Do not assume synthetic timing represents real-printer cadence. Base thresholds on observed behavior with sensible safety bounds.
+## Retest gate
 
-### 6. Persistence
-Persist normalized real observations through the existing persistence boundaries. Do not persist raw vendor payloads or credentials.
+Do not claim M2 ready for detailed Product Owner testing until the remediation is implemented and automated validation passes.
 
-Prove enough normalized state/event persistence to support future observed print-session history without building the later M4 job-history product.
+The next Product Owner hands-on retest should be able to verify, without editing repository secret files:
 
-### 7. UI
-Extend the accepted M1 UI only as needed to:
-- configure/select/connect real printers;
-- distinguish real versus synthetic sources;
-- display validated real state/capabilities;
-- display stale/offline/reconnecting/recovered semantics;
-- expose credential-free diagnostics.
+1. app/server automatically discovers compatible printers when entering onboarding;
+2. Product Owner selects a candidate and supplies only required remaining data/Access Code;
+3. an incorrectly configured printer can be edited/reconfigured;
+4. a configured printer can be removed and re-added;
+5. normal fleet UI is focused on real printers rather than synthetic demo devices;
+6. A1 Mini remains connectable;
+7. X2D can connect while printing, or the approved-path limitation is surfaced clearly and safely.
 
-**Do not redesign or modernize the frontend in M2.** The Product Owner explicitly deferred that work.
+## PR / authority
 
-### 8. Synthetic regression
-Synthetic mode remains a permanent deterministic path. Existing M1 synthetic scenarios and prior validated behavior must continue to work.
+Continue only on existing branch `m2/real-device-readonly-prototype` and draft PR #3.
 
-## Automated/offline tests
-Add at minimum:
-- adapter contract tests using project-authored synthetic/sanitized fixture messages;
-- parser/normalizer tests for partial, malformed, missing and unknown fields;
-- reconnect/backoff/freshness tests with mocked transport;
-- credential/log-redaction tests;
-- tests proving the M2 adapter/API surface exposes no printer write/control capability;
-- synthetic regression coverage;
-- existing build/Vitest validation;
-- Playwright E2E;
-- TypeDoc/source-documentation checks;
-- dependency/license checks;
-- Docker/Docker Compose validation.
-
-All new original source files must follow the repository MPL-2.0 source-file notice policy. Preserve third-party license/provenance and use only commercially safe, MPL-compatible dependencies. Any significant new dependency is a stop condition unless already covered by an approved decision.
-
-## Local real-device validation
-Real-device validation is explicitly authorized only on the Product Owner's LAN and only for the Product Owner's A1 Mini and X2D under this contract.
-
-Provide a documented local-only validation path that:
-- accepts required connection information through a non-committed local mechanism;
-- never echoes LAN Access Codes;
-- validates each printer individually and both concurrently;
-- exercises real active-print progress where practical;
-- exercises stale/offline/reconnect/recovery scenarios where practical;
-- emits only sanitized capability/timing/pass-fail output suitable for repository evidence.
-
-Do not run real-device validation in public/shared CI.
-
-## Repository evidence policy
-Permitted committed evidence includes:
-- sanitized capability matrices;
-- aggregate timing/cadence measurements;
-- pass/fail validation tables;
-- redacted error categories;
-- firmware/model-family notes;
-- project-authored synthetic reproductions containing no private live-device material.
-
-Do not commit:
-- LAN Access Codes or other credentials;
-- serial numbers, MAC addresses, local IPs or account identifiers;
-- raw MQTT/device payload dumps;
-- packet captures containing private device traffic;
-- private printer screenshots/media;
-- unsanitized logs or shell output containing identifying/private material.
-
-If raw local debugging evidence is temporarily required, keep it outside the repository, minimize retention, and convert findings to sanitized summaries or project-authored synthetic fixtures before commit.
-
-## Required M2 evidence
-For each A1 Mini and X2D classify attempted capabilities as:
-- `proven-live`;
-- `proven-static`;
-- `unavailable`;
-- `unreliable`;
-- `not-tested`.
-
-Also record sanitized evidence for:
-- firmware version;
-- initial connection behavior;
-- observed update cadence/latency;
-- real-print progress behavior;
-- stale/offline/reconnect behavior;
-- relevant print-session transitions;
-- simultaneous dual-device behavior;
-- model/firmware limitations;
-- credential/redaction controls.
-
-## GO / CONDITIONAL GO / NO-GO gate
-The implementation completion report must recommend exactly one disposition.
-
-### GO
-Both A1 Mini and X2D support stable, useful real read-only monitoring under approved constraints, including availability, current operating/print state, useful progress during printing, meaningful temperature/status telemetry, safe freshness/reconnect behavior, and simultaneous normalized monitoring.
-
-### CONDITIONAL GO
-Only a non-core/model-specific gap remains and the remaining telemetry still supports a useful product. State the exact V1 claim reduction that requires Product Owner approval.
-
-### NO-GO / reassessment required
-Either target printer cannot provide stable useful monitoring, or required data depends on a prohibited interface/security mechanism. Stop downstream implementation and return for Product Owner reassessment. Do not begin M3.
-
-## Explicit non-goals / prohibited scope
-Do not implement or test:
-- any printer write/control command;
-- Developer Mode;
-- Fleet Hub;
-- cloud-client impersonation;
-- camera/video initiation;
-- printer file operations;
-- AMS physical controls;
-- Home Assistant or other integrations;
-- M3 widgets/presets;
-- frontend modernization/redesign;
-- maintenance/notification product features;
-- backup/update features;
-- M3+ scope.
-
-## Stop conditions
-Stop and surface the issue before proceeding if work would require:
-- Developer Mode;
-- weakening TLS/vendor security;
-- private Bambu credentials/SDK/partner authorization;
-- cloud-client authentication impersonation;
-- authorization/signature bypass;
-- write/control traffic;
-- proprietary implementation copying;
-- major architecture/framework/datastore change;
-- significant unapproved dependency/infrastructure addition;
-- persisted real credentials requiring new key-management architecture;
-- committing private live-device material;
-- M3+ scope;
-- any other material architecture/security/privacy change not already approved.
-
-## Completion / PR evidence
-Before requesting technical/Product Owner review, the M2 draft PR must include or link to:
-- exact branch and final head SHA;
-- automated validation results;
-- clean-checkout and Docker regression evidence;
-- sanitized A1 Mini capability matrix;
-- sanitized X2D capability matrix;
-- simultaneous dual-device evidence;
-- freshness/stale/offline/reconnect evidence;
-- real print-session transition/progress evidence where practical;
-- credential-handling/redaction evidence;
-- known firmware/model limitations;
-- updated module documentation/source docs;
-- updated risks, feedback notes, `CURRENT_STATUS.md`, `CHATGPT_HANDOVER.md`, and this execution gate as appropriate;
-- technical GO / CONDITIONAL GO / NO-GO recommendation.
-
-Milestone completion still requires Product Owner hands-on prototype validation, feedback reconciliation, explicit M2 gate decision, and separate merge authorization.
-
-## Authority
-This task is authorized for Codex execution. It authorizes implementation and controlled local real-device validation only within the boundaries above. It does **not** authorize M2 acceptance, merge, M3 work, printer controls, or any material architecture/security expansion.
+Keep PR #3 draft and unmerged. Product Owner acceptance and merge authorization remain separate decisions. Do not begin M3.
