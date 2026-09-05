@@ -70,12 +70,12 @@ M2 remains the approved standard-mode local MQTTS read-only path unless Product 
 
 M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype.
 
-**Current state: SSDP remediation implemented locally; awaiting PR-head CI evidence, technical review and Product Owner discovery retest.**
+**Current state: SSDP remediation implemented; PR-head CI passed; awaiting technical review and Product Owner discovery retest.**
 
 Draft PR #3 remains open, draft and unmerged on branch `m2/real-device-readonly-prototype`. Merge is not authorized. M3 remains blocked.
 
 Executable gate:
-- `prompts/codex/NEXT_PROMPT.md` — HOLD pending review/retest.
+- `prompts/codex/NEXT_PROMPT.md` — HOLD pending technical review / Product Owner retest.
 
 Latest research:
 - `project-control/reviews/M2_DISCOVERY_INTERFACE_RESEARCH_2026-08-30.md`
@@ -103,7 +103,7 @@ Prior remediation head `8a5a09ddabd548720b0da2500ab1e3fc078cc3c1` passed GitHub 
 Local SSDP remediation validation on 2026-09-05:
 - `npm run validate` passed: TypeScript build, web build, Vitest `36` tests, TypeDoc generation and dependency-license inventory.
 - `npm run test:e2e` passed: Playwright `15` tests across desktop, tablet and mobile.
-- `npm run docker:validate` could not run locally because Docker is unavailable on the Codex workstation (`docker` command not found); use GitHub Actions after push for Docker/Compose evidence.
+- `npm run docker:validate` could not run locally because Docker is unavailable on the Codex workstation (`docker` command not found); GitHub Actions Docker/Compose validation passed after push.
 - Real-device validation was not run because this Codex environment is not the Product Owner LAN with locally supplied credentials.
 
 A1 Mini earlier connected through the approved read-only path and exposed limited basic live telemetry (nozzle temperature + Wi-Fi/network data). Do not overstate this as full validation.
@@ -135,6 +135,6 @@ The Product Owner is open to Bambu Network Plugin or cloud integration if approp
 
 ## Next action
 
-No further product implementation is currently authorized. The current branch/PR needs PR-head CI evidence, technical review and Product Owner discovery retest of automatic SSDP discovery / Rescan before detailed M2 validation resumes.
+No further product implementation is currently authorized. The current branch/PR needs technical review and Product Owner discovery retest of automatic SSDP discovery / Rescan before detailed M2 validation resumes.
 
 Do not ask Product Owner to run the full Excel M2 matrix until discovery is working or a clear network-specific multicast limitation is established. Do not begin M3. Never merge PR #3 without explicit Product Owner authorization.

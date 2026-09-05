@@ -1,7 +1,7 @@
 # Next Codex Task
 
 ## Status
-HOLD — SSDP discovery remediation has been implemented locally on the active M2 PR branch. Await PR-head CI evidence, independent technical review and Product Owner discovery retest before authorizing more product implementation.
+HOLD — SSDP discovery remediation has been implemented on the active M2 PR branch and PR-head CI has passed. Await independent technical review and Product Owner discovery retest before authorizing more product implementation.
 
 ## Milestone
 M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype
@@ -25,7 +25,8 @@ Validated in the Codex environment on 2026-09-05:
 
 - `npm run validate` — passed: TypeScript build, web build, Vitest `36` tests, TypeDoc generation and dependency-license inventory.
 - `npm run test:e2e` — passed: Playwright `15` tests across desktop, tablet and mobile.
-- `npm run docker:validate` — not runnable locally because Docker is unavailable on the Codex workstation (`docker` command not found); use GitHub Actions after push for Docker/Compose evidence.
+- `npm run docker:validate` — not runnable locally because Docker is unavailable on the Codex workstation (`docker` command not found); GitHub Actions Docker/Compose validation passed after push.
+- PR-head GitHub Actions after the SSDP remediation push passed fresh-checkout validation, browser E2E and Docker Compose validation.
 - Local real-device validation was not run because this Codex environment is not the Product Owner LAN with locally supplied credentials.
 
 ## Review / Retest Gate

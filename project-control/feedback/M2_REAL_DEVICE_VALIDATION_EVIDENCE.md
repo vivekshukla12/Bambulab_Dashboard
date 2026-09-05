@@ -38,7 +38,8 @@ Validated in the Codex environment on 2026-09-05 after SSDP discovery remediatio
 - `npm run test:e2e` — passed: Playwright `15` tests across desktop, tablet and mobile.
 - Adapter discovery regression now uses mocked/sanitized SSDP packets only and covers representative response parsing, NOTIFY alive parsing, byebye/unrelated-service filtering, Bambu service-type matching, candidate sanitization, deduplication, no-candidate timeout and socket failure fallback.
 - Server/browser regressions continue to cover automatic scan initiation, Rescan, sanitized candidate DTOs without private endpoint fields, manual fallback, edit/reconfigure, remove and explicit synthetic regression mode.
-- Local `npm run docker:validate` — not runnable in the Codex workstation because Docker is unavailable (`docker` command not found); GitHub Actions Docker/Compose evidence must be checked after the branch is pushed.
+- Local `npm run docker:validate` — not runnable in the Codex workstation because Docker is unavailable (`docker` command not found); GitHub Actions Docker/Compose validation passed after push.
+- PR-head GitHub Actions after the SSDP remediation push passed fresh-checkout validation, browser E2E and Docker Compose validation.
 - Local real-device validation was not run because this Codex environment is not the Product Owner LAN with locally supplied credentials.
 
 ## A1 Mini Capability Matrix
