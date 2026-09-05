@@ -5,10 +5,13 @@ import { Buffer } from "node:buffer";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createBambuReadonlyAdapter,
+  discoverBambuPrinters,
   normalizeBambuStatusPayload,
+  parseBambuSsdpCandidate,
   parseBambuStatusPayload,
   type BambuMqttsTransportConfig,
   type BambuMqttsStatusTransport,
+  type BambuSsdpDiscoverySocket,
   type BambuStatusMessage,
   type BambuTransportState
 } from "./index.js";
@@ -82,6 +85,65 @@ class ActivePrintFirstTransport extends MockTransport {
     this.starts += 1;
     this.emitStatus(x2dActivePrintPayload());
     this.emitState("connected");
+  }
+}
+
+class MockSsdpSocket implements BambuSsdpDiscoverySocket {
+  readonly errorListeners = new Set<(error: Error) => void>();
+  readonly messageListeners = new Set<(message: Buffer, remoteInfo: { address: string }) => void>();
+  readonly sends: Array<{ address: string; message: Buffer; port: number }> = [];
+  boundPort?: number;
+  closed = false;
+  loopback?: boolean;
+  sendError?: Error;
+  ttl?: number;
+
+  bind(port: number, callback: () => void): void {
+    this.boundPort = port;
+    callback();
+  }
+
+  close(): void {
+    this.closed = true;
+  }
+
+  on(event: "message", listener: (message: Buffer, remoteInfo: { address: string }) => void): this {
+    if (event === "message") {
+      this.messageListeners.add(listener);
+    }
+    return this;
+  }
+
+  once(event: "error", listener: (error: Error) => void): this {
+    if (event === "error") {
+      this.errorListeners.add(listener);
+    }
+    return this;
+  }
+
+  send(message: Buffer, port: number, address: string, callback: (error: Error | null) => void): void {
+    this.sends.push({ address, message, port });
+    callback(this.sendError ?? null);
+  }
+
+  setMulticastLoopback(enabled: boolean): void {
+    this.loopback = enabled;
+  }
+
+  setMulticastTTL(ttl: number): void {
+    this.ttl = ttl;
+  }
+
+  emitMessage(message: string, address = "192.0.2.42"): void {
+    for (const listener of this.messageListeners) {
+      listener(Buffer.from(message, "utf8"), { address });
+    }
+  }
+
+  emitError(): void {
+    for (const listener of this.errorListeners) {
+      listener(new Error("synthetic SSDP socket failure"));
+    }
   }
 }
 
@@ -422,6 +484,114 @@ describe("BambuReadonlyAdapter", () => {
   });
 });
 
+describe("Bambu SSDP discovery", () => {
+  it("parses representative SSDP responses into internal candidates without exposing raw identifiers", () => {
+    const candidate = parseBambuSsdpCandidate(ssdpResponse({ friendlyName: "Workshop A1 Mini 00M09A341234567" }), {
+      discoveredAt: "2026-08-30T16:00:00.000Z",
+      idFactory: () => "fixed-id",
+      remoteAddress: "192.0.2.42"
+    });
+
+    expect(candidate).toMatchObject({
+      id: "bambu-ssdp-fixed-id",
+      displayName: "Workshop A1 Mini [redacted]",
+      modelHint: "A1 Mini",
+      host: "192.0.2.42",
+      port: 8883,
+      source: "ssdp",
+      discoveredAt: "2026-08-30T16:00:00.000Z",
+      requiresAccessCode: true
+    });
+    expect(candidate?.endpointHint).toContain("urn:bambulab-com:device:3dprinter:1");
+    expect(candidate?.endpointHint).not.toContain("192.0.2.42");
+    expect(JSON.stringify(candidate)).not.toContain("00M09A341234567");
+  });
+
+  it("parses Bambu SSDP NOTIFY alive messages and ignores byebye/unrelated services", () => {
+    const alive = parseBambuSsdpCandidate(
+      ssdpNotify({ friendlyName: "Studio X2D", model: "X2D", nts: "ssdp:alive" }),
+      {
+        idFactory: () => "notify-id",
+        remoteAddress: "192.0.2.43"
+      }
+    );
+    const byebye = parseBambuSsdpCandidate(ssdpNotify({ nts: "ssdp:byebye" }));
+    const unrelated = parseBambuSsdpCandidate(ssdpResponse({ serviceType: "upnp:rootdevice" }));
+
+    expect(alive?.displayName).toBe("Studio X2D");
+    expect(alive?.modelHint).toBe("X2D");
+    expect(byebye).toBeUndefined();
+    expect(unrelated).toBeUndefined();
+  });
+
+  it("sends bounded M-SEARCH requests, filters Bambu service responses and deduplicates candidates", async () => {
+    vi.useFakeTimers();
+    const sockets: MockSsdpSocket[] = [];
+    const discovery = discoverBambuPrinters({
+      timeoutMs: 100,
+      now: fixedNow,
+      ssdpSocketFactory: () => {
+        const socket = new MockSsdpSocket();
+        sockets.push(socket);
+        return socket;
+      }
+    });
+    const socket = sockets[0];
+    expect(socket?.boundPort).toBe(0);
+    expect(socket?.ttl).toBe(2);
+    expect(socket?.loopback).toBe(false);
+    expect(socket?.sends[0]?.address).toBe("239.255.255.250");
+    expect(socket?.sends[0]?.port).toBe(1900);
+    expect(socket?.sends[0]?.message.toString("utf8")).toContain("ST: urn:bambulab-com:device:3dprinter:1");
+
+    socket?.emitMessage(ssdpResponse({ friendlyName: "Workshop A1 Mini", locationHost: "192.0.2.42" }));
+    socket?.emitMessage(ssdpResponse({ friendlyName: "Workshop A1 Mini", locationHost: "192.0.2.42" }));
+    socket?.emitMessage(ssdpResponse({ serviceType: "upnp:rootdevice", locationHost: "192.0.2.99" }));
+    await vi.advanceTimersByTimeAsync(101);
+
+    const candidates = await discovery;
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.displayName).toBe("Workshop A1 Mini");
+    expect(candidates[0]?.host).toBe("192.0.2.42");
+    expect(socket?.closed).toBe(true);
+  });
+
+  it("returns no candidates after an SSDP timeout while keeping manual fallback possible", async () => {
+    vi.useFakeTimers();
+    const sockets: MockSsdpSocket[] = [];
+    const discovery = discoverBambuPrinters({
+      timeoutMs: 100,
+      ssdpSocketFactory: () => {
+        const socket = new MockSsdpSocket();
+        sockets.push(socket);
+        return socket;
+      }
+    });
+
+    await vi.advanceTimersByTimeAsync(101);
+
+    await expect(discovery).resolves.toEqual([]);
+    expect(sockets[0]?.closed).toBe(true);
+  });
+
+  it("reports socket failures as discovery failures without raw socket details", async () => {
+    const sockets: MockSsdpSocket[] = [];
+    const discovery = discoverBambuPrinters({
+      timeoutMs: 100,
+      ssdpSocketFactory: () => {
+        const socket = new MockSsdpSocket();
+        sockets.push(socket);
+        return socket;
+      }
+    });
+
+    sockets[0]?.emitError();
+
+    await expect(discovery).rejects.toThrow("Server-side SSDP discovery failed.");
+    expect(sockets[0]?.closed).toBe(true);
+  });
+});
+
 describe("Bambu status parser and normalizer", () => {
   it("normalizes observed print progress and temperatures", () => {
     const device = normalizeBambuStatusPayload(parseBambuStatusPayload(JSON.stringify(realStatusPayload())), {
@@ -501,4 +671,38 @@ function x2dActivePrintPayload() {
       project_name: "sanitized active print"
     }
   };
+}
+
+function ssdpResponse(options: {
+  friendlyName?: string;
+  locationHost?: string;
+  model?: string;
+  serviceType?: string;
+} = {}): string {
+  const serviceType = options.serviceType ?? "urn:bambulab-com:device:3dprinter:1";
+  const lines = [
+    "HTTP/1.1 200 OK",
+    "CACHE-CONTROL: max-age=1800",
+    `LOCATION: http://${options.locationHost ?? "192.0.2.42"}:1900/description.xml`,
+    `ST: ${serviceType}`,
+    `USN: uuid:synthetic-printer::${serviceType}`,
+    options.friendlyName ? `friendly-name: ${options.friendlyName}` : undefined,
+    options.model ? `model: ${options.model}` : undefined
+  ].filter((line): line is string => Boolean(line));
+  return `${lines.join("\r\n")}\r\n\r\n`;
+}
+
+function ssdpNotify(options: { friendlyName?: string; model?: string; nts: string }): string {
+  const serviceType = "urn:bambulab-com:device:3dprinter:1";
+  const lines = [
+    "NOTIFY * HTTP/1.1",
+    "HOST: 239.255.255.250:1900",
+    `LOCATION: http://192.0.2.43:1900/description.xml`,
+    `NT: ${serviceType}`,
+    `NTS: ${options.nts}`,
+    `USN: uuid:synthetic-printer::${serviceType}`,
+    options.friendlyName ? `friendly-name: ${options.friendlyName}` : undefined,
+    options.model ? `model: ${options.model}` : undefined
+  ].filter((line): line is string => Boolean(line));
+  return `${lines.join("\r\n")}\r\n\r\n`;
 }

@@ -98,10 +98,10 @@ async function readInteractiveValidationConfig(discoverBambuPrinters) {
   const rl = createPromptInterface();
   try {
     console.error("M2 interactive validation keeps credentials in process memory only and does not write a config file.");
-    console.error("Attempting server-side mDNS discovery for sanitized local candidates...");
+    console.error("Attempting server-side SSDP discovery for sanitized local candidates...");
     const candidates = await discoverBambuPrinters().catch(() => []);
     if (candidates.length === 0) {
-      console.error("No sanitized mDNS candidates were found; manual host fallback remains available.");
+      console.error("No sanitized SSDP candidates were found; manual host fallback remains available.");
     } else {
       for (const [index, candidate] of candidates.entries()) {
         console.error(`${index + 1}. ${candidate.displayName} / ${candidate.modelHint} (${candidate.endpointHint})`);

@@ -119,9 +119,9 @@ export async function buildDashboardServer(config: ServerConfig, options: Dashbo
           discovery: {
             status: "failed",
             candidates: [],
-            discoveryMethod: "mdns",
+            discoveryMethod: "ssdp",
             manualFallbackAvailable: true,
-            note: "Server-side discovery failed; manual host fallback remains available."
+            note: "Server-side SSDP discovery failed; manual host fallback remains available."
           } satisfies RealPrinterDiscoveryDto
         },
         request.id
@@ -280,12 +280,12 @@ function toRealPrinterDiscoveryDto(candidates: BambuDiscoveredPrinterCandidate[]
   return {
     status: candidates.length > 0 ? "found" : "none",
     candidates: candidates.map(toRealPrinterCandidateDto),
-    discoveryMethod: "mdns",
+    discoveryMethod: "ssdp",
     manualFallbackAvailable: true,
     note:
       candidates.length > 0
-        ? "Server-side mDNS discovery found sanitized printer candidates; Access Codes remain memory-only."
-        : "No server-side mDNS candidates found; use the manual host fallback."
+        ? "Server-side SSDP discovery found sanitized printer candidates; Access Codes remain memory-only."
+        : "No server-side SSDP candidates found; use the manual host fallback."
   };
 }
 

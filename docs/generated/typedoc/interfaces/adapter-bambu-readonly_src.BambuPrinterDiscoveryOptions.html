@@ -12,11 +12,11 @@
 <li><a href="" aria-current="page">BambuPrinterDiscoveryOptions</a></li></ul>
 <h1>Interface BambuPrinterDiscoveryOptions</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>Options for bounded server-side printer discovery.</p>
+<div class="tsd-comment tsd-typography"><p>Options for bounded server-side SSDP printer discovery.</p>
 </div></section>
-<div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">BambuPrinterDiscoveryOptions</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#now">now</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">Date</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#servicetypes">serviceTypes</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#timeoutms">timeoutMs</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">BambuPrinterDiscoveryOptions</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#now">now</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">Date</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#searchtargets">searchTargets</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#servicetypes">serviceTypes</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#ssdpsocketfactory">ssdpSocketFactory</a><span class="tsd-signature-symbol">?:</span> <a href="../types/adapter-bambu-readonly_src.BambuSsdpSocketFactory.html" class="tsd-signature-type tsd-kind-type-alias">BambuSsdpSocketFactory</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#timeoutms">timeoutMs</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/vivekshukla12/Bambulab_Dashboard/blob/1b4ea7dde9fea25d5fa80ec2afbe33564ffd09d2/packages/adapter-bambu-readonly/src/index.ts#L150">adapter-bambu-readonly/src/index.ts:150</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/vivekshukla12/Bambulab_Dashboard/blob/086af417917f3bc673f751cbfc4f1357db9b3377/packages/adapter-bambu-readonly/src/index.ts#L151">adapter-bambu-readonly/src/index.ts:151</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -25,7 +25,9 @@
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading tsd-anchor-link" id="properties">Properties<a href="#properties" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-index-list"><a href="#now" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>now?</span></a>
+<a href="#searchtargets" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>search<wbr/>Targets?</span></a>
 <a href="#servicetypes" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>service<wbr/>Types?</span></a>
+<a href="#ssdpsocketfactory" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>ssdp<wbr/>Socket<wbr/>Factory?</span></a>
 <a href="#timeoutms" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>timeout<wbr/>Ms?</span></a>
 </div></section></div></details></section></section>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -35,17 +37,27 @@
 <h3 class="tsd-anchor-link" id="now"><code class="tsd-tag">Optional</code><span>now</span><a href="#now" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">now</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">Date</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/vivekshukla12/Bambulab_Dashboard/blob/1b4ea7dde9fea25d5fa80ec2afbe33564ffd09d2/packages/adapter-bambu-readonly/src/index.ts#L153">adapter-bambu-readonly/src/index.ts:153</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/vivekshukla12/Bambulab_Dashboard/blob/086af417917f3bc673f751cbfc4f1357db9b3377/packages/adapter-bambu-readonly/src/index.ts#L155">adapter-bambu-readonly/src/index.ts:155</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="searchtargets"><code class="tsd-tag">Optional</code><span>search<wbr/>Targets</span><a href="#searchtargets" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">searchTargets</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/vivekshukla12/Bambulab_Dashboard/blob/086af417917f3bc673f751cbfc4f1357db9b3377/packages/adapter-bambu-readonly/src/index.ts#L153">adapter-bambu-readonly/src/index.ts:153</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="servicetypes"><code class="tsd-tag">Optional</code><span>service<wbr/>Types</span><a href="#servicetypes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">serviceTypes</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/vivekshukla12/Bambulab_Dashboard/blob/1b4ea7dde9fea25d5fa80ec2afbe33564ffd09d2/packages/adapter-bambu-readonly/src/index.ts#L152">adapter-bambu-readonly/src/index.ts:152</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/vivekshukla12/Bambulab_Dashboard/blob/086af417917f3bc673f751cbfc4f1357db9b3377/packages/adapter-bambu-readonly/src/index.ts#L154">adapter-bambu-readonly/src/index.ts:154</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="ssdpsocketfactory"><code class="tsd-tag">Optional</code><span>ssdp<wbr/>Socket<wbr/>Factory</span><a href="#ssdpsocketfactory" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">ssdpSocketFactory</span><span class="tsd-signature-symbol">?:</span> <a href="../types/adapter-bambu-readonly_src.BambuSsdpSocketFactory.html" class="tsd-signature-type tsd-kind-type-alias">BambuSsdpSocketFactory</a></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/vivekshukla12/Bambulab_Dashboard/blob/086af417917f3bc673f751cbfc4f1357db9b3377/packages/adapter-bambu-readonly/src/index.ts#L156">adapter-bambu-readonly/src/index.ts:156</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="timeoutms"><code class="tsd-tag">Optional</code><span>timeout<wbr/>Ms</span><a href="#timeoutms" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">timeoutMs</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/vivekshukla12/Bambulab_Dashboard/blob/1b4ea7dde9fea25d5fa80ec2afbe33564ffd09d2/packages/adapter-bambu-readonly/src/index.ts#L151">adapter-bambu-readonly/src/index.ts:151</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/vivekshukla12/Bambulab_Dashboard/blob/086af417917f3bc673f751cbfc4f1357db9b3377/packages/adapter-bambu-readonly/src/index.ts#L152">adapter-bambu-readonly/src/index.ts:152</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -62,7 +74,7 @@
 <h3>On This Page</h3></summary>
 <div class="tsd-accordion-details">
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
-<div><a href="#now"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>now</span></a><a href="#servicetypes"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>service<wbr/>Types</span></a><a href="#timeoutms"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>timeout<wbr/>Ms</span></a></div></details></div></details></div>
+<div><a href="#now"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>now</span></a><a href="#searchtargets"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>search<wbr/>Targets</span></a><a href="#servicetypes"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>service<wbr/>Types</span></a><a href="#ssdpsocketfactory"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>ssdp<wbr/>Socket<wbr/>Factory</span></a><a href="#timeoutms"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>timeout<wbr/>Ms</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../index.html">Bambu Printer Dashboard M2 Contracts</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">

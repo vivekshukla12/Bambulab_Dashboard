@@ -143,14 +143,14 @@ describe("Fastify API", () => {
       {
         realPrinterDiscovery: async () => [
           {
-            id: "bambu-mdns-synthetic",
+            id: "bambu-ssdp-synthetic",
             displayName: "Product Owner A1 Mini",
             modelHint: "A1 Mini",
             host: "private-printer.local",
             port: 8883,
-            source: "mdns",
+            source: "ssdp",
             discoveredAt: "2026-08-24T20:00:00.000Z",
-            endpointHint: "_bambu._tcp.local candidate on port 8883",
+            endpointHint: "SSDP urn:bambulab-com:device:3dprinter:1 candidate; read-only MQTTS port 8883",
             requiresAccessCode: true
           } satisfies BambuDiscoveredPrinterCandidate
         ],
@@ -163,7 +163,8 @@ describe("Fastify API", () => {
 
     const candidatesResponse = await dashboard.server.inject({ method: "GET", url: "/api/v1/real-printer-candidates" });
     expect(candidatesResponse.statusCode).toBe(200);
-    expect(candidatesResponse.body).toContain("bambu-mdns-synthetic");
+    expect(candidatesResponse.json().data.discovery.discoveryMethod).toBe("ssdp");
+    expect(candidatesResponse.body).toContain("bambu-ssdp-synthetic");
     expect(candidatesResponse.body).toContain("Product Owner A1 Mini");
     expect(candidatesResponse.body).not.toContain("private-printer.local");
     expect(candidatesResponse.body).not.toContain("SYNTHETIC_ACCESS_CODE");
@@ -173,7 +174,7 @@ describe("Fastify API", () => {
       method: "POST",
       url: "/api/v1/real-printers",
       payload: {
-        candidateId: "bambu-mdns-synthetic",
+        candidateId: "bambu-ssdp-synthetic",
         displayName: "Product Owner A1 Mini",
         modelHint: "A1 Mini",
         serialNumber: "SYNTHETIC_SERIAL_FOR_TEST",

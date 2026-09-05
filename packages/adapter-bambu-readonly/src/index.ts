@@ -13,7 +13,7 @@ import type {
   TemperatureTelemetry
 } from "@bpd/domain";
 import { normalizeProgressPercent } from "@bpd/domain";
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { createSocket } from "node:dgram";
 import { readFile } from "node:fs/promises";
 import { Buffer } from "node:buffer";
@@ -36,9 +36,10 @@ const DEFAULT_RECONNECT_INITIAL_MS = 1_000;
 const DEFAULT_RECONNECT_MAX_MS = 30_000;
 const MQTT_CONNECT_TIMEOUT_MS = 10_000;
 const DEFAULT_DISCOVERY_TIMEOUT_MS = 2_500;
-const MDNS_MULTICAST_ADDRESS = "224.0.0.251";
-const MDNS_PORT = 5353;
-const BAMBULAB_MDNS_SERVICE_TYPES = ["_bambu._tcp.local", "_bblp._tcp.local", "_printer._tcp.local"];
+const SSDP_MULTICAST_ADDRESS = "239.255.255.250";
+const SSDP_PORT = 1900;
+const SSDP_MX_SECONDS = 1;
+const BAMBULAB_SSDP_SERVICE_TYPES = ["urn:bambulab-com:device:3dprinter:1"];
 
 /**
  * Runtime phase for one configured real printer connection.
@@ -138,19 +139,49 @@ export interface BambuDiscoveredPrinterCandidate {
   modelHint: string;
   host: string;
   port: number;
-  source: "mdns";
+  source: "ssdp";
   discoveredAt: string;
   endpointHint: string;
   requiresAccessCode: true;
 }
 
 /**
- * Options for bounded server-side printer discovery.
+ * Options for bounded server-side SSDP printer discovery.
  */
 export interface BambuPrinterDiscoveryOptions {
   timeoutMs?: number;
+  searchTargets?: string[];
   serviceTypes?: string[];
   now?: () => Date;
+  ssdpSocketFactory?: BambuSsdpSocketFactory;
+}
+
+/**
+ * Testable subset of a UDP socket used for server-side SSDP discovery.
+ */
+export interface BambuSsdpDiscoverySocket {
+  bind(port: number, callback: () => void): unknown;
+  close(): unknown;
+  on(event: "message", listener: (message: Buffer, remoteInfo: { address: string }) => void): unknown;
+  once(event: "error", listener: (error: Error) => void): unknown;
+  send(message: Buffer, port: number, address: string, callback: (error: Error | null) => void): unknown;
+  setMulticastLoopback(enabled: boolean): unknown;
+  setMulticastTTL(ttl: number): unknown;
+}
+
+/**
+ * UDP socket factory used by SSDP discovery. Production uses Node's standard-library UDP socket.
+ */
+export type BambuSsdpSocketFactory = () => BambuSsdpDiscoverySocket;
+
+/**
+ * Options for parsing one server-side SSDP response or NOTIFY packet into an internal candidate.
+ */
+export interface BambuSsdpCandidateParseOptions {
+  discoveredAt?: string;
+  idFactory?: () => string;
+  remoteAddress?: string;
+  serviceTypes?: string[];
 }
 
 /**
@@ -419,20 +450,23 @@ export function createBambuReadonlyAdapter(options?: BambuReadonlyAdapterOptions
 }
 
 /**
- * Attempts server-side mDNS discovery for Bambu-compatible local printer candidates.
+ * Attempts server-side SSDP discovery for Bambu-compatible local printer candidates.
  */
 export async function discoverBambuPrinters(
   options: BambuPrinterDiscoveryOptions = {}
 ): Promise<BambuDiscoveredPrinterCandidate[]> {
   const timeoutMs = positiveInteger(options.timeoutMs, DEFAULT_DISCOVERY_TIMEOUT_MS);
-  const serviceTypes = (options.serviceTypes ?? BAMBULAB_MDNS_SERVICE_TYPES).map(normalizeDnsName);
+  const serviceTypes = (options.serviceTypes ?? BAMBULAB_SSDP_SERVICE_TYPES).map(normalizeSsdpHeaderValue);
+  const searchTargets = (options.searchTargets ?? serviceTypes).map(normalizeSsdpHeaderValue);
   const discoveredAt = (options.now ?? (() => new Date()))().toISOString();
+  const socketFactory = options.ssdpSocketFactory ?? (() => createSocket({ type: "udp4", reuseAddr: true }));
 
-  return new Promise((resolve) => {
-    const socket = createSocket({ type: "udp4", reuseAddr: true });
-    const records: MdnsRecord[] = [];
+  return new Promise((resolve, reject) => {
+    const socket = socketFactory();
+    const candidates = new Map<string, BambuDiscoveredPrinterCandidate>();
     let settled = false;
-    const finish = () => {
+
+    const finish = (error?: Error) => {
       if (settled) {
         return;
       }
@@ -443,31 +477,51 @@ export async function discoverBambuPrinters(
       } catch {
         // Closing a UDP socket after a local discovery error has no evidence value.
       }
-      resolve(candidatesFromMdnsRecords(records, serviceTypes, discoveredAt));
-    };
-    const timer = setTimeout(finish, timeoutMs);
-
-    socket.on("message", (message) => {
-      records.push(...parseMdnsRecords(message));
-    });
-    socket.once("error", finish);
-    socket.bind(MDNS_PORT, () => {
-      try {
-        socket.addMembership(MDNS_MULTICAST_ADDRESS);
-        socket.setMulticastTTL(1);
-      } catch {
-        finish();
+      if (error) {
+        reject(new Error("Server-side SSDP discovery failed."));
         return;
       }
-      for (const serviceType of serviceTypes) {
-        const query = encodeMdnsPtrQuery(serviceType);
-        socket.send(query, MDNS_PORT, MDNS_MULTICAST_ADDRESS, (error) => {
-          if (error) {
-            finish();
-          }
-        });
+      resolve([...candidates.values()].sort((left, right) => left.displayName.localeCompare(right.displayName)));
+    };
+
+    const timer = setTimeout(() => finish(), timeoutMs);
+
+    socket.on("message", (message, remoteInfo) => {
+      const candidate = parseBambuSsdpCandidate(message, {
+        discoveredAt,
+        remoteAddress: remoteInfo.address,
+        serviceTypes
+      });
+      if (!candidate) {
+        return;
+      }
+      const existing = candidates.get(ssdpCandidateDedupeKey(candidate));
+      if (!existing || existing.displayName === "Discovered Bambu printer") {
+        candidates.set(ssdpCandidateDedupeKey(candidate), candidate);
       }
     });
+    socket.once("error", () => finish(new Error("SSDP socket error")));
+    try {
+      socket.bind(0, () => {
+        try {
+          socket.setMulticastTTL(2);
+          socket.setMulticastLoopback(false);
+        } catch {
+          finish(new Error("SSDP socket setup failed"));
+          return;
+        }
+        for (const searchTarget of searchTargets) {
+          const query = encodeSsdpSearch(searchTarget);
+          socket.send(query, SSDP_PORT, SSDP_MULTICAST_ADDRESS, (error) => {
+            if (error) {
+              finish(error);
+            }
+          });
+        }
+      });
+    } catch {
+      finish(new Error("SSDP socket setup failed"));
+    }
   });
 }
 
@@ -831,232 +885,158 @@ class PrinterSession {
   }
 }
 
-interface MdnsRecord {
-  name: string;
-  type: number;
-  ptr?: string;
-  srv?: {
-    port: number;
-    target: string;
-  };
-  txt?: Map<string, string>;
-  address?: string;
+interface ParsedSsdpMessage {
+  startLine: string;
+  headers: Map<string, string>;
 }
 
-interface MdnsReadNameResult {
-  name: string;
-  nextOffset: number;
+function encodeSsdpSearch(searchTarget: string): Buffer {
+  const normalizedSearchTarget = searchTarget.trim();
+  return Buffer.from(
+    [
+      "M-SEARCH * HTTP/1.1",
+      `HOST: ${SSDP_MULTICAST_ADDRESS}:${SSDP_PORT}`,
+      'MAN: "ssdp:discover"',
+      `MX: ${SSDP_MX_SECONDS}`,
+      `ST: ${normalizedSearchTarget}`,
+      "",
+      ""
+    ].join("\r\n"),
+    "utf8"
+  );
 }
 
-function encodeMdnsPtrQuery(serviceType: string): Buffer {
-  const header = Buffer.alloc(12);
-  header.writeUInt16BE(1, 4);
-  return Buffer.concat([header, encodeDnsName(serviceType), Buffer.from([0, 12, 0, 1])]);
-}
-
-function encodeDnsName(name: string): Buffer {
-  const labels = normalizeDnsName(name).split(".");
-  const chunks = labels.map((label) => Buffer.concat([Buffer.from([Buffer.byteLength(label)]), Buffer.from(label, "utf8")]));
-  return Buffer.concat([...chunks, Buffer.from([0])]);
-}
-
-function parseMdnsRecords(message: Buffer): MdnsRecord[] {
-  if (message.length < 12) {
-    return [];
+/**
+ * Parses one server-side SSDP response or NOTIFY packet into an internal candidate.
+ */
+export function parseBambuSsdpCandidate(
+  message: Buffer | string,
+  options: BambuSsdpCandidateParseOptions = {}
+): BambuDiscoveredPrinterCandidate | undefined {
+  const parsed = parseSsdpMessage(message);
+  if (!parsed || isSsdpByebye(parsed.headers)) {
+    return undefined;
   }
-  let offset = 12;
-  const questionCount = message.readUInt16BE(4);
-  const answerCount = message.readUInt16BE(6);
-  const authorityCount = message.readUInt16BE(8);
-  const additionalCount = message.readUInt16BE(10);
-
-  for (let index = 0; index < questionCount; index += 1) {
-    const questionName = readDnsName(message, offset);
-    offset = questionName.nextOffset + 4;
-    if (offset > message.length) {
-      return [];
-    }
+  const serviceTypes = (options.serviceTypes ?? BAMBULAB_SSDP_SERVICE_TYPES).map(normalizeSsdpHeaderValue);
+  const serviceType = matchingBambuSsdpServiceType(parsed.headers, serviceTypes);
+  if (!serviceType) {
+    return undefined;
   }
-
-  const records: MdnsRecord[] = [];
-  const recordCount = answerCount + authorityCount + additionalCount;
-  for (let index = 0; index < recordCount; index += 1) {
-    const recordName = readDnsName(message, offset);
-    offset = recordName.nextOffset;
-    if (offset + 10 > message.length) {
-      break;
-    }
-    const type = message.readUInt16BE(offset);
-    const rdLength = message.readUInt16BE(offset + 8);
-    const rdOffset = offset + 10;
-    const nextOffset = rdOffset + rdLength;
-    if (nextOffset > message.length) {
-      break;
-    }
-    const record: MdnsRecord = {
-      name: recordName.name,
-      type
-    };
-    if (type === 12) {
-      record.ptr = readDnsName(message, rdOffset).name;
-    } else if (type === 33 && rdLength >= 6) {
-      record.srv = {
-        port: message.readUInt16BE(rdOffset + 4),
-        target: readDnsName(message, rdOffset + 6).name
-      };
-    } else if (type === 16) {
-      record.txt = parseTxtRecord(message.subarray(rdOffset, nextOffset));
-    } else if (type === 1 && rdLength === 4) {
-      record.address = [...message.subarray(rdOffset, nextOffset)].join(".");
-    }
-    records.push(record);
-    offset = nextOffset;
+  const host = ssdpLocationHost(parsed.headers.get("location")) ?? options.remoteAddress?.trim();
+  if (!host) {
+    return undefined;
   }
-  return records;
-}
-
-function readDnsName(message: Buffer, offset: number, depth = 0): MdnsReadNameResult {
-  if (depth > 8 || offset >= message.length) {
-    return { name: "", nextOffset: offset };
-  }
-  const labels: string[] = [];
-  let cursor = offset;
-  let nextOffset = offset;
-  let jumped = false;
-
-  while (cursor < message.length) {
-    const length = message[cursor] ?? 0;
-    if (length === 0) {
-      if (!jumped) {
-        nextOffset = cursor + 1;
-      }
-      break;
-    }
-    if ((length & 0xc0) === 0xc0) {
-      if (cursor + 1 >= message.length) {
-        break;
-      }
-      const pointer = ((length & 0x3f) << 8) | (message[cursor + 1] ?? 0);
-      if (!jumped) {
-        nextOffset = cursor + 2;
-      }
-      const pointed = readDnsName(message, pointer, depth + 1);
-      if (pointed.name) {
-        labels.push(pointed.name);
-      }
-      jumped = true;
-      break;
-    }
-    if ((length & 0xc0) !== 0 || cursor + 1 + length > message.length) {
-      break;
-    }
-    cursor += 1;
-    labels.push(message.subarray(cursor, cursor + length).toString("utf8"));
-    cursor += length;
-    if (!jumped) {
-      nextOffset = cursor;
-    }
-  }
-
+  const modelHint = inferDiscoveredModelHint(parsed.headers);
   return {
-    name: normalizeDnsName(labels.join(".")),
-    nextOffset
+    id: `bambu-ssdp-${options.idFactory?.() ?? randomUUID()}`,
+    displayName: discoveredDisplayName(parsed.headers, modelHint),
+    modelHint,
+    host,
+    port: DEFAULT_PORT,
+    source: "ssdp",
+    discoveredAt: options.discoveredAt ?? new Date().toISOString(),
+    endpointHint: `SSDP ${serviceType} candidate; read-only MQTTS port ${DEFAULT_PORT}`,
+    requiresAccessCode: true
   };
 }
 
-function parseTxtRecord(data: Buffer): Map<string, string> {
-  const txt = new Map<string, string>();
-  let offset = 0;
-  while (offset < data.length) {
-    const length = data[offset] ?? 0;
-    offset += 1;
-    if (length === 0 || offset + length > data.length) {
+function parseSsdpMessage(message: Buffer | string): ParsedSsdpMessage | undefined {
+  const text = Buffer.isBuffer(message) ? message.toString("utf8") : message;
+  const lines = text.split(/\r?\n/);
+  const startLine = lines.shift()?.trim() ?? "";
+  if (!/^HTTP\/1\.[01]\s+200\b/i.test(startLine) && !/^NOTIFY\s+\*\s+HTTP\/1\.[01]$/i.test(startLine)) {
+    return undefined;
+  }
+  const headers = new Map<string, string>();
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed === "") {
+      break;
+    }
+    const separator = trimmed.indexOf(":");
+    if (separator <= 0) {
       continue;
     }
-    const entry = data.subarray(offset, offset + length).toString("utf8");
-    offset += length;
-    const separator = entry.indexOf("=");
-    if (separator === -1) {
-      txt.set(entry.toLowerCase(), "true");
-    } else {
-      txt.set(entry.slice(0, separator).toLowerCase(), entry.slice(separator + 1));
+    const key = trimmed.slice(0, separator).trim().toLowerCase();
+    const value = trimmed.slice(separator + 1).trim();
+    if (!headers.has(key)) {
+      headers.set(key, value);
     }
   }
-  return txt;
+  return { startLine, headers };
 }
 
-function candidatesFromMdnsRecords(
-  records: MdnsRecord[],
-  serviceTypes: string[],
-  discoveredAt: string
-): BambuDiscoveredPrinterCandidate[] {
-  const services = new Map<string, { serviceType: string; srv?: MdnsRecord["srv"]; txt?: Map<string, string> }>();
-  const addresses = new Map<string, string>();
+function isSsdpByebye(headers: Map<string, string>): boolean {
+  return normalizeSsdpHeaderValue(headers.get("nts") ?? "") === "ssdp:byebye";
+}
 
-  for (const record of records) {
-    if (record.type === 12 && record.ptr && serviceTypes.includes(record.name)) {
-      const existing = services.get(record.ptr) ?? { serviceType: record.name };
-      services.set(record.ptr, existing);
-    }
-    const serviceType = serviceTypeForInstance(record.name, serviceTypes);
-    if (serviceType && (record.srv || record.txt)) {
-      const existing = services.get(record.name) ?? { serviceType };
-      if (record.srv) {
-        existing.srv = record.srv;
-      }
-      if (record.txt) {
-        existing.txt = record.txt;
-      }
-      services.set(record.name, existing);
-    }
-    if (record.address) {
-      addresses.set(record.name, record.address);
+function matchingBambuSsdpServiceType(headers: Map<string, string>, serviceTypes: string[]): string | undefined {
+  const advertised = [headers.get("st"), headers.get("nt"), headers.get("usn")]
+    .filter((value): value is string => Boolean(value))
+    .map(normalizeSsdpHeaderValue);
+  return serviceTypes.find((serviceType) => advertised.some((value) => value.includes(serviceType)));
+}
+
+function ssdpLocationHost(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  try {
+    return new URL(value).hostname;
+  } catch {
+    return undefined;
+  }
+}
+
+function ssdpCandidateDedupeKey(candidate: BambuDiscoveredPrinterCandidate): string {
+  return `${candidate.host}:${candidate.port}`;
+}
+
+function discoveredDisplayName(headers: Map<string, string>, modelHint: string): string {
+  const label = firstHeaderValue(headers, [
+    "friendly-name",
+    "friendly_name",
+    "friendlyname",
+    "fn",
+    "dev-name",
+    "dev_name",
+    "devicename",
+    "name"
+  ]);
+  const sanitized = label ? sanitizeDiscoveryLabel(label) : "";
+  if (sanitized && sanitized !== "[redacted]") {
+    return sanitized;
+  }
+  return modelHint === "Bambu-compatible" ? "Discovered Bambu printer" : `${modelHint} printer`;
+}
+
+function firstHeaderValue(headers: Map<string, string>, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = headers.get(key);
+    if (value && value.trim() !== "") {
+      return value;
     }
   }
-
-  const candidates = new Map<string, BambuDiscoveredPrinterCandidate>();
-  for (const [serviceName, service] of services) {
-    const host = service.srv?.target;
-    if (!host || !looksLikeBambuCandidate(serviceName, service.serviceType, service.txt)) {
-      continue;
-    }
-    const port = service.serviceType === "_printer._tcp.local" ? DEFAULT_PORT : service.srv?.port ?? DEFAULT_PORT;
-    const endpointHost = stripLocalRoot(host);
-    const address = addresses.get(host);
-    const id = candidateId(serviceName, endpointHost, port);
-    candidates.set(id, {
-      id,
-      displayName: sanitizeDiscoveryLabel(instanceName(serviceName, service.serviceType)),
-      modelHint: inferDiscoveredModelHint(serviceName, service.txt),
-      host: endpointHost || address || host,
-      port,
-      source: "mdns",
-      discoveredAt,
-      endpointHint: `${service.serviceType} candidate on port ${port}`,
-      requiresAccessCode: true
-    });
-  }
-  return [...candidates.values()].sort((left, right) => left.displayName.localeCompare(right.displayName));
+  return undefined;
 }
 
-function serviceTypeForInstance(name: string, serviceTypes: string[]): string | undefined {
-  return serviceTypes.find((serviceType) => name.endsWith(`.${serviceType}`));
-}
-
-function instanceName(serviceName: string, serviceType: string): string {
-  return serviceName.endsWith(`.${serviceType}`) ? serviceName.slice(0, -serviceType.length - 1) : serviceName;
-}
-
-function looksLikeBambuCandidate(serviceName: string, serviceType: string, txt: Map<string, string> | undefined): boolean {
-  if (serviceType === "_bambu._tcp.local" || serviceType === "_bblp._tcp.local") {
-    return true;
-  }
-  const haystack = [serviceName, serviceType, ...(txt ? [...txt.values()] : [])].join(" ").toLowerCase();
-  return haystack.includes("bambu") || haystack.includes("bblp");
-}
-
-function inferDiscoveredModelHint(serviceName: string, txt: Map<string, string> | undefined): string {
-  const haystack = [serviceName, ...(txt ? [...txt.values()] : [])].join(" ").toLowerCase();
+function inferDiscoveredModelHint(headers: Map<string, string>): string {
+  const haystack = [
+    "model",
+    "printer-type",
+    "printer_type",
+    "dev-model",
+    "dev_model",
+    "friendly-name",
+    "friendly_name",
+    "friendlyname",
+    "fn",
+    "server",
+    "usn"
+  ]
+    .map((key) => headers.get(key) ?? "")
+    .join(" ")
+    .toLowerCase();
   if (haystack.includes("a1 mini") || haystack.includes("a1-mini")) {
     return "A1 Mini";
   }
@@ -1075,23 +1055,14 @@ function inferDiscoveredModelHint(serviceName: string, txt: Map<string, string> 
 function sanitizeDiscoveryLabel(value: string): string {
   const normalized = value
     .replace(/([0-9a-f]{2}[:-]){5}[0-9a-f]{2}/gi, "[redacted]")
-    .replace(/\b[a-z0-9]{10,}\b/gi, "[redacted]")
+    .replace(/\b(?=[a-z0-9]*\d)[a-z0-9]{10,}\b/gi, "[redacted]")
     .replace(/[\u0000-\u001f\u007f]/g, "")
     .trim();
   return normalized.length > 0 ? normalized : "Discovered Bambu printer";
 }
 
-function candidateId(serviceName: string, host: string, port: number): string {
-  const digest = createHash("sha256").update(`${serviceName}|${host}|${port}`).digest("hex").slice(0, 12);
-  return `bambu-mdns-${digest}`;
-}
-
-function normalizeDnsName(value: string): string {
-  return value.trim().replace(/\.$/, "").toLowerCase();
-}
-
-function stripLocalRoot(value: string): string {
-  return value.replace(/\.$/, "");
+function normalizeSsdpHeaderValue(value: string): string {
+  return value.trim().toLowerCase();
 }
 
 /**

@@ -40,7 +40,7 @@ Consumes normalized adapter events through device core and emits API DTO events 
 ## Invariants
 
 - No write/control printer route exists.
-- Discovery candidate responses do not expose host, serial number, Access Code or raw mDNS TXT data.
+- Discovery candidate responses do not expose host, serial number, Access Code, raw SSDP headers or private endpoint details.
 - Real-printer onboarding never returns host, serial number, Access Code, TLS server identity or raw status payloads.
 - Real-printer removal clears active process-memory configuration/credentials and live registry state without deleting normalized history.
 - Request identifiers are stable per request and appear in structured logs.

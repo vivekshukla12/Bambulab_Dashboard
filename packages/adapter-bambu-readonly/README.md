@@ -7,7 +7,7 @@ Owns the M2 real Bambu read-only adapter boundary for the approved standard-mode
 ## Responsibilities
 
 - Connect to locally configured printers through MQTTS without disabling TLS validation.
-- Attempt bounded server-side mDNS discovery for sanitized onboarding candidates.
+- Attempt bounded server-side SSDP discovery for sanitized onboarding candidates using the Bambu printer service type `urn:bambulab-com:device:3dprinter:1`.
 - Subscribe only to printer-originated status report topics.
 - Parse and normalize observed status fields into `@bpd/domain` types.
 - Accumulate partial printer-originated report frames into one in-memory live snapshot so sparse updates do not flicker already observed capabilities back to unknown.
@@ -19,7 +19,7 @@ Owns the M2 real Bambu read-only adapter boundary for the approved standard-mode
 
 ## Public Contracts
 
-Exports `BambuReadonlyAdapter`, `createBambuReadonlyAdapter`, `discoverBambuPrinters`, parser/normalizer helpers and transport/discovery/configuration interfaces for mocked offline tests.
+Exports `BambuReadonlyAdapter`, `createBambuReadonlyAdapter`, `discoverBambuPrinters`, `parseBambuSsdpCandidate`, parser/normalizer helpers and transport/discovery/configuration interfaces for mocked offline tests.
 
 ## Owned Data
 

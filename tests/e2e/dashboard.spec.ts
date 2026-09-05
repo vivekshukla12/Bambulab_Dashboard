@@ -16,9 +16,9 @@ test("normal fleet view is real-printer focused by default", async ({ page }) =>
           discovery: {
             status: "none",
             candidates: [],
-            discoveryMethod: "mdns",
+            discoveryMethod: "ssdp",
             manualFallbackAvailable: true,
-            note: "No server-side mDNS candidates found; use the manual host fallback."
+            note: "No server-side SSDP candidates found; use the manual host fallback."
           }
         })
       )
@@ -91,18 +91,18 @@ test("real-printer onboarding automatically discovers, supports reconfigure, and
             status: "found",
             candidates: [
               {
-                id: "bambu-mdns-synthetic",
+                id: "bambu-ssdp-synthetic",
                 displayName: "Discovered X2D",
                 modelHint: "X2D",
-                source: "mdns",
+                source: "ssdp",
                 discoveredAt: "2026-08-30T15:31:00.000Z",
-                endpointHint: "_bambu._tcp.local candidate on port 8883",
+                endpointHint: "SSDP urn:bambulab-com:device:3dprinter:1 candidate; read-only MQTTS port 8883",
                 requiresAccessCode: true
               }
             ],
-            discoveryMethod: "mdns",
+            discoveryMethod: "ssdp",
             manualFallbackAvailable: true,
-            note: "Server-side mDNS discovery found sanitized printer candidates; Access Codes remain memory-only."
+            note: "Server-side SSDP discovery found sanitized printer candidates; Access Codes remain memory-only."
           }
         })
       )

@@ -126,7 +126,7 @@ export interface RealPrinterCandidateDto {
   id: string;
   displayName: string;
   modelHint: string;
-  source: "mdns";
+  source: "ssdp";
   discoveredAt: string;
   endpointHint: string;
   requiresAccessCode: true;
@@ -138,7 +138,7 @@ export interface RealPrinterCandidateDto {
 export interface RealPrinterDiscoveryDto {
   status: "found" | "none" | "failed";
   candidates: RealPrinterCandidateDto[];
-  discoveryMethod: "mdns";
+  discoveryMethod: "ssdp";
   manualFallbackAvailable: true;
   note: string;
 }

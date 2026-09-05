@@ -19,7 +19,7 @@ Validated in the Codex environment on 2026-08-24:
 - GitHub Actions run `32767627648` — passed `Fresh checkout validation` and `Docker Compose validation` for remediation commit `5e111ec30c6638a2fecbc03ad28b10c7bf9dce59`.
 - Local `npm run docker:validate` — not runnable in the Codex workstation because Docker is unavailable (`docker` command not found); this is a local environment limitation, not the sole remaining Docker/Compose evidence blocker.
 
-The local validation script now emits sanitized pre-stop connection state, initial connection result/timing, update cadence/latency summaries and redacted failure categories. It also supports optional local `--interactive` entry with hidden serial/Access Code prompts while retaining the ignored JSON config path. The dashboard attempts bounded server-side mDNS discovery for sanitized onboarding candidates while retaining manual fallback. Real-printer capability rows below remain `not-tested` until Product Owner LAN validation runs.
+The local validation script now emits sanitized pre-stop connection state, initial connection result/timing, update cadence/latency summaries and redacted failure categories. It also supports optional local `--interactive` entry with hidden serial/Access Code prompts while retaining the ignored JSON config path. The dashboard attempts bounded server-side SSDP discovery for sanitized onboarding candidates while retaining manual fallback. Real-printer capability rows below remain `not-tested` until Product Owner LAN validation runs.
 
 Validated in the Codex environment on 2026-08-30 after Product Owner remediation feedback:
 
@@ -31,6 +31,15 @@ Validated in the Codex environment on 2026-08-30 after Product Owner remediation
 - A mocked lifecycle bug was found and fixed: if a printer-originated active-print status frame arrives during connection startup before the transport reports fully connected, the later transport-connected signal no longer overwrites the already observed live print state with a degraded waiting state.
 - Local `npm run docker:validate` — not runnable in the Codex workstation because Docker is unavailable (`docker` command not found); GitHub Actions Docker/Compose evidence must be checked after this remediation is pushed.
 - Local real-device validation was not run because `secrets/m2-printers.local.json` is absent in this checkout and Product Owner detailed real-device validation remains paused until remediation review.
+
+Validated in the Codex environment on 2026-09-05 after SSDP discovery remediation:
+
+- `npm run validate` — passed: TypeScript build, web build, Vitest `36` tests, TypeDoc generation and dependency-license inventory.
+- `npm run test:e2e` — passed: Playwright `15` tests across desktop, tablet and mobile.
+- Adapter discovery regression now uses mocked/sanitized SSDP packets only and covers representative response parsing, NOTIFY alive parsing, byebye/unrelated-service filtering, Bambu service-type matching, candidate sanitization, deduplication, no-candidate timeout and socket failure fallback.
+- Server/browser regressions continue to cover automatic scan initiation, Rescan, sanitized candidate DTOs without private endpoint fields, manual fallback, edit/reconfigure, remove and explicit synthetic regression mode.
+- Local `npm run docker:validate` — not runnable in the Codex workstation because Docker is unavailable (`docker` command not found); GitHub Actions Docker/Compose evidence must be checked after the branch is pushed.
+- Local real-device validation was not run because this Codex environment is not the Product Owner LAN with locally supplied credentials.
 
 ## A1 Mini Capability Matrix
 
