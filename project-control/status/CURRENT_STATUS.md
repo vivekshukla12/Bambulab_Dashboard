@@ -2,112 +2,64 @@
 
 ## Current milestone
 
-M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype
+M2 — Real A1 Mini + X2D integration feasibility / GO-NO-GO
 
 ## State
 
-**SSDP REMEDIATION IMPLEMENTED — PR-head CI passed; awaiting technical review and Product Owner discovery retest.**
+**HOLD — official Bambu-supported integration viability gate.**
 
-On 2026-09-05 Codex executed the queued SSDP discovery remediation on PR #3. The M2 adapter now uses independently implemented server-side SSDP discovery with Node standard-library UDP, targeting the publicly observed Bambu printer service type `urn:bambulab-com:device:3dprinter:1`. The implementation preserves automatic scan, explicit Rescan, sanitized candidates, manual host fallback, edit/reconfigure, remove/delete, real-printer-focused normal UX and deterministic synthetic regression.
+On 2026-09-05 the Product Owner reported that the SSDP-based prototype still cannot automatically find the printers in hands-on use. This follows earlier failed mDNS discovery and an unresolved X2D active-print connection failure. The Product Owner has therefore decided that further unsupported discovery/cloud reverse-engineering is not justified.
 
-Local automated evidence on 2026-09-05:
-- `npm run validate` — passed: TypeScript build, web build, Vitest `36` tests, TypeDoc generation and dependency-license inventory.
-- `npm run test:e2e` — passed: Playwright `15` tests across desktop, tablet and mobile.
-- `npm run docker:validate` — not runnable in the Codex workstation because Docker is unavailable (`docker` command not found); GitHub Actions Docker/Compose validation passed after push.
-- Real-device validation was not run because this Codex environment is not the Product Owner LAN with locally supplied credentials.
+The project may continue only if Bambu Lab provides a documented, supported integration path that is technically and contractually suitable for this open-source dashboard. If no such path exists, the preferred disposition is project termination rather than continued workaround development.
 
-On 2026-08-30 the Product Owner retested PR #3 after the onboarding/configuration remediation. Automatic discovery / Rescan still returned no usable Bambu printer candidates, so the Product Owner considered the prototype not ready for detailed M2 testing. Research then verified that the prior PR #3 adapter implementation used mDNS (`224.0.0.251:5353` and `_bambu/_bblp/_printer` service queries). Public Bambu Studio behavior/issues and mature independent integrations provide strong evidence that Bambu LAN printer discovery is SSDP-based rather than mDNS-based. Automatic LAN discovery remains technically feasible; the prior discovery mechanism was the likely implementation error.
+Authoritative decision:
+- `project-control/decisions/DECISION_LOG.md` — DEC-017
 
-Authoritative research:
-- `project-control/reviews/M2_DISCOVERY_INTERFACE_RESEARCH_2026-08-30.md`
+Authoritative viability review:
+- `project-control/reviews/M2_OFFICIAL_BAMBU_INTEGRATION_VIABILITY_2026-09-05.md`
 
-Authoritative Product Owner feedback:
-- `project-control/feedback/M2_PRODUCT_OWNER_FEEDBACK_2026-08-30.md`
+Executable gate:
+- `prompts/codex/NEXT_PROMPT.md` — **HOLD** pending external Bambu integration viability.
 
-Executable Codex gate:
-- `prompts/codex/NEXT_PROMPT.md` — **HOLD** pending technical review and Product Owner discovery retest.
+M2 is not accepted. PR #3 remains draft/unmerged. M3 remains blocked.
 
-M2 is not accepted. PR #3 must remain draft/unmerged. M3 remains blocked.
-
-## Repository / PR
-
-- Repository: `vivekshukla12/Bambulab_Dashboard`
-- Branch: `m2/real-device-readonly-prototype`
-- Draft PR: #3 — `M2: real-device read-only GO/NO-GO prototype`
-- Base: `main`
-- Merge: not authorized
-
-## Completed milestones
-
-- M0 complete/merged 2026-08-22 — merge commit `bad179a0f847f9a478e2c167e62dd94760baa105`.
-- M1 complete/merged 2026-08-24 — merge commit `42821596cc0bf80a302b12287063b3ee17f58f3a`.
-- M1 visual/UI modernization feedback remains deferred to later planning / possible V1.1.
-
-## M2 approved boundary
-
-M2 remains limited to the approved standard-mode local MQTTS **read-only** status path through the dedicated Bambu adapter.
-
-Do not use:
-- Developer Mode;
-- Fleet Hub dependency;
-- printer write/control commands;
-- weakened TLS/authentication/authorization/security;
-- Bambu cloud-client impersonation;
-- undocumented/private Bambu Cloud APIs;
-- private/partner credentials;
-- proprietary implementation copying;
-- private live-device material in Git/public CI.
-
-LAN Access Codes remain sensitive and process-memory-only by default.
-
-## Verified M2 implementation state
+## Verified implementation / evidence
 
 PR #3 currently contains:
-- `packages/adapter-bambu-readonly` with local MQTTS read-only transport;
-- strict credential-bearing TLS plus `local-printer-chain` handling for local/private printer certificates;
-- normalized telemetry, freshness, reconnect and partial-report accumulation;
-- server-side SSDP printer discovery using the Bambu printer service type, bounded M-SEARCH, NOTIFY parsing, candidate deduplication and sanitized browser-facing DTOs;
+- local standard-mode MQTTS read-only adapter;
+- strict credential-bearing TLS and local certificate handling;
+- normalization, freshness, reconnect and sparse-frame accumulation;
+- server-side SSDP discovery targeting `urn:bambulab-com:device:3dprinter:1`;
 - automatic discovery initiation + Rescan UI;
 - manual host fallback;
-- safe Edit/Reconfigure and Remove/Delete flows;
+- Edit/Reconfigure and Remove/Delete flows;
 - real-printer-focused normal Fleet UX;
-- deterministic synthetic adapter/scenarios retained for explicit development/regression use;
+- explicit synthetic regression mode;
 - mocked X2D startup lifecycle hardening.
 
-The prior remediation head `8a5a09ddabd548720b0da2500ab1e3fc078cc3c1` passed GitHub Actions run `33320803532`, including fresh-checkout/browser/Docker Compose validation. That CI success does not validate the real LAN discovery protocol.
+Codex automated evidence on 2026-09-05 passed build/Vitest/TypeDoc/license validation, Playwright E2E, and PR-head GitHub Actions including Docker Compose validation. This automated success does not overcome the Product Owner hands-on finding that automatic discovery still fails in the real environment.
 
-## Real-device evidence / Product Owner findings
+Earlier A1 Mini testing established only limited basic live telemetry feasibility. X2D connectivity while actively printing remains unresolved.
 
-### A1 Mini
+## Official Bambu integration research disposition
 
-Earlier Product Owner testing established limited feasibility: A1 Mini connected through the approved read-only path and basic live telemetry including nozzle temperature and Wi-Fi/network data was observed. This is limited evidence only, not full M2 validation.
+Public Bambu statements establish two important boundaries:
 
-### X2D
+1. Bambu Cloud is private infrastructure governed by a user agreement; unofficial software must not impersonate official Bambu clients. Reverse-engineered cloud-client impersonation is therefore not an acceptable project path.
+2. Bambu explicitly invites third-party and farm-management software developers to work directly with Bambu Lab to implement proper authorization controls and provides a developer-partnership contact route. Bambu Connect / Network Plugin / Farm Manager or another partner interface may therefore be viable only under documented Bambu-supported terms.
 
-The Product Owner reported inability to connect X2D while it was actively printing. Root cause remains unresolved. Ecosystem research indicates X2D read-only monitoring is technically feasible, so this remains an implementation/model/firmware validation issue rather than proof that X2D monitoring is impossible.
-
-### Discovery — retest pending
-
-The Product Owner's 2026-08-30 retest showed the prior Rescan flow did not discover usable printers.
-
-That implementation queried mDNS. Research found:
-- Bambu Studio uses/depends on automatic LAN discovery, with known failures when multicast/network topology interferes;
-- Bambu Studio public issue reports/logs explicitly reference SSDP;
-- mature Home Assistant Bambu integration registers SSDP discovery for `urn:bambulab-com:device:3dprinter:1`;
-- therefore M2 replaced printer mDNS discovery with independently implemented server-side SSDP discovery and retained manual fallback.
-
-Perfect zero-config discovery is still not guaranteed across VLANs, guest Wi-Fi, AP isolation, VPNs, firewalls, containers or multicast-suppressed networks. Product Owner LAN retest is required to decide whether SSDP discovery now unblocks detailed M2 validation or whether a network-specific multicast limitation remains.
-
-## Network Plugin / Cloud disposition
-
-The Product Owner is open to broader Bambu integration if legally/contractually appropriate. Research disposition for M2:
-
-- **Bambu Network Plugin / Bambu Connect:** Bambu officially supports these as part of third-party/control integration, but the stock Network Plugin is proprietary/closed-source and introducing it would be a material dependency/licensing/architecture decision. It is not required merely to solve LAN discovery/read-only monitoring. **Not authorized for current M2 remediation.**
-- **Direct Bambu Cloud login/API:** Bambu states its cloud is private infrastructure governed by its user agreement and explicitly objects to unofficial clients impersonating official clients. No general public cloud API for this dashboard use case was established. **Direct reverse-engineered cloud integration is not authorized.**
-- If local SSDP + approved read-only MQTTS ultimately proves insufficient, return for a separate Product Owner decision on an official Bambu partnership/supported integration route rather than silently expanding scope.
+No public review has yet established a general-purpose cloud/API contract suitable for this dashboard, nor confirmed licensing/redistribution/MPL compatibility, fees, NDA/certificate requirements, or supported models/platforms.
 
 ## Next action
 
-No further product implementation is currently authorized. The SSDP remediation has passed automated/CI validation and must now go through technical review and Product Owner discovery retest.
+No further Codex/product implementation is authorized.
 
-Do not resume the full M2 Excel test matrix until the SSDP remediation is independently reviewed and Product Owner discovery retest succeeds or the network-specific limitation is clearly established. Do not begin M3 and do not merge PR #3 without explicit Product Owner authorization.
+The next project action is external feasibility:
+1. obtain official Bambu guidance/documentation for a supported third-party integration route;
+2. determine whether it supports printer enumeration/discovery, read-only telemetry, A1 Mini and X2D, and suitable authentication without client impersonation;
+3. review licensing, redistribution, open-source/MPL compatibility, fees, NDA/certificate requirements, supported platforms, privacy and security constraints;
+4. return to Product Owner architecture/security/dependency review before any implementation resumes.
+
+If Bambu does not provide a suitable supported route, recommend terminating the project and closing M2/PR #3 through explicit Product Owner decision.
+
+Do not begin M3 and do not merge PR #3 without explicit Product Owner authorization.
