@@ -6,71 +6,52 @@ M2 — Real A1 Mini + X2D integration feasibility / GO-NO-GO
 
 ## State
 
-**HOLD — FEASIBLE FOR PRODUCT OWNER ARCHITECTURE REVIEW.**
+**REMEDIATION AUTHORIZED — COUNTRY/REGION FIX QUEUED BEFORE PRODUCT OWNER RETEST.**
 
-The bounded no-outreach Bambu Connect / user-installed official Network Plugin spike authorized by DEC-018 is implemented on draft PR #3. This disposition means the public, user-installed plugin boundary is technically usable for an isolated optional bridge. It is not M2 acceptance, permanent dependency approval, a GO recommendation or merge authorization.
+The bounded no-outreach Bambu Connect / user-installed official Network Plugin spike authorized by DEC-018 remains technically feasible for Product Owner architecture review, but the Product Owner has authorized one additional narrow remediation before the clean Windows real-device retest.
 
 PR #3 remains open, draft and unmerged on `m2/real-device-readonly-prototype`. M3 remains blocked.
 
-## Spike outcome — 2026-09-06
+## Authorized remediation — 2026-09-06
 
-The project independently implemented a Windows helper from the public Bambu Studio declarations without copying Bambu Studio implementation code or any proprietary binary. The optional `@bpd/bambu-network-plugin-bridge` package:
+Independent review found that the project-authored native Network Plugin helper hard-codes the plugin country code to `US` during agent initialization. This is an unjustified environment assumption and could invalidate a real discovery/monitoring failure outside that region.
 
-- is disabled unless `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1`;
-- uses only a Network Plugin already installed by the user through Bambu Studio;
-- requires valid Authenticode signatures and the same signer certificate on Bambu Studio and `bambu_networking.dll`;
-- accepts ABI prefix `02.08.02` and fails closed for absent, unsigned, differently signed or incompatible components;
-- resolves only discovery, local connection/disconnection and local read-only callback entry points;
-- retains private discovery endpoints/serials on the server and keeps Access Codes in process memory only;
-- normalizes local callback payloads through the existing M2 read-only adapter/domain boundary;
-- exposes no cloud-login, arbitrary send-message, bind/unbind, printing, motion, calibration, camera, file-transfer or other write/control API;
-- preserves the existing direct MQTTS/SSDP path and synthetic regression mode when the opt-in flag is absent.
+`prompts/codex/NEXT_PROMPT.md` is QUEUED to:
 
-No Bambu binary, proprietary fixture, real credential, private endpoint or raw device payload is committed.
+- remove the hard-coded `US` value;
+- support explicit local override `BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE`;
+- otherwise derive an ISO 3166-1 alpha-2 country code from a safe Windows local geographic-locale API;
+- validate/normalize the value;
+- fail closed with a sanitized diagnostic if no valid country code can be resolved;
+- preserve all existing DEC-018 security, licensing and interface boundaries;
+- return the execution gate to HOLD after automated/CI validation.
 
-## Local runtime evidence
+No Bambu account/cloud/profile configuration, Bambu Connect credentials, tokens, cookies or private IPC may be read to obtain the region.
 
-Local inspection found an official Bambu Studio `02.08.02.61` installation and user-installed Network Plugin `02.08.02.54`. Both files had valid Authenticode signatures from the same signer. The native helper built successfully with the installed Microsoft C++ toolchain, loaded the plugin and verified the complete allowed symbol boundary and ABI prefix.
+## Existing spike outcome
 
-Sanitized commands/results:
+The optional Windows `@bpd/bambu-network-plugin-bridge` remains disabled unless explicitly enabled and uses only an official Network Plugin already installed by the user through Bambu Studio. It verifies official signed runtime compatibility, resolves only discovery/local-connect/local-message functions, keeps private device/credential data server-side, exposes no write/control API, and preserves direct MQTTS/SSDP plus synthetic regression paths.
 
-- `npm run m2:network-plugin:build` — passed.
-- `npm run m2:network-plugin:probe` — passed; component available, ABI prefix `02.08.02`.
-- `npm run m2:network-plugin:discover` — completed with zero candidates while Bambu Studio was running.
+Prior automated evidence on head `0b395628d04cc492e3b59ddf25f0b2758b0aff09` passed, including final GitHub Actions run `34022690041` with Fresh checkout validation and Docker Compose validation. That evidence predates the country-code remediation and must be rerun on the new implementation head.
 
-The zero-candidate run is not treated as a clean bridge failure because local inspection showed the running Studio instance already owned the plugin discovery/listener ports. A Product Owner retest must exit Bambu Studio before starting the standalone bridge/dashboard. Real A1 Mini and X2D discovery and read-only status reliability remain unproven and must not be marked passed.
+## Product Owner clean retest gate
 
-## Automated evidence
+After Codex completes the country/region remediation and returns `NEXT_PROMPT.md` to HOLD:
 
-On the local spike state:
+1. Exit Bambu Studio completely while leaving the official Network Plugin installed.
+2. Run the documented bridge build/probe/discovery commands.
+3. Enable `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1` and start the normal local server/web prototype.
+4. Verify automatic enumeration for A1 Mini and X2D.
+5. Enter Access Codes only through the local memory-only flow.
+6. Verify useful read-only status for both printers, including X2D while actively printing.
+7. Record only sanitized outcomes.
 
-- native bridge build passed;
-- signed-runtime/ABI probe passed;
-- final `npm run validate` passed after documentation reconciliation: TypeScript/web build, Vitest `43` tests, TypeDoc and license inventory;
-- `npm run test:e2e` passed: `15` Playwright tests across desktop, tablet and mobile;
-- bridge tests cover clean component absence, discovery sanitization/rejection/deduplication, callback normalization, browser/server redaction and absence of write/control exports;
-- no proprietary plugin is required or loaded by public CI.
-
-Local `npm run docker:validate` could not run because Docker is not installed on this workstation (`docker` command not found). GitHub Actions run `34022565310` passed both Fresh checkout validation (including browser E2E) and Docker Compose validation for implementation commit `0c0e5d5a17bdcfd16082d82efc1129497c769a3e`.
-
-## Product Owner review / retest gate
-
-Before permanent adoption, the Product Owner must explicitly review the proprietary runtime dependency, licensing/redistribution posture, Windows/platform limitation, ABI/version maintenance and operational requirement for a normal official Bambu installation.
-
-For a clean hands-on retest:
-
-1. Exit Bambu Studio while leaving the official Network Plugin installed.
-2. Run `npm run m2:network-plugin:build`, `npm run m2:network-plugin:probe` and `npm run m2:network-plugin:discover`.
-3. Set `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1`, start the normal server/web prototype locally and use only the browser's memory-only Access Code entry.
-4. Verify automatic enumeration and useful read-only status for A1 Mini and X2D, including the previously unresolved X2D active-print case.
-5. Record only sanitized outcomes in project control.
-
-If that clean Product Owner retest fails to establish reliable discovery and useful read-only monitoring for both printers, return an M2 NO-GO / project termination recommendation rather than adding another workaround.
+If this corrected clean Product Owner retest fails to establish reliable discovery and useful read-only monitoring for both target printers, return for **M2 NO-GO / project-termination review** rather than implementing another workaround.
 
 ## Authority
 
 - Current decision: `project-control/decisions/DEC-018_BAMBU_CONNECT_NETWORK_PLUGIN_FEASIBILITY.md`
-- Spike review: `project-control/reviews/M2_BAMBU_CONNECT_NETWORK_PLUGIN_FEASIBILITY_2026-09-06.md`
-- Execution gate: `prompts/codex/NEXT_PROMPT.md` — HOLD
+- Execution gate: `prompts/codex/NEXT_PROMPT.md` — QUEUED for country/region remediation only.
+- PR #3 remains draft/unmerged.
 
-Do not merge PR #3, make the Network Plugin a permanent dependency or begin M3 without explicit Product Owner authorization.
+Do not merge PR #3, permanently adopt the proprietary Network Plugin, or begin M3 without explicit Product Owner authorization.
