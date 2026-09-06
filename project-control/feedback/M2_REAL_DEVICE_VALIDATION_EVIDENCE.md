@@ -102,5 +102,6 @@ Sanitized local runtime evidence:
 - Final `npm run validate` passed after documentation reconciliation with `43` Vitest tests.
 - `npm run test:e2e` passed with `15` Playwright tests across desktop, tablet and mobile.
 - `npm run docker:validate` could not run locally because Docker is not installed; PR-head Docker Compose CI remains the packaging evidence source.
+- GitHub Actions run `34022565310` passed Fresh checkout validation (including browser E2E) and Docker Compose validation for implementation commit `0c0e5d5a17bdcfd16082d82efc1129497c769a3e`.
 
 Product Owner retest remains required with Bambu Studio exited. Do not change A1 Mini/X2D capability rows until standalone discovery and useful read-only callback behavior are actually observed and sanitized.

@@ -87,6 +87,8 @@ The concurrent zero-candidate run is not sufficient to classify real discovery a
 
 Automated mocks prove component-absence failure, private/public endpoint filtering, candidate sanitization and deduplication, server-side serial/host resolution, callback normalization through the existing adapter, credential/browser redaction, no write/control export and synthetic/browser regressions.
 
+GitHub Actions run `34022565310` passed Fresh checkout validation (including browser E2E) and Docker Compose validation for implementation commit `0c0e5d5a17bdcfd16082d82efc1129497c769a3e`.
+
 Before permanent adoption, Product Owner review is required for the proprietary dependency, no-redistribution constraint, Windows-only spike scope, ABI/version maintenance, Bambu Studio coexistence and Docker/public-CI limitations. A failed clean A1 Mini/X2D retest should produce an M2 NO-GO / project termination recommendation, not another workaround.
 
 Public declarations used:

@@ -21,6 +21,7 @@ Sanitized local evidence:
 - native helper build passed;
 - installed official runtime/signature/ABI probe passed;
 - automated build, unit/integration, browser, documentation and license checks passed locally;
+- GitHub Actions run `34022565310` passed Fresh checkout validation and Docker Compose validation for implementation commit `0c0e5d5a17bdcfd16082d82efc1129497c769a3e`;
 - bounded discovery returned zero candidates while Bambu Studio was concurrently using the plugin listener ports, so a clean standalone Product Owner retest remains required;
 - no real plugin-backed monitor session ran because no local credential file was present.
 

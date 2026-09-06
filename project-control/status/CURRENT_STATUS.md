@@ -51,7 +51,7 @@ On the local spike state:
 - bridge tests cover clean component absence, discovery sanitization/rejection/deduplication, callback normalization, browser/server redaction and absence of write/control exports;
 - no proprietary plugin is required or loaded by public CI.
 
-Local `npm run docker:validate` could not run because Docker is not installed on this workstation (`docker` command not found). PR-head GitHub Actions, including Docker Compose validation, must be recorded after push.
+Local `npm run docker:validate` could not run because Docker is not installed on this workstation (`docker` command not found). GitHub Actions run `34022565310` passed both Fresh checkout validation (including browser E2E) and Docker Compose validation for implementation commit `0c0e5d5a17bdcfd16082d82efc1129497c769a3e`.
 
 ## Product Owner review / retest gate
 

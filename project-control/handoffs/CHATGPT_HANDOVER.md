@@ -79,7 +79,8 @@ Sanitized local results:
 - `npm run m2:network-plugin:discover` — zero candidates while Bambu Studio was running and owned the plugin's discovery/listener ports; this is not a clean standalone failure.
 - final `npm run validate` — passed after documentation reconciliation with `43` Vitest tests.
 - `npm run test:e2e` — `15` passed across desktop, tablet and mobile.
-- `npm run docker:validate` — unavailable locally because Docker is not installed; verify the PR-head Docker Compose job after push.
+- `npm run docker:validate` — unavailable locally because Docker is not installed; GitHub Actions provides the Docker Compose evidence.
+- GitHub Actions run `34022565310` — Fresh checkout validation and Docker Compose validation passed for implementation commit `0c0e5d5a17bdcfd16082d82efc1129497c769a3e`.
 
 No local real credential file is present. No real Access Code, serial, private IP, account data or raw plugin/device payload was read into evidence or committed.
 
