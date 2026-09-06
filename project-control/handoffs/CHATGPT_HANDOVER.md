@@ -30,7 +30,7 @@ M1 UI modernization remains deferred.
 
 M2 — Real A1 Mini + X2D integration feasibility / GO-NO-GO.
 
-**Current state: HOLD — FEASIBLE FOR PRODUCT OWNER ARCHITECTURE REVIEW.**
+**Current state: REMEDIATION AUTHORIZED — COUNTRY/REGION FIX QUEUED BEFORE PRODUCT OWNER RETEST.**
 
 Draft PR #3 remains open/draft/unmerged on `m2/real-device-readonly-prototype`. M3 remains blocked. Merge is not authorized.
 
@@ -38,13 +38,11 @@ Authority:
 
 - `project-control/decisions/DEC-018_BAMBU_CONNECT_NETWORK_PLUGIN_FEASIBILITY.md`
 - `project-control/reviews/M2_BAMBU_CONNECT_NETWORK_PLUGIN_FEASIBILITY_2026-09-06.md`
-- `prompts/codex/NEXT_PROMPT.md` — HOLD
+- `prompts/codex/NEXT_PROMPT.md` — QUEUED for the country/region remediation only.
 
 ## Decision history
 
-DEC-018 restores DEC-011's no-outreach policy and supersedes DEC-017 only where DEC-017 required contacting Bambu Lab or pursuing partner authorization. Do not contact Bambu Lab. The restrictions on Developer Mode, unsupported discovery work, private Bambu Cloud access, official-client impersonation, credential/token extraction, proprietary binary reverse engineering/redistribution, write/control operations and security weakening remain in force.
-
-`DECISION_LOG.md` now mechanically indexes DEC-018 and marks DEC-011/DEC-017 consistently.
+DEC-018 restores DEC-011's no-outreach policy and supersedes DEC-017 only where DEC-017 required contacting Bambu Lab or pursuing partner authorization. Do not contact Bambu Lab. The restrictions on Developer Mode, unsupported/private Bambu Cloud access, official-client impersonation, credential/token extraction, proprietary binary reverse engineering/redistribution, write/control operations and security weakening remain in force.
 
 ## Bounded spike result
 
@@ -61,42 +59,49 @@ The helper:
 - emits private payloads only over child IPC for server-side parsing;
 - exposes no arbitrary send, bind/unbind, cloud login, printing, motion, calibration, camera or file-transfer function.
 
-The bridge is used only when `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1`. Without that flag, the existing direct MQTTS/SSDP implementation remains active. Browser DTOs remain sanitized, and official discovery can supply the serial server-side so the browser asks only for the remaining Access Code.
+The bridge is used only when `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1`. Without that flag, the existing direct MQTTS/SSDP implementation remains active.
 
-## Evidence at handoff
+## Country/region remediation authorization — 2026-09-06
 
-Local official installation:
+Independent review found that the native helper initializes the Network Plugin with a hard-coded `US` country code. The Product Owner explicitly authorized a narrow fix before the clean real-device test.
 
-- Bambu Studio `02.08.02.61`
-- Network Plugin `02.08.02.54`
-- valid matching Authenticode signer certificates
-- complete allowed symbol boundary present
+Codex is authorized to:
 
-Sanitized local results:
+- remove the hard-coded `US` value;
+- support explicit `BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE` override;
+- otherwise derive a country code from a safe Windows local geographic-locale API;
+- normalize/validate it as ISO 3166-1 alpha-2;
+- fail closed with a sanitized actionable diagnostic if it cannot resolve a valid value;
+- add automated coverage and update the local runbook;
+- rerun build/probe/validation/E2E/CI;
+- return `NEXT_PROMPT.md` to HOLD when ready for the Product Owner clean retest.
+
+Do not obtain the country/region from Bambu Studio account/cloud/profile data, Bambu Connect credentials, tokens, cookies or private IPC. Do not broaden the bridge or alter DEC-018 boundaries.
+
+## Prior evidence before remediation
+
+On prior head `0b395628d04cc492e3b59ddf25f0b2758b0aff09`:
 
 - `npm run m2:network-plugin:build` — passed.
 - `npm run m2:network-plugin:probe` — passed; ABI prefix `02.08.02`.
 - `npm run m2:network-plugin:discover` — zero candidates while Bambu Studio was running and owned the plugin's discovery/listener ports; this is not a clean standalone failure.
-- final `npm run validate` — passed after documentation reconciliation with `43` Vitest tests.
+- `npm run validate` — passed with `43` Vitest tests.
 - `npm run test:e2e` — `15` passed across desktop, tablet and mobile.
-- `npm run docker:validate` — unavailable locally because Docker is not installed; GitHub Actions provides the Docker Compose evidence.
-- GitHub Actions run `34022565310` — Fresh checkout validation and Docker Compose validation passed for implementation commit `0c0e5d5a17bdcfd16082d82efc1129497c769a3e`.
+- GitHub Actions run `34022690041` passed Fresh checkout validation and Docker Compose validation.
 
-No local real credential file is present. No real Access Code, serial, private IP, account data or raw plugin/device payload was read into evidence or committed.
+These results predate the country-code remediation and must not be treated as final validation of the new implementation.
 
-## Required Product Owner action
+## Required next sequence
 
-Before permanent adoption, review the proprietary user-installed runtime dependency, no-redistribution posture, Windows/platform scope, ABI/version maintenance and operational coexistence implications.
+1. Codex executes only the queued country/region remediation and returns the gate to HOLD.
+2. Verify the resulting PR head and CI.
+3. Product Owner exits Bambu Studio but leaves the official Network Plugin installed.
+4. Product Owner runs documented build/probe/discovery commands.
+5. Product Owner enables `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1` and launches the prototype locally.
+6. Enter Access Codes only through the local memory-only flow; do not place secrets in chat/Git.
+7. Verify A1 Mini and X2D automatic enumeration and useful read-only status, including X2D while actively printing.
+8. Record only sanitized results.
 
-For the clean A1 Mini/X2D retest:
-
-1. Exit Bambu Studio but leave the official plugin installed.
-2. Run the documented build/probe/discovery commands.
-3. Set `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1` and launch the server/web prototype locally.
-4. Enter the Access Code only through the loopback browser form; do not place secrets in chat/Git.
-5. Verify A1 Mini and X2D enumeration and useful read-only status, including X2D while actively printing.
-6. Commit only sanitized capability/reliability outcomes.
-
-If the clean retest fails to provide reliable discovery and useful read-only monitoring for both printers, recommend M2 NO-GO / project termination. Do not add another workaround.
+If the corrected clean retest fails to provide reliable discovery and useful read-only monitoring for both printers, recommend M2 NO-GO / project termination. Do not add another workaround.
 
 Never merge PR #3, adopt the proprietary plugin permanently or begin M3 without explicit Product Owner authorization.
