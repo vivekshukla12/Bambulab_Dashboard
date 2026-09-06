@@ -9,7 +9,7 @@ Owns the read-only HTTP boundary: Fastify REST snapshots, Server-Sent Events, di
 - Start the dashboard service and synthetic adapter.
 - Start the M2 Bambu read-only adapter with no real printers configured until local onboarding occurs.
 - Expose only versioned read-only API routes.
-- Attempt server-side real-printer discovery and expose only sanitized candidates with found/none/failed states.
+- Attempt server-side real-printer discovery and expose only sanitized candidates with found/none/failed states. The default remains direct SSDP; the bounded Windows feasibility bridge uses a user-installed official Network Plugin only when `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1`.
 - Accept process-memory-only real-printer connection details through the server-side onboarding route.
 - Reconfigure and remove process-memory real-printer entries without returning credentials or private endpoint data.
 - Keep browser clients behind REST/SSE contracts.
@@ -48,7 +48,7 @@ Consumes normalized adapter events through device core and emits API DTO events 
 
 ## Dependencies
 
-Allowed: contracts, device core, persistence, synthetic adapter, Bambu read-only adapter, discovery and observability.
+Allowed: contracts, device core, persistence, synthetic adapter, Bambu read-only adapter, the optional Bambu Network Plugin feasibility bridge, discovery and observability.
 
 ## Extension Points
 

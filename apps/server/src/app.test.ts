@@ -151,7 +151,8 @@ describe("Fastify API", () => {
             source: "ssdp",
             discoveredAt: "2026-08-24T20:00:00.000Z",
             endpointHint: "SSDP urn:bambulab-com:device:3dprinter:1 candidate; read-only MQTTS port 8883",
-            requiresAccessCode: true
+            requiresAccessCode: true,
+            requiresSerialNumber: true
           } satisfies BambuDiscoveredPrinterCandidate
         ],
         realTransportFactory: (config) => {
@@ -188,6 +189,65 @@ describe("Fastify API", () => {
     expect(connectResponse.body).not.toContain("private-printer.local");
     expect(connectResponse.body).not.toContain("SYNTHETIC_ACCESS_CODE");
     expect(connectResponse.body).not.toContain("SYNTHETIC_SERIAL_FOR_TEST");
+  });
+
+  it("uses an official-plugin candidate's private serial without returning it to the browser", async () => {
+    temp = await createTempDatabase();
+    const transportConfigs: BambuMqttsTransportConfig[] = [];
+    dashboard = await buildDashboardServer(
+      {
+        ...loadServerConfig({}),
+        databasePath: temp.databasePath,
+        syntheticIntervalMs: 1000
+      },
+      {
+        realPrinterDiscoveryMethod: "bambu-network-plugin",
+        realPrinterDiscovery: async () => [
+          {
+            id: "bambu-network-plugin-synthetic",
+            displayName: "Product Owner A1 Mini",
+            modelHint: "A1 Mini",
+            host: "private-plugin-printer.local",
+            port: 8883,
+            serialNumber: "SYNTHETIC_PLUGIN_SERIAL",
+            source: "bambu-network-plugin",
+            discoveredAt: "2026-09-06T12:00:00.000Z",
+            endpointHint: "Official Bambu Network Plugin candidate; local read-only connection",
+            requiresAccessCode: true,
+            requiresSerialNumber: false
+          } satisfies BambuDiscoveredPrinterCandidate
+        ],
+        realTransportFactory: (config) => {
+          transportConfigs.push(config);
+          return new MockRealTransport();
+        }
+      }
+    );
+
+    const candidatesResponse = await dashboard.server.inject({ method: "GET", url: "/api/v1/real-printer-candidates" });
+    expect(candidatesResponse.statusCode).toBe(200);
+    expect(candidatesResponse.json().data.discovery.discoveryMethod).toBe("bambu-network-plugin");
+    expect(candidatesResponse.json().data.discovery.candidates[0].requiresSerialNumber).toBe(false);
+    expect(candidatesResponse.body).not.toContain("private-plugin-printer.local");
+    expect(candidatesResponse.body).not.toContain("SYNTHETIC_PLUGIN_SERIAL");
+
+    const connectResponse = await dashboard.server.inject({
+      method: "POST",
+      url: "/api/v1/real-printers",
+      payload: {
+        candidateId: "bambu-network-plugin-synthetic",
+        displayName: "Product Owner A1 Mini",
+        modelHint: "A1 Mini",
+        accessCode: "SYNTHETIC_ACCESS_CODE"
+      }
+    });
+
+    expect(connectResponse.statusCode).toBe(200);
+    expect(transportConfigs[0]?.host).toBe("private-plugin-printer.local");
+    expect(transportConfigs[0]?.serialNumber).toBe("SYNTHETIC_PLUGIN_SERIAL");
+    expect(connectResponse.body).not.toContain("private-plugin-printer.local");
+    expect(connectResponse.body).not.toContain("SYNTHETIC_PLUGIN_SERIAL");
+    expect(connectResponse.body).not.toContain("SYNTHETIC_ACCESS_CODE");
   });
 
   it("reports no-candidate and failed discovery states with manual fallback", async () => {

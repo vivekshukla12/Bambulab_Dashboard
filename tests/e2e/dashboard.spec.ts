@@ -97,7 +97,8 @@ test("real-printer onboarding automatically discovers, supports reconfigure, and
                 source: "ssdp",
                 discoveredAt: "2026-08-30T15:31:00.000Z",
                 endpointHint: "SSDP urn:bambulab-com:device:3dprinter:1 candidate; read-only MQTTS port 8883",
-                requiresAccessCode: true
+                requiresAccessCode: true,
+                requiresSerialNumber: true
               }
             ],
             discoveryMethod: "ssdp",

@@ -10,6 +10,7 @@
     "packages/telemetry/src/index.ts",
     "packages/discovery/src/index.ts",
     "packages/secrets/src/index.ts",
+    "packages/bambu-network-plugin-bridge/src/index.ts",
     "packages/observability/src/index.ts"
   ],
   "out": "docs/generated/typedoc",

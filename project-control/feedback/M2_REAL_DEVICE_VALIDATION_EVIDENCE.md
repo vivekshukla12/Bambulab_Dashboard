@@ -80,3 +80,27 @@ Not tested yet. Run `npm run m2:validate:real -- secrets/m2-printers.local.json`
 ## Gate Recommendation
 
 Pending. No GO / CONDITIONAL GO / NO-GO recommendation can be made until real A1 Mini and X2D validation evidence is collected under the approved local-only process.
+
+## Official Network Plugin feasibility spike — 2026-09-06
+
+Technical disposition: **FEASIBLE FOR PRODUCT OWNER ARCHITECTURE REVIEW**. This is a spike/architecture disposition only; the M2 device gate recommendation above remains pending.
+
+Sanitized implementation evidence:
+
+- Added an opt-in Windows bridge around a user-installed official Bambu Network Plugin using only the public ABI declarations.
+- The bridge verifies matching valid Authenticode signers for Bambu Studio and the plugin, pins the `02.08.02` ABI prefix, uses isolated temporary runtime directories and fails closed when the component is absent/untrusted/incompatible.
+- Discovery host/serial values remain server-side; Access Codes remain process-memory-only and are never returned to the browser.
+- Local status callbacks normalize through the existing read-only adapter; no write/control entry point is resolved or exported.
+- Existing direct MQTTS/SSDP behavior remains the default; the spike requires `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1`.
+
+Sanitized local runtime evidence:
+
+- Native helper build passed.
+- Official installed runtime/signature/ABI probe passed.
+- Bounded discovery returned zero candidates while Bambu Studio was running and already owned the plugin listener ports. This concurrent result is not classified as a clean discovery failure.
+- No local real-printer credential file was present, so no real bridge monitor session was attempted.
+- Final `npm run validate` passed after documentation reconciliation with `43` Vitest tests.
+- `npm run test:e2e` passed with `15` Playwright tests across desktop, tablet and mobile.
+- `npm run docker:validate` could not run locally because Docker is not installed; PR-head Docker Compose CI remains the packaging evidence source.
+
+Product Owner retest remains required with Bambu Studio exited. Do not change A1 Mini/X2D capability rows until standalone discovery and useful read-only callback behavior are actually observed and sanitized.

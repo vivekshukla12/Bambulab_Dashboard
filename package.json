@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "build": "npm run build:ts && npm run build --workspace @bpd/web",
-    "build:ts": "tsc -b packages/domain packages/contracts packages/adapter-api packages/telemetry packages/observability packages/discovery packages/secrets packages/persistence packages/adapter-synthetic packages/adapter-bambu-readonly packages/device-core packages/test-support apps/server",
+    "build:ts": "tsc -b packages/domain packages/contracts packages/adapter-api packages/telemetry packages/observability packages/discovery packages/secrets packages/persistence packages/adapter-synthetic packages/adapter-bambu-readonly packages/bambu-network-plugin-bridge packages/device-core packages/test-support apps/server",
     "dev:server": "npm run dev --workspace @bpd/server",
     "dev:web": "npm run dev --workspace @bpd/web --",
     "start": "npm run start --workspace @bpd/server",
@@ -24,6 +24,9 @@
     "test:e2e": "playwright test",
     "docs:typedoc": "typedoc --options typedoc.json",
     "m2:validate:real": "npm run build:ts && node scripts/m2-real-device-validation.mjs",
+    "m2:network-plugin:build": "npm run build:native:windows --workspace @bpd/bambu-network-plugin-bridge",
+    "m2:network-plugin:probe": "npm run probe --workspace @bpd/bambu-network-plugin-bridge",
+    "m2:network-plugin:discover": "npm run discover --workspace @bpd/bambu-network-plugin-bridge",
     "docker:build": "docker compose build",
     "docker:up": "docker compose up --build",
     "docker:validate": "node scripts/validate-docker-compose.mjs",

@@ -8,7 +8,7 @@ Defines versioned REST and SSE DTOs shared by the Fastify server and React brows
 
 - API envelope and health DTOs.
 - Device summary/detail/state DTOs.
-- Sanitized real-printer discovery/onboarding/reconfiguration/removal DTOs.
+- Sanitized real-printer discovery/onboarding/reconfiguration/removal DTOs, including direct SSDP and optional official Network Plugin candidate provenance.
 - SSE event DTOs.
 - Mappers from normalized domain objects to browser-safe contracts.
 

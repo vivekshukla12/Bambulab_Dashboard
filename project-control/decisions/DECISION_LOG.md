@@ -113,7 +113,7 @@
 ## DEC-011 — Exclude printer Developer Mode and defer direct Bambu Lab partnership/contact
 
 - **Date:** 2026-08-23
-- **Status:** Superseded in part by DEC-017
+- **Status:** Approved / restored by DEC-018
 - **Decision:** The project will not require or use Bambu printer Developer Mode. The project will also not contact Bambu Lab or pursue developer-partner authorization at this stage. Reverse-engineered cloud-client impersonation remains prohibited under DEC-006.
 - **Rationale:** Preserve a low-friction end-user posture that does not require weakening/default-changing printer security settings, and avoid making current development dependent on vendor partnership or private authorization.
 - **Alternatives considered:** Direct LAN integration through Developer Mode; immediate Bambu developer-partner/Fleet Hub authorization request — both deferred by product-owner direction.
@@ -157,7 +157,7 @@
 ## DEC-015 — Adopt read-only LAN access, discovery and printer-credential policy
 
 - **Date:** 2026-08-23
-- **Status:** Approved, subject to DEC-017 viability gate
+- **Status:** Approved, subject to DEC-018 viability gate
 - **Decision:** The read-only V1 dashboard has no interactive application login. It is LAN-accessible by default with an option to restrict network binding where feasible. Initial read-only LAN deployment may use HTTP while remaining HTTPS-capable; HTTPS plus strong authentication is mandatory before any future write/control or comparable sensitive capability. The dashboard server should advertise a stable LAN-local service name via mDNS or equivalent so manual server IP/port entry is not the normal UX. Future real-printer onboarding uses server-side LAN discovery plus a user-supplied LAN Access Code, with manual IP/serial/access-code fallback. The user decides per printer whether the Access Code is remembered: remembered values are encrypted at rest through the secrets module; declined values remain process-memory-only and must be re-entered after restart.
 - **Rationale:** Read-only LAN monitoring does not justify unnecessary dashboard-login friction, while printer credentials remain sensitive device secrets. Stable local naming and automatic printer discovery reduce setup friction without browser-side LAN scanning. Separating read-only access from future privileged control keeps the current product simple while preserving a hard security gate for later capabilities.
 - **Alternatives considered:** Mandatory V1 dashboard authentication; localhost-only dashboard; manual server IP/port; manual-only printer onboarding; always-persisted or never-persisted Access Codes; mandatory HTTPS before the read-only prototype.
@@ -179,10 +179,22 @@
 ## DEC-017 — Gate project continuation on an official Bambu-supported integration path
 
 - **Date:** 2026-09-05
-- **Status:** Approved / current viability gate
+- **Status:** Superseded in part by DEC-018
 - **Decision:** Stop further unsupported LAN-discovery and cloud reverse-engineering work. The project may continue only if Bambu Lab provides a documented, supported integration route suitable for this open-source dashboard, whether through an approved cloud API, Bambu Connect/Network Plugin integration, Farm Manager integration, partner authorization, or another official interface. Reverse-engineered Bambu Cloud client impersonation remains prohibited. If Bambu does not provide a supported route that is technically and contractually compatible with the Product Owner's product goals, recommend project termination rather than continued workaround development.
 - **Rationale:** Repeated automatic-discovery remediation has not produced an acceptable M2 onboarding experience. Bambu publicly states that its cloud is private infrastructure and that unofficial clients must not impersonate official clients, while also explicitly inviting farm-management and third-party software developers to work with Bambu Lab on proper authorization controls. Continuing unsupported reverse engineering would violate the project's legal/interface posture and no longer justifies further investment.
 - **Alternatives considered:** Continue SSDP/mDNS experimentation indefinitely; implement unofficial Bambu Cloud login; enable Developer Mode; silently embed proprietary Bambu software — rejected. Immediate project termination without first testing the official partnership route — deferred because Bambu publicly offers a legitimate developer-partnership path.
-- **Consequences:** DEC-011 is superseded only with respect to contacting Bambu/pursuing official developer-partner authorization; Developer Mode remains excluded unless separately approved. M2 implementation is HOLD. PR #3 remains draft/unmerged and M3 remains blocked. Before any new Bambu interface is implemented, the Product Owner must review the official interface documentation, authentication model, licensing/redistribution terms, open-source/MPL compatibility, fees, NDA/certificate requirements, supported platforms/models, data handling, and security/privacy implications. If no acceptable official path is available, close the project through a final Product Owner stop decision.
+- **Consequences:** DEC-018 restores DEC-011's no-outreach policy and supersedes this decision only where it required contacting Bambu or pursuing partner authorization. The prohibition on unsupported discovery experimentation, private cloud APIs, official-client impersonation, Developer Mode and security bypasses remains in force. PR #3 remains draft/unmerged and M3 remains blocked.
 - **Approved by:** Product owner direction on 2026-09-05.
 - **Related milestone / PR:** M2 / PR #3.
+
+## DEC-018 — Restore no-outreach and authorize bounded public Bambu Connect / Network Plugin feasibility evaluation
+
+- **Date:** 2026-09-06
+- **Status:** Approved / current M2 viability decision
+- **Decision:** Restore DEC-011's no-outreach constraint and supersede DEC-017 where it required vendor contact or partner authorization. Permit one bounded evaluation of Bambu Connect only as its documented user-mediated action handoff and of an official user-installed Bambu Network Plugin for discovery, local connection and read-only monitoring through public integration declarations. Prohibit plugin redistribution or binary reverse engineering, AGPL implementation copying, cloud-client impersonation, credential/token extraction, private cloud/IPC use, Developer Mode, write/control operations and security weakening.
+- **Rationale:** The Product Owner rejected outreach while Bambu's public material and Bambu Studio declarations identify a narrower no-contact monitoring boundary worth one final feasibility test.
+- **Alternatives considered:** Vendor outreach, further custom mDNS/SSDP experimentation, private cloud access, Developer Mode and immediate termination were rejected or deferred as recorded in the dedicated decision.
+- **Consequences:** The bounded bridge may use only a user-installed official component, remains opt-in and is not permanent dependency approval. A successful spike returns to HOLD for Product Owner architecture/dependency/licensing review; a failed real-device route leads to an M2 NO-GO / termination recommendation. PR #3 remains draft/unmerged and M3 remains blocked.
+- **Approved by:** Product Owner direction on 2026-09-06.
+- **Related milestone / PR:** M2 / PR #3.
+- **Full record:** `project-control/decisions/DEC-018_BAMBU_CONNECT_NETWORK_PLUGIN_FEASIBILITY.md`.

@@ -11,6 +11,7 @@
     { "path": "./packages/persistence" },
     { "path": "./packages/adapter-synthetic" },
     { "path": "./packages/adapter-bambu-readonly" },
+    { "path": "./packages/bambu-network-plugin-bridge" },
     { "path": "./packages/device-core" },
     { "path": "./packages/test-support" },
     { "path": "./apps/server" }

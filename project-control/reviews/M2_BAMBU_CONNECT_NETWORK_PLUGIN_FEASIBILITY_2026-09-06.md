@@ -56,3 +56,41 @@ If the spike cannot establish reliable A1 Mini and X2D discovery/read-only monit
 ## Legal note
 
 This is a technical/licensing risk assessment from public materials, not legal advice. The public Bambu statements support third-party use of Bambu Connect and exploration of the updated Network Plugin within documented boundaries, but they do not establish a right to redistribute the proprietary plugin or use undocumented/private Bambu Cloud interfaces.
+
+## Executed spike outcome — 2026-09-06
+
+**Technical disposition: FEASIBLE FOR PRODUCT OWNER ARCHITECTURE REVIEW.**
+
+The public Bambu Studio declarations were sufficient to independently implement a small Windows ABI helper without copying Bambu Studio implementation code. The helper successfully loaded the locally installed official Network Plugin after validating Authenticode on both the plugin and Bambu Studio executable, requiring the signer certificates to match, checking release-mode compatibility and pinning ABI prefix `02.08.02`.
+
+The committed bridge resolves only:
+
+- version/release compatibility and agent lifecycle;
+- config/certificate/country initialization;
+- SSDP/discovery callback and bounded discovery start/stop;
+- local connect/disconnect callback;
+- local read-only message callback;
+- printer local connect/disconnect.
+
+It does not resolve or expose cloud login, arbitrary send-message, subscription-send, bind/unbind, install-certificate, print, motion, calibration, camera, file-transfer or other write/control entry points. The plugin remains a user-installed runtime asset and is absent from the repository/build artifacts.
+
+Local evidence:
+
+- official Bambu Studio version `02.08.02.61` found;
+- user-installed official Network Plugin version `02.08.02.54` found;
+- both signatures valid with matching signer certificates;
+- required allowed ABI symbols present;
+- native helper build and sanitized probe passed;
+- one bounded discovery run returned zero candidates while Bambu Studio was concurrently running and owned the plugin's discovery/listener ports.
+
+The concurrent zero-candidate run is not sufficient to classify real discovery as failed. The Product Owner must exit Bambu Studio and perform the documented standalone A1 Mini/X2D retest. Real device discovery, useful read-only callbacks and the X2D active-print case remain unproven, so this disposition is not M2 GO/acceptance and does not authorize permanent adoption.
+
+Automated mocks prove component-absence failure, private/public endpoint filtering, candidate sanitization and deduplication, server-side serial/host resolution, callback normalization through the existing adapter, credential/browser redaction, no write/control export and synthetic/browser regressions.
+
+Before permanent adoption, Product Owner review is required for the proprietary dependency, no-redistribution constraint, Windows-only spike scope, ABI/version maintenance, Bambu Studio coexistence and Docker/public-CI limitations. A failed clean A1 Mini/X2D retest should produce an M2 NO-GO / project termination recommendation, not another workaround.
+
+Public declarations used:
+
+- `https://github.com/bambulab/BambuStudio/blob/master/src/slic3r/Utils/NetworkAgent.hpp`
+- `https://github.com/bambulab/BambuStudio/blob/master/src/slic3r/Utils/bambu_networking.hpp`
+- `https://github.com/bambulab/BambuStudio/blob/master/src/slic3r/Utils/NetworkAgent.cpp`

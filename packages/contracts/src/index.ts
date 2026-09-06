@@ -126,10 +126,11 @@ export interface RealPrinterCandidateDto {
   id: string;
   displayName: string;
   modelHint: string;
-  source: "ssdp";
+  source: "ssdp" | "bambu-network-plugin";
   discoveredAt: string;
   endpointHint: string;
   requiresAccessCode: true;
+  requiresSerialNumber: boolean;
 }
 
 /**
@@ -138,7 +139,7 @@ export interface RealPrinterCandidateDto {
 export interface RealPrinterDiscoveryDto {
   status: "found" | "none" | "failed";
   candidates: RealPrinterCandidateDto[];
-  discoveryMethod: "ssdp";
+  discoveryMethod: "ssdp" | "bambu-network-plugin";
   manualFallbackAvailable: true;
   note: string;
 }
@@ -151,7 +152,7 @@ export interface RealPrinterConnectionRequest {
   displayName: string;
   modelHint: string;
   host?: string;
-  serialNumber: string;
+  serialNumber?: string;
   accessCode: string;
   port?: number;
   caCertificatePath?: string;

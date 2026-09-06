@@ -139,10 +139,12 @@ export interface BambuDiscoveredPrinterCandidate {
   modelHint: string;
   host: string;
   port: number;
-  source: "ssdp";
+  serialNumber?: string;
+  source: "ssdp" | "bambu-network-plugin";
   discoveredAt: string;
   endpointHint: string;
   requiresAccessCode: true;
+  requiresSerialNumber: boolean;
 }
 
 /**
@@ -936,7 +938,8 @@ export function parseBambuSsdpCandidate(
     source: "ssdp",
     discoveredAt: options.discoveredAt ?? new Date().toISOString(),
     endpointHint: `SSDP ${serviceType} candidate; read-only MQTTS port ${DEFAULT_PORT}`,
-    requiresAccessCode: true
+    requiresAccessCode: true,
+    requiresSerialNumber: true
   };
 }
 

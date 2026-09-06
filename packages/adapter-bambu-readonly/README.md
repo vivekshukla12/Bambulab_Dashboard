@@ -19,7 +19,7 @@ Owns the M2 real Bambu read-only adapter boundary for the approved standard-mode
 
 ## Public Contracts
 
-Exports `BambuReadonlyAdapter`, `createBambuReadonlyAdapter`, `discoverBambuPrinters`, `parseBambuSsdpCandidate`, parser/normalizer helpers and transport/discovery/configuration interfaces for mocked offline tests.
+Exports `BambuReadonlyAdapter`, `createBambuReadonlyAdapter`, `discoverBambuPrinters`, `parseBambuSsdpCandidate`, parser/normalizer helpers and transport/discovery/configuration interfaces for mocked offline tests. The separate optional `@bpd/bambu-network-plugin-bridge` package implements the same transport boundary for the bounded official-plugin feasibility spike.
 
 ## Owned Data
 

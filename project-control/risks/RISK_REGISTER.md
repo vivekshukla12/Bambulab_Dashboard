@@ -72,3 +72,13 @@
 - **Owner:** Product owner / Architecture
 - **Status:** Open
 - **Related milestone:** M2
+
+## R-017 — Optional official Network Plugin bridge creates a proprietary runtime and platform dependency
+
+- **Description:** The bounded spike can invoke the user-installed official Bambu Network Plugin through public Bambu Studio ABI declarations, but the component is proprietary, separately distributed, currently proven only on Windows ABI prefix `02.08.02`, and cannot be bundled in this MPL repository. Version drift, signer changes, installation layout changes or concurrent Bambu Studio ownership of local plugin listeners may make discovery or monitoring unavailable. Docker/public CI cannot exercise the proprietary runtime.
+- **Likelihood:** High
+- **Impact:** Critical
+- **Mitigation:** Keep the bridge opt-in and isolated; require a normal official Bambu Studio/plugin installation; verify Authenticode and require the plugin signer certificate to match the Studio executable; pin and report the compatible ABI prefix; resolve only the approved discovery/local-connect/local-message entry points; fail closed when absent or incompatible; never redistribute the plugin; preserve direct MQTTS/SSDP and synthetic paths; require Product Owner architecture/dependency/licensing review and clean A1 Mini/X2D retesting with Bambu Studio exited before permanent adoption.
+- **Owner:** Product owner / Architecture / Security
+- **Status:** Open — bounded spike feasible; permanent adoption and real-device reliability unapproved
+- **Related milestone:** M2 / PR #3

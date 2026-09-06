@@ -241,6 +241,7 @@ function RealPrinterPanel({
   const [autoDiscoveryStarted, setAutoDiscoveryStarted] = useState(false);
   const [configuredLoaded, setConfiguredLoaded] = useState(false);
   const configuredCount = Math.max(health?.realPrinterOnboarding.configuredPrinters ?? 0, configuredPrinters.length);
+  const selectedCandidate = candidates.find((candidate) => candidate.id === selectedCandidateId);
 
   const refreshConfiguredPrinters = useCallback(async () => {
     try {
@@ -290,10 +291,12 @@ function RealPrinterPanel({
     const request: RealPrinterConnectionRequest = {
       displayName,
       modelHint,
-      serialNumber,
       accessCode,
       tlsTrustProfile: tlsTrustProfile || "local-printer-chain"
     };
+    if (serialNumber.trim()) {
+      request.serialNumber = serialNumber;
+    }
     if (selectedCandidateId) {
       request.candidateId = selectedCandidateId;
     } else {
@@ -340,6 +343,9 @@ function RealPrinterPanel({
     setDisplayName(candidate.displayName);
     setModelHint(candidate.modelHint);
     setHost("");
+    if (!candidate.requiresSerialNumber) {
+      setSerialNumber("");
+    }
   };
 
   const startEdit = (printer: RealPrinterConnectionDto) => {
@@ -532,11 +538,12 @@ function RealPrinterPanel({
         <label className="field-wide">
           <span>Serial</span>
           <input
-            value={serialNumber}
+            value={selectedCandidate && !selectedCandidate.requiresSerialNumber ? "Resolved server-side" : serialNumber}
             onChange={(event) => setSerialNumber(event.target.value)}
-            required={requiresFullConnectionFields}
+            required={requiresFullConnectionFields && (!selectedCandidate || selectedCandidate.requiresSerialNumber)}
+            disabled={Boolean(selectedCandidate && !selectedCandidate.requiresSerialNumber)}
             autoComplete="off"
-            placeholder={formMode === "edit" ? "Leave blank to keep current" : undefined}
+            placeholder={formMode === "edit" ? "Leave blank to keep current" : "Required for manual/SSDP setup"}
           />
         </label>
         <label className="field-wide">

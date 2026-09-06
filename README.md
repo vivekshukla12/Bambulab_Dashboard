@@ -54,7 +54,7 @@ npm run dev:web -- --host 127.0.0.1
 
 Open `http://127.0.0.1:5173`. The Vite web app proxies read-only REST/SSE traffic to the Fastify server on `http://127.0.0.1:3001`.
 
-M2 real-printer onboarding is available from the fleet page with automatic bounded server-side SSDP discovery, a visible rescan action, edit/remove lifecycle controls, local-printer-chain TLS trust profile support and manual host fallback. Real LAN Access Codes are process-memory-only by default, are cleared from the form after submit/reconfigure and are not returned through diagnostics. Enter a real Access Code in the browser only when the dashboard is opened on the server machine through `localhost`/loopback or when the dashboard is HTTPS-served. For remote LAN HTTP validation, use the local CLI config path instead. Use only the Product Owner's LAN and target printers for real validation.
+M2 real-printer onboarding is available from the fleet page with automatic bounded server-side SSDP discovery, a visible rescan action, edit/remove lifecycle controls, local-printer-chain TLS trust profile support and manual host fallback. A bounded Windows-only feasibility spike can instead use a user-installed official Bambu Network Plugin by setting `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1`; it is opt-in and does not replace the direct MQTTS/SSDP implementation. Real LAN Access Codes are process-memory-only by default, are cleared from the form after submit/reconfigure and are not returned through diagnostics. Enter a real Access Code in the browser only when the dashboard is opened on the server machine through `localhost`/loopback or when the dashboard is HTTPS-served. For remote LAN HTTP validation, use the local CLI config path instead. Use only the Product Owner's LAN and target printers for real validation.
 
 The normal Fleet view is real-printer focused and hides deterministic synthetic printer cards by default. Open `http://127.0.0.1:5173/?synthetic=1` when you need the explicit synthetic regression view.
 
@@ -90,6 +90,18 @@ npm run m2:validate:real -- secrets/m2-printers.local.json
 ```
 
 For local hands-on entry without writing a config file, run `npm run m2:validate:real -- --interactive`; serial and Access Code prompts are hidden. See [`docs/development/M2_REAL_DEVICE_VALIDATION.md`](docs/development/M2_REAL_DEVICE_VALIDATION.md). The `secrets/` directory is ignored by Git and must contain no committed material.
+
+Optional official Network Plugin feasibility retest on Windows:
+
+```powershell
+npm run m2:network-plugin:build
+npm run m2:network-plugin:probe
+npm run m2:network-plugin:discover
+$env:BPD_BAMBU_NETWORK_PLUGIN_BRIDGE = "1"
+npm run dev:server
+```
+
+Exit Bambu Studio before the standalone discovery/dashboard retest so it is not concurrently using the same installed plugin listener. Run the web app normally in a second terminal. See [`packages/bambu-network-plugin-bridge/README.md`](packages/bambu-network-plugin-bridge/README.md) for the spike boundary.
 
 ## Repository layout
 

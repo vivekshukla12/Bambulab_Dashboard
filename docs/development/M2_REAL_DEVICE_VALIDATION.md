@@ -18,6 +18,18 @@ Enter a real LAN Access Code through the browser form only from `localhost`/loop
 
 The dashboard automatically starts bounded server-side discovery from the Fleet onboarding panel when no configured real printer makes that scan unnecessary. Discovery uses local SSDP from the server process for the Bambu printer service type `urn:bambulab-com:device:3dprinter:1`, returns sanitized candidates to the browser and preserves manual host entry as fallback when discovery is unavailable or unreliable. Use the visible rescan action to refresh discovery. Configured real printers can be edited/reconfigured or removed from the same panel; existing Access Codes are never displayed back, and entering a new Access Code replaces the in-memory credential.
 
+For the bounded official Network Plugin feasibility retest on Windows, install Bambu Studio and its Network Plugin only through Bambu's normal distribution path, then exit Bambu Studio before running the standalone bridge so the two processes do not compete for the plugin's local listener. Build and probe the project-authored helper, run sanitized discovery, and enable the bridge only for that server process:
+
+```powershell
+npm run m2:network-plugin:build
+npm run m2:network-plugin:probe
+npm run m2:network-plugin:discover
+$env:BPD_BAMBU_NETWORK_PLUGIN_BRIDGE = "1"
+npm run dev:server
+```
+
+Run `npm run dev:web -- --host 127.0.0.1` in a second terminal and open `http://127.0.0.1:5173`. A discovered official-plugin candidate resolves host and serial only on the server; the browser asks for the LAN Access Code but does not receive those private fields. If the component is absent, unsigned, signed by a different publisher or ABI-incompatible, the bridge fails closed. Remove the environment flag to return to direct MQTTS/SSDP. Do not copy the installed plugin into this repository or provide credentials in chat/Git.
+
 The normal Fleet view is real-printer focused and hides deterministic synthetic cards by default. Use `/?synthetic=1` only for development/regression validation of synthetic scenarios.
 
 ## Commands
@@ -27,6 +39,9 @@ npm run validate
 npm run test:e2e
 npm run m2:validate:real -- secrets/m2-printers.local.json
 npm run m2:validate:real -- --interactive
+npm run m2:network-plugin:build
+npm run m2:network-plugin:probe
+npm run m2:network-plugin:discover
 ```
 
 Run the real validation for each printer individually and with both printers in the same config. Run during idle and, where practical, during a real print so progress and print-session transitions can be classified.

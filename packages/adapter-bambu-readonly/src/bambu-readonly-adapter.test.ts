@@ -500,7 +500,8 @@ describe("Bambu SSDP discovery", () => {
       port: 8883,
       source: "ssdp",
       discoveredAt: "2026-08-30T16:00:00.000Z",
-      requiresAccessCode: true
+      requiresAccessCode: true,
+      requiresSerialNumber: true
     });
     expect(candidate?.endpointHint).toContain("urn:bambulab-com:device:3dprinter:1");
     expect(candidate?.endpointHint).not.toContain("192.0.2.42");

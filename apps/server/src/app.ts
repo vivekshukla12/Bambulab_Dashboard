@@ -11,6 +11,10 @@ import {
 } from "@bpd/adapter-bambu-readonly";
 import { createSyntheticAdapter } from "@bpd/adapter-synthetic";
 import {
+  createBambuNetworkPluginTransportFactory,
+  discoverBambuPrintersWithNetworkPlugin
+} from "@bpd/bambu-network-plugin-bridge";
+import {
   envelope,
   toDeviceDetailDto,
   toDeviceSummaryDto,
@@ -47,6 +51,7 @@ export interface DashboardServer {
 export interface DashboardServerOptions {
   realTransportFactory?: BambuTransportFactory;
   realPrinterDiscovery?: () => Promise<BambuDiscoveredPrinterCandidate[]>;
+  realPrinterDiscoveryMethod?: RealPrinterDiscoveryDto["discoveryMethod"];
 }
 
 /**
@@ -59,10 +64,17 @@ export async function buildDashboardServer(config: ServerConfig, options: Dashbo
     logger: logger.child({ component: "database" })
   });
   const syntheticAdapter = createSyntheticAdapter({ intervalMs: config.syntheticIntervalMs });
+  const pluginBridgeEnabled = config.bambuNetworkPluginBridgeEnabled;
+  const realTransportFactory =
+    options.realTransportFactory ?? (pluginBridgeEnabled ? createBambuNetworkPluginTransportFactory() : undefined);
   const realAdapter = createBambuReadonlyAdapter(
-    options.realTransportFactory ? { transportFactory: options.realTransportFactory } : {}
+    realTransportFactory ? { transportFactory: realTransportFactory } : {}
   );
-  const discoverRealPrinters = options.realPrinterDiscovery ?? (() => discoverBambuPrinters());
+  const discoveryMethod =
+    options.realPrinterDiscoveryMethod ?? (pluginBridgeEnabled ? "bambu-network-plugin" : "ssdp");
+  const discoverRealPrinters =
+    options.realPrinterDiscovery ??
+    (pluginBridgeEnabled ? () => discoverBambuPrintersWithNetworkPlugin() : () => discoverBambuPrinters());
   const discoveredCandidates = new Map<string, BambuDiscoveredPrinterCandidate>();
   const deviceService = new DeviceStateService([syntheticAdapter, realAdapter], database, logger.child({ component: "device-core" }));
   await deviceService.start();
@@ -111,7 +123,7 @@ export async function buildDashboardServer(config: ServerConfig, options: Dashbo
       for (const candidate of candidates) {
         discoveredCandidates.set(candidate.id, candidate);
       }
-      return envelope({ discovery: toRealPrinterDiscoveryDto(candidates) }, request.id);
+      return envelope({ discovery: toRealPrinterDiscoveryDto(candidates, discoveryMethod) }, request.id);
     } catch {
       discoveredCandidates.clear();
       return envelope(
@@ -119,9 +131,12 @@ export async function buildDashboardServer(config: ServerConfig, options: Dashbo
           discovery: {
             status: "failed",
             candidates: [],
-            discoveryMethod: "ssdp",
+            discoveryMethod,
             manualFallbackAvailable: true,
-            note: "Server-side SSDP discovery failed; manual host fallback remains available."
+            note:
+              discoveryMethod === "bambu-network-plugin"
+                ? "Official Network Plugin discovery failed; manual host fallback remains available."
+                : "Server-side SSDP discovery failed; manual host fallback remains available."
           } satisfies RealPrinterDiscoveryDto
         },
         request.id
@@ -272,20 +287,28 @@ function toRealPrinterCandidateDto(candidate: BambuDiscoveredPrinterCandidate): 
     source: candidate.source,
     discoveredAt: candidate.discoveredAt,
     endpointHint: candidate.endpointHint,
-    requiresAccessCode: true
+    requiresAccessCode: true,
+    requiresSerialNumber: candidate.requiresSerialNumber
   };
 }
 
-function toRealPrinterDiscoveryDto(candidates: BambuDiscoveredPrinterCandidate[]): RealPrinterDiscoveryDto {
+function toRealPrinterDiscoveryDto(
+  candidates: BambuDiscoveredPrinterCandidate[],
+  discoveryMethod: RealPrinterDiscoveryDto["discoveryMethod"]
+): RealPrinterDiscoveryDto {
   return {
     status: candidates.length > 0 ? "found" : "none",
     candidates: candidates.map(toRealPrinterCandidateDto),
-    discoveryMethod: "ssdp",
+    discoveryMethod,
     manualFallbackAvailable: true,
     note:
-      candidates.length > 0
-        ? "Server-side SSDP discovery found sanitized printer candidates; Access Codes remain memory-only."
-        : "No server-side SSDP candidates found; use the manual host fallback."
+      discoveryMethod === "bambu-network-plugin"
+        ? candidates.length > 0
+          ? "Official Network Plugin discovery found sanitized printer candidates; Access Codes remain memory-only."
+          : "No official Network Plugin candidates found; use the manual host fallback."
+        : candidates.length > 0
+          ? "Server-side SSDP discovery found sanitized printer candidates; Access Codes remain memory-only."
+          : "No server-side SSDP candidates found; use the manual host fallback."
   };
 }
 
@@ -301,7 +324,7 @@ function toBambuConnectionInput(
     displayName: requireBodyString(body.displayName, "displayName"),
     modelHint: requireBodyString(body.modelHint, "modelHint"),
     host: candidate?.host ?? requireBodyString(body.host, "host"),
-    serialNumber: requireBodyString(body.serialNumber, "serialNumber"),
+    serialNumber: candidate?.serialNumber ?? requireBodyString(body.serialNumber, "serialNumber"),
     accessCode: requireBodyString(body.accessCode, "accessCode")
   };
   const port = body.port ?? candidate?.port;
@@ -332,7 +355,7 @@ function toBambuReconfigurationInput(
     displayName: optionalBodyString(body.displayName) ?? "",
     modelHint: optionalBodyString(body.modelHint) ?? "",
     host: candidate?.host ?? optionalBodyString(body.host) ?? "",
-    serialNumber: optionalBodyString(body.serialNumber) ?? "",
+    serialNumber: candidate?.serialNumber ?? optionalBodyString(body.serialNumber) ?? "",
     accessCode: optionalBodyString(body.accessCode) ?? ""
   };
   const port = body.port ?? candidate?.port;

@@ -5,6 +5,7 @@
 GitHub is authoritative: `vivekshukla12/Bambulab_Dashboard`.
 
 At the start of a new project/milestone chat, reconcile:
+
 1. `project-control/status/CURRENT_STATUS.md`
 2. `project-control/handoffs/CHATGPT_HANDOVER.md`
 3. `prompts/codex/NEXT_PROMPT.md`
@@ -12,103 +13,89 @@ At the start of a new project/milestone chat, reconcile:
 5. relevant milestone/spec files
 6. `project-control/decisions/DECISION_LOG.md` plus current dedicated decision records
 7. `project-control/risks/RISK_REGISTER.md`
-8. actual branch/PR/merge/commit/CI state.
+8. actual branch/PR/merge/commit/CI state
 
 ## Product/governance baseline
 
-Bambu Printer Dashboard is an independent, open-source, local-first/read-only-first monitoring dashboard for compatible Bambu Lab printers. Product Owner controls scope, architecture, dependencies, security/privacy boundaries, milestone acceptance and merges. Repository license is MPL-2.0.
+Bambu Printer Dashboard is an independent, open-source, local-first/read-only-first monitoring dashboard for compatible Bambu Lab printers. The Product Owner controls scope, architecture, dependencies, security/privacy boundaries, milestone acceptance and merges. The repository license is MPL-2.0.
 
 Completed:
+
 - M0 merged: `bad179a0f847f9a478e2c167e62dd94760baa105`
 - M1 merged: `42821596cc0bf80a302b12287063b3ee17f58f3a`
 
 M1 UI modernization remains deferred.
 
-## Current milestone
+## Current milestone / gate
 
 M2 — Real A1 Mini + X2D integration feasibility / GO-NO-GO.
 
-**Current state: QUEUED for one bounded no-outreach Bambu Connect / user-installed Network Plugin feasibility spike.**
+**Current state: HOLD — FEASIBLE FOR PRODUCT OWNER ARCHITECTURE REVIEW.**
 
 Draft PR #3 remains open/draft/unmerged on `m2/real-device-readonly-prototype`. M3 remains blocked. Merge is not authorized.
 
-Current authoritative decision:
+Authority:
+
 - `project-control/decisions/DEC-018_BAMBU_CONNECT_NETWORK_PLUGIN_FEASIBILITY.md`
-
-Current feasibility review:
 - `project-control/reviews/M2_BAMBU_CONNECT_NETWORK_PLUGIN_FEASIBILITY_2026-09-06.md`
+- `prompts/codex/NEXT_PROMPT.md` — HOLD
 
-Codex gate:
-- `prompts/codex/NEXT_PROMPT.md` — QUEUED for the bounded feasibility spike only.
+## Decision history
 
-## Governance correction — 2026-09-06
+DEC-018 restores DEC-011's no-outreach policy and supersedes DEC-017 only where DEC-017 required contacting Bambu Lab or pursuing partner authorization. Do not contact Bambu Lab. The restrictions on Developer Mode, unsupported discovery work, private Bambu Cloud access, official-client impersonation, credential/token extraction, proprietary binary reverse engineering/redistribution, write/control operations and security weakening remain in force.
 
-The Product Owner reaffirmed that contacting Bambu Lab / pursuing developer-partner authorization is a no-go and noted that this had already been decided in DEC-011. The previous outreach-based DEC-017 continuation gate conflicted with that direction.
+`DECISION_LOG.md` now mechanically indexes DEC-018 and marks DEC-011/DEC-017 consistently.
 
-DEC-018 restores the no-outreach policy and supersedes DEC-017 to the extent it required vendor contact/partner authorization. `DECISION_LOG.md` still needs a mechanical index/status reconciliation in the next project-control maintenance commit; until then the dedicated DEC-018 record is authoritative for the current gate.
+## Bounded spike result
 
-Do not contact Bambu Lab.
+The branch adds an isolated optional `@bpd/bambu-network-plugin-bridge` package and project-authored Windows native helper based only on public Bambu Studio declarations. It does not contain Bambu source headers, implementation code, binaries or proprietary fixtures.
 
-## Technical history
+The helper:
 
-M2 has already tried:
-- custom mDNS printer discovery — hands-on failure;
-- custom SSDP discovery targeting `urn:bambulab-com:device:3dprinter:1` — automated/CI success, but Product Owner reports real automatic discovery still fails;
-- manual local read-only MQTTS path — A1 Mini previously showed limited basic telemetry;
-- X2D active-print connection — unresolved failure.
+- locates only a normal user-installed Bambu Studio/Network Plugin or explicit local override;
+- verifies both files with Authenticode and requires matching signer certificates;
+- pins ABI prefix `02.08.02`;
+- resolves only compatibility/version, discovery, local connect/disconnect and local message callback functions;
+- sends host, serial and Access Code to the child only through its private environment and removes those variables immediately;
+- uses an isolated temporary config/log directory and deletes it after use;
+- emits private payloads only over child IPC for server-side parsing;
+- exposes no arbitrary send, bind/unbind, cloud login, printing, motion, calibration, camera or file-transfer function.
 
-The Product Owner does not want further unsupported discovery/cloud reverse-engineering. If the final publicly supported no-contact integration surface cannot satisfy the product, recommend project termination.
+The bridge is used only when `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1`. Without that flag, the existing direct MQTTS/SSDP implementation remains active. Browser DTOs remain sanitized, and official discovery can supply the serial server-side so the browser asks only for the remaining Access Code.
 
-## Public Bambu integration conclusion
+## Evidence at handoff
 
-### Bambu Connect
+Local official installation:
 
-Bambu publicly documents Bambu Connect as the user-mediated path for authorization-controlled third-party operations via a URL Scheme. Treat it only as that documented handoff. It is not established as a general OAuth/token, printer enumeration or telemetry API.
+- Bambu Studio `02.08.02.61`
+- Network Plugin `02.08.02.54`
+- valid matching Authenticode signer certificates
+- complete allowed symbol boundary present
 
-Never scrape/extract Bambu Connect credentials/tokens/private IPC or use it to obtain private cloud authorization for this dashboard.
+Sanitized local results:
 
-### Updated Network Plugin
+- `npm run m2:network-plugin:build` — passed.
+- `npm run m2:network-plugin:probe` — passed; ABI prefix `02.08.02`.
+- `npm run m2:network-plugin:discover` — zero candidates while Bambu Studio was running and owned the plugin's discovery/listener ports; this is not a clean standalone failure.
+- final `npm run validate` — passed after documentation reconciliation with `43` Vitest tests.
+- `npm run test:e2e` — `15` passed across desktop, tablet and mobile.
+- `npm run docker:validate` — unavailable locally because Docker is not installed; verify the PR-head Docker Compose job after push.
 
-Bambu publicly states that monitoring functions such as status/temperature/position/speed remain accessible and that unofficial software can explore integration using the updated Network Plugin.
+No local real credential file is present. No real Access Code, serial, private IP, account data or raw plugin/device payload was read into evidence or committed.
 
-Bambu Studio public source exposes a `NetworkAgent` wrapper boundary around the separately distributed plugin, including discovery/SSDP, local-connect/local-message, subscription and printer-connect functions.
+## Required Product Owner action
 
-The networking plugin is separately distributed and proprietary/non-free. Public research has not established a redistribution right compatible with bundling it into this MPL repository. Therefore the spike may use only an **official Bambu component already installed by the user** through Bambu's normal distribution path.
+Before permanent adoption, review the proprietary user-installed runtime dependency, no-redistribution posture, Windows/platform scope, ABI/version maintenance and operational coexistence implications.
 
-Do not copy Bambu Studio AGPL implementation code into this MPL repository. Any bridge must be independently implemented from public declarations/documented behavior.
+For the clean A1 Mini/X2D retest:
 
-### Cloud
+1. Exit Bambu Studio but leave the official plugin installed.
+2. Run the documented build/probe/discovery commands.
+3. Set `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1` and launch the server/web prototype locally.
+4. Enter the Access Code only through the loopback browser form; do not place secrets in chat/Git.
+5. Verify A1 Mini and X2D enumeration and useful read-only status, including X2D while actively printing.
+6. Commit only sanitized capability/reliability outcomes.
 
-Bambu states that Bambu Cloud is private infrastructure governed by its user agreement and that unofficial clients must not impersonate official Bambu clients. Direct reverse-engineered cloud login/API use remains prohibited.
+If the clean retest fails to provide reliable discovery and useful read-only monitoring for both printers, recommend M2 NO-GO / project termination. Do not add another workaround.
 
-## Spike boundaries
-
-Allowed only for feasibility:
-- detect a user-installed official Bambu networking component;
-- use a public integration boundary if sufficient;
-- test printer discovery/enumeration;
-- test local connection;
-- test read-only status/telemetry callbacks/subscriptions;
-- normalize results through existing read-only architecture;
-- A1 Mini + X2D only.
-
-Prohibited:
-- vendor outreach/partner authorization;
-- Developer Mode;
-- private/undocumented Bambu Cloud API use;
-- official-client impersonation;
-- credential/token/private-key extraction;
-- private IPC/cloud traffic interception;
-- bundling/downloading/redistributing/patching/reverse-engineering the proprietary plugin;
-- copying AGPL implementation code;
-- printer write/control, bind/unbind, printing, motion, calibration or camera initiation;
-- security weakening/bypass.
-
-This is not permanent approval of the Network Plugin as a product dependency. A successful spike returns to the Product Owner for an explicit architecture/dependency/licensing decision.
-
-## Outcome gate
-
-- If user-installed official Network Plugin + public boundary reliably provides A1 Mini and X2D discovery/read-only monitoring: return to HOLD for independent review and Product Owner architecture decision.
-- If it cannot, and Bambu Connect does not expose a documented monitoring/discovery API: recommend M2 NO-GO and project termination rather than another workaround.
-
-Never merge PR #3 without explicit Product Owner authorization and do not begin M3.
+Never merge PR #3, adopt the proprietary plugin permanently or begin M3 without explicit Product Owner authorization.
