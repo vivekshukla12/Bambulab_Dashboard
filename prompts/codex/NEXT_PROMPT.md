@@ -2,47 +2,70 @@
 
 ## Status
 
-HOLD — FEASIBLE FOR PRODUCT OWNER ARCHITECTURE REVIEW.
+QUEUED — COUNTRY/REGION REMEDIATION BEFORE PRODUCT OWNER RETEST.
 
 ## Milestone
 
 M2 — Real A1 Mini + X2D integration feasibility / GO-NO-GO
 
-## Completed bounded spike
+## Product Owner authorization — 2026-09-06
 
-The DEC-018 no-outreach feasibility spike is implemented on existing branch `m2/real-device-readonly-prototype` / draft PR #3.
+The Product Owner authorizes one narrowly scoped remediation before the clean Windows Product Owner retest of the optional official Bambu Network Plugin bridge.
 
-The optional Windows `@bpd/bambu-network-plugin-bridge` package independently uses the public Bambu Studio ABI declarations and only a user-installed official Network Plugin. It verifies matching valid Authenticode signer certificates, pins ABI prefix `02.08.02`, resolves only discovery/local-connect/local-message functions, keeps private endpoint/credential data server-side and exposes no write/control API. The existing direct MQTTS/SSDP adapter remains the default.
+The current native bridge hard-codes the Network Plugin country code to `US` during agent initialization. Remove that assumption so a failed discovery/monitoring test cannot be attributed to an incorrect region value.
 
-No Bambu binary, proprietary fixture, real credential, private endpoint or raw device payload is committed.
+## Authorized task
 
-Sanitized local evidence:
+Fix country/region handling for `@bpd/bambu-network-plugin-bridge` only.
 
-- native helper build passed;
-- installed official runtime/signature/ABI probe passed;
-- automated build, unit/integration, browser, documentation and license checks passed locally;
-- GitHub Actions run `34022565310` passed Fresh checkout validation and Docker Compose validation for implementation commit `0c0e5d5a17bdcfd16082d82efc1129497c769a3e`;
-- bounded discovery returned zero candidates while Bambu Studio was concurrently using the plugin listener ports, so a clean standalone Product Owner retest remains required;
-- no real plugin-backed monitor session ran because no local credential file was present.
+Requirements:
 
-## Hold authority
+1. Remove the hard-coded `US` value from native bridge initialization.
+2. Use only local, non-sensitive sources for the country code. Do not read Bambu Studio account/profile/cloud configuration, Bambu Connect credentials, tokens, cookies or private IPC.
+3. Support an explicit environment override named `BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE` for deterministic local testing.
+4. When the override is absent, derive the country code from the Windows local user/system geographic locale using a documented Windows API where safely available.
+5. Normalize and validate the resolved value as an uppercase ISO 3166-1 alpha-2 country code before passing it to the Network Plugin.
+6. Do not silently fall back to `US` or another arbitrary country. If no valid local country code can be resolved, fail closed with a sanitized actionable diagnostic explaining how to set the explicit environment override.
+7. Keep the resolved country code non-secret and safe to include in sanitized probe/test diagnostics if useful, but do not expose printer identifiers, hosts, serials, Access Codes or raw plugin payloads.
+8. Preserve all DEC-018 boundaries: user-installed official Network Plugin only; no Bambu binary redistribution; no Developer Mode; no Bambu Cloud/private API/client impersonation; no token/credential extraction; no plugin reverse engineering; no AGPL implementation copying; no write/control operations; no security weakening.
+9. Do not change the architecture, make the proprietary Network Plugin a permanent dependency, remove direct MQTTS/SSDP fallback, or alter M3 scope.
 
-Do not resume implementation until the Product Owner explicitly decides the architecture/dependency/licensing posture and authorizes the standalone real-device retest or next remediation.
+## Verification
 
-The Product Owner review must consider:
+Add/update automated coverage for at least:
 
-- the proprietary, separately distributed and non-redistributable runtime dependency;
-- official user installation through Bambu Studio;
-- Windows-only spike scope and ABI/version maintenance;
-- Bambu Studio/plugin listener coexistence;
-- inability to exercise the proprietary runtime in Docker/public CI;
-- preservation of the direct MQTTS/SSDP fallback and synthetic regression path;
-- continued prohibition of outreach, Developer Mode, private cloud access/client impersonation, token/credential extraction, binary reverse engineering, AGPL implementation copying, write/control operations and security weakening.
+- valid explicit override;
+- lowercase override normalized to uppercase;
+- invalid override rejected;
+- Windows locale-derived country code path through a mockable/project-authored boundary;
+- unresolved/invalid local country fails closed without an arbitrary default;
+- existing bridge redaction/read-only/security invariants remain intact.
 
-If authorized, the clean retest must exit Bambu Studio, run the documented build/probe/discovery path, enable `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1`, and validate only A1 Mini/X2D automatic enumeration plus useful local read-only status. Credentials must remain local and must not enter GitHub/chat.
+Run the relevant validation suite, including at minimum:
 
-If the clean retest fails to establish reliable discovery and useful read-only monitoring for both printers, recommend **M2 NO-GO / PROJECT TERMINATION** rather than implementing another workaround.
+- `npm run m2:network-plugin:build`
+- `npm run m2:network-plugin:probe`
+- `npm run validate`
+- `npm run test:e2e`
+- `git diff --check`
+
+Update the bridge README/runbook and project-control evidence/status/handover only as necessary to document the new country-code behavior and the exact clean Product Owner retest procedure.
+
+Do not require or perform a real printer test on behalf of the Product Owner. Do not place Product Owner printer details or credentials in repository output.
+
+## Completion gate
+
+After remediation and automated/CI validation:
+
+- push to existing branch `m2/real-device-readonly-prototype` / draft PR #3;
+- record the final head SHA and CI status;
+- return this file to **HOLD — READY FOR PRODUCT OWNER CLEAN NETWORK PLUGIN RETEST**;
+- provide sanitized local commands for the Product Owner to test with Bambu Studio fully exited.
+
+The clean retest must then prove A1 Mini and X2D automatic enumeration plus useful read-only status, including the previously unresolved X2D active-print case.
+
+If that clean Product Owner retest fails after this country/region correction, do not implement another workaround; return for M2 NO-GO / project-termination review.
 
 ## PR / milestone authority
 
-Keep PR #3 draft and unmerged. Do not permanently adopt the proprietary Network Plugin. Do not begin M3 without explicit Product Owner authorization.
+Keep PR #3 draft and unmerged. Do not permanently adopt the proprietary Network Plugin and do not begin M3 without explicit Product Owner authorization.
