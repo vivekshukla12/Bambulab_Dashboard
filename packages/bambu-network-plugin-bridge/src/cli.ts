@@ -2,6 +2,7 @@
 
 import {
   discoverBambuPrintersWithNetworkPlugin,
+  isBambuNetworkPluginCountryCodeError,
   probeBambuNetworkPlugin
 } from "./index.js";
 
@@ -22,13 +23,15 @@ if (command === "probe") {
         modelFamilies: [...new Set(candidates.map((candidate) => candidate.modelHint))].sort()
       })
     );
-  } catch {
+  } catch (error) {
+    const countryCodeUnavailable = isBambuNetworkPluginCountryCodeError(error);
     console.log(
       JSON.stringify({
         available: false,
         discoveryMethod: "bambu-network-plugin",
         candidateCount: 0,
-        reason: "official-plugin-discovery-failed"
+        reason: countryCodeUnavailable ? "country-code-unavailable" : "official-plugin-discovery-failed",
+        ...(countryCodeUnavailable ? { diagnostic: error.message } : {})
       })
     );
     process.exitCode = 1;

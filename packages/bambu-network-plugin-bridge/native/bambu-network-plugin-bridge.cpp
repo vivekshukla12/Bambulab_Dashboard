@@ -2,6 +2,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
+#define _WIN32_WINNT 0x0A00
 #include <windows.h>
 #include <softpub.h>
 #include <wincrypt.h>
@@ -238,6 +239,36 @@ std::optional<std::string> take_environment_value(const wchar_t* name) {
     return to_utf8(value);
 }
 
+std::optional<std::string> normalize_country_code(const std::wstring& value) {
+    if (value.size() != 2) {
+        return std::nullopt;
+    }
+    std::string normalized;
+    normalized.reserve(2);
+    for (const wchar_t character : value) {
+        if (character >= L'a' && character <= L'z') {
+            normalized.push_back(static_cast<char>(character - L'a' + 'A'));
+        } else if (character >= L'A' && character <= L'Z') {
+            normalized.push_back(static_cast<char>(character));
+        } else {
+            return std::nullopt;
+        }
+    }
+    return normalized;
+}
+
+std::optional<std::string> windows_user_country_code() {
+    const int required = GetUserDefaultGeoName(nullptr, 0);
+    if (required <= 1) {
+        return std::nullopt;
+    }
+    std::vector<wchar_t> buffer(static_cast<std::size_t>(required));
+    if (GetUserDefaultGeoName(buffer.data(), required) <= 1) {
+        return std::nullopt;
+    }
+    return normalize_country_code(std::wstring(buffer.data()));
+}
+
 template <typename Function>
 Function resolve(HMODULE module, const char* name) {
     return reinterpret_cast<Function>(GetProcAddress(module, name));
@@ -320,7 +351,8 @@ bool load_runtime(const std::filesystem::path& plugin, const std::filesystem::pa
 bool initialize_agent(
     Runtime& runtime,
     const std::filesystem::path& config_directory,
-    const std::filesystem::path& certificate_file) {
+    const std::filesystem::path& certificate_file,
+    const std::string& country_code) {
     const std::string config = to_utf8(config_directory.wstring());
     runtime.agent = runtime.create_agent(config);
     if (!runtime.agent) {
@@ -331,7 +363,17 @@ bool initialize_agent(
                runtime.agent,
                to_utf8(certificate_file.parent_path().wstring()),
                to_utf8(certificate_file.filename().wstring())) == 0 &&
-           runtime.set_country_code(runtime.agent, "US") == 0;
+           runtime.set_country_code(runtime.agent, country_code) == 0;
+}
+
+int run_country() {
+    const auto country_code = windows_user_country_code();
+    if (!country_code) {
+        std::cerr << "Windows geographic country/region unavailable; set BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE\n";
+        return 4;
+    }
+    emit_line("{\"type\":\"country\",\"countryCode\":\"" + json_escape(*country_code) + "\"}");
+    return 0;
 }
 
 int run_probe(Runtime& runtime) {
@@ -344,8 +386,9 @@ int run_discovery(
     Runtime& runtime,
     const std::filesystem::path& config_directory,
     const std::filesystem::path& certificate_file,
+    const std::string& country_code,
     int timeout_ms) {
-    if (!initialize_agent(runtime, config_directory, certificate_file)) {
+    if (!initialize_agent(runtime, config_directory, certificate_file, country_code)) {
         return 6;
     }
     OnDiscovery on_discovery = [](std::string payload) { emit_payload("discovery", payload); };
@@ -362,13 +405,14 @@ int run_discovery(
 int run_monitor(
     Runtime& runtime,
     const std::filesystem::path& config_directory,
-    const std::filesystem::path& certificate_file) {
+    const std::filesystem::path& certificate_file,
+    const std::string& country_code) {
     auto device_id = take_environment_value(L"BPD_BRIDGE_DEVICE_ID");
     auto host = take_environment_value(L"BPD_BRIDGE_HOST");
     auto username = take_environment_value(L"BPD_BRIDGE_USERNAME");
     auto access_code = take_environment_value(L"BPD_BRIDGE_ACCESS_CODE");
     if (!device_id || !host || !username || !access_code ||
-        !initialize_agent(runtime, config_directory, certificate_file)) {
+        !initialize_agent(runtime, config_directory, certificate_file, country_code)) {
         return 6;
     }
 
@@ -422,6 +466,11 @@ int wmain(int argc, wchar_t** argv) {
         std::cerr << "bridge command required\n";
         return 2;
     }
+    const std::wstring command(argv[1]);
+    if (command == L"country") {
+        return run_country();
+    }
+
     const auto plugin_value = option_value(argc, argv, L"--plugin");
     const auto studio_value = option_value(argc, argv, L"--studio");
     if (!plugin_value || !studio_value) {
@@ -435,7 +484,6 @@ int wmain(int argc, wchar_t** argv) {
         return 3;
     }
 
-    const std::wstring command(argv[1]);
     if (command == L"probe") {
         return run_probe(runtime);
     }
@@ -446,13 +494,19 @@ int wmain(int argc, wchar_t** argv) {
         std::cerr << "isolated runtime paths required\n";
         return 2;
     }
+    const auto country_value = option_value(argc, argv, L"--country-code");
+    const auto country_code = country_value ? normalize_country_code(*country_value) : std::nullopt;
+    if (!country_code) {
+        std::cerr << "valid uppercase ISO country/region required; set BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE\n";
+        return 2;
+    }
     if (command == L"discover") {
         const auto timeout_value = option_value(argc, argv, L"--timeout-ms");
         const int timeout_ms = timeout_value ? std::max(250, _wtoi(timeout_value->c_str())) : 5000;
-        return run_discovery(runtime, *config_value, *certificate_value, timeout_ms);
+        return run_discovery(runtime, *config_value, *certificate_value, *country_code, timeout_ms);
     }
     if (command == L"monitor") {
-        return run_monitor(runtime, *config_value, *certificate_value);
+        return run_monitor(runtime, *config_value, *certificate_value, *country_code);
     }
 
     std::cerr << "unsupported bridge command\n";

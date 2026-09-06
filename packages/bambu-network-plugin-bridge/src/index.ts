@@ -18,6 +18,10 @@ import { fileURLToPath } from "node:url";
 const DEFAULT_DISCOVERY_TIMEOUT_MS = 5_000;
 const DEFAULT_BRIDGE_START_TIMEOUT_MS = 15_000;
 const NETWORK_PLUGIN_SOURCE = "bambu-network-plugin" as const;
+const COUNTRY_CODE_ENVIRONMENT_VARIABLE = "BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE";
+const ISO_3166_1_ALPHA_2_CODES = new Set(
+  "AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW".split(" ")
+);
 
 /** Runtime paths for the user-installed official Bambu component and this project-authored helper. */
 export interface BambuNetworkPluginRuntimePaths {
@@ -30,10 +34,20 @@ export interface BambuNetworkPluginRuntimePaths {
 /** Sanitized availability result for diagnostics and the local feasibility probe. */
 export interface BambuNetworkPluginProbeResult {
   available: boolean;
-  reason: "available" | "component-absent" | "unsupported-platform" | "untrusted-or-incompatible";
+  reason:
+    | "available"
+    | "component-absent"
+    | "unsupported-platform"
+    | "untrusted-or-incompatible"
+    | "country-code-unavailable";
   pluginVersion?: string;
   abiPrefix?: string;
+  countryCode?: string;
+  diagnostic?: string;
 }
+
+/** Project-authored boundary around the local Windows geographic-region lookup. */
+export type BambuNetworkPluginWindowsCountryCodeResolver = () => Promise<string | undefined>;
 
 /** Handlers for one local read-only monitor process. */
 export interface BambuNetworkPluginMonitorHandlers {
@@ -64,6 +78,7 @@ export interface BambuNetworkPluginBridgeOptions {
   env?: NodeJS.ProcessEnv;
   now?: () => Date;
   runtime?: BambuNetworkPluginBridgeRuntime;
+  windowsCountryCodeResolver?: BambuNetworkPluginWindowsCountryCodeResolver;
 }
 
 /** Options for official-plugin discovery parsing and tests. */
@@ -99,6 +114,28 @@ export function resolveBambuNetworkPluginRuntimePaths(
   };
 }
 
+/** Resolves and validates the non-secret country/region used to initialize the official plugin. */
+export async function resolveBambuNetworkPluginCountryCode(
+  options: {
+    env?: NodeJS.ProcessEnv;
+    windowsCountryCodeResolver?: BambuNetworkPluginWindowsCountryCodeResolver;
+  } = {}
+): Promise<string> {
+  const env = options.env ?? process.env;
+  const override = env[COUNTRY_CODE_ENVIRONMENT_VARIABLE];
+  if (override !== undefined) {
+    return normalizeCountryCode(override, "override");
+  }
+
+  let localCountryCode: string | undefined;
+  try {
+    localCountryCode = await options.windowsCountryCodeResolver?.();
+  } catch {
+    throw countryCodeError("local");
+  }
+  return normalizeCountryCode(localCountryCode, "local");
+}
+
 /** Probes the signed user-installed official plugin without accessing user configuration or printer credentials. */
 export async function probeBambuNetworkPlugin(
   options: BambuNetworkPluginBridgeOptions = {}
@@ -106,10 +143,17 @@ export async function probeBambuNetworkPlugin(
   if (!options.runtime && process.platform !== "win32") {
     return { available: false, reason: "unsupported-platform" };
   }
-  const runtime = options.runtime ?? new NativeBambuNetworkPluginRuntime(resolveBambuNetworkPluginRuntimePaths(options), options.now);
+  const runtime = options.runtime ?? createNativeRuntime(options);
   try {
     return await runtime.probe();
   } catch (error) {
+    if (isBambuNetworkPluginCountryCodeError(error)) {
+      return {
+        available: false,
+        reason: "country-code-unavailable",
+        diagnostic: error.message
+      };
+    }
     return {
       available: false,
       reason: isMissingComponentError(error) ? "component-absent" : "untrusted-or-incompatible"
@@ -124,7 +168,7 @@ export async function probeBambuNetworkPlugin(
 export async function discoverBambuPrintersWithNetworkPlugin(
   options: BambuNetworkPluginDiscoveryOptions = {}
 ): Promise<BambuDiscoveredPrinterCandidate[]> {
-  const runtime = options.runtime ?? new NativeBambuNetworkPluginRuntime(resolveBambuNetworkPluginRuntimePaths(options), options.now);
+  const runtime = options.runtime ?? createNativeRuntime(options);
   const now = options.now ?? (() => new Date());
   const idFactory = options.idFactory ?? randomUUID;
   const timeoutMs = positiveInteger(options.timeoutMs, DEFAULT_DISCOVERY_TIMEOUT_MS);
@@ -146,7 +190,7 @@ export async function discoverBambuPrintersWithNetworkPlugin(
 export function createBambuNetworkPluginTransportFactory(
   options: BambuNetworkPluginBridgeOptions = {}
 ): BambuTransportFactory {
-  const runtime = options.runtime ?? new NativeBambuNetworkPluginRuntime(resolveBambuNetworkPluginRuntimePaths(options), options.now);
+  const runtime = options.runtime ?? createNativeRuntime(options);
   const now = options.now ?? (() => new Date());
   return (config) => new OfficialPluginStatusTransport(config, runtime, now);
 }
@@ -271,12 +315,17 @@ class OfficialPluginStatusTransport implements BambuMqttsStatusTransport {
 
 class NativeBambuNetworkPluginRuntime implements BambuNetworkPluginBridgeRuntime {
   private readonly now: () => Date;
+  private readonly windowsCountryCodeResolver: BambuNetworkPluginWindowsCountryCodeResolver;
+  private countryCodePromise: Promise<string> | undefined;
 
   constructor(
     private readonly paths: BambuNetworkPluginRuntimePaths,
-    now?: () => Date
+    private readonly env: NodeJS.ProcessEnv,
+    now?: () => Date,
+    windowsCountryCodeResolver?: BambuNetworkPluginWindowsCountryCodeResolver
   ) {
     this.now = now ?? (() => new Date());
+    this.windowsCountryCodeResolver = windowsCountryCodeResolver ?? (() => this.resolveWindowsCountryCode());
   }
 
   async probe(): Promise<BambuNetworkPluginProbeResult> {
@@ -285,6 +334,7 @@ class NativeBambuNetworkPluginRuntime implements BambuNetworkPluginBridgeRuntime
       this.paths.pluginLibraryPath,
       this.paths.studioExecutablePath
     ]);
+    const countryCode = await this.countryCode();
     const events = await collectNativeEvents(this.spawn("probe"), DEFAULT_BRIDGE_START_TIMEOUT_MS);
     const probe = events.find((event) => event.type === "probe");
     if (!probe || probe.type !== "probe" || probe.available !== true) {
@@ -299,16 +349,23 @@ class NativeBambuNetworkPluginRuntime implements BambuNetworkPluginBridgeRuntime
       available: true,
       reason: "available",
       pluginVersion,
-      abiPrefix
+      abiPrefix,
+      countryCode
     };
   }
 
   async discover(timeoutMs: number): Promise<unknown[]> {
     await assertFilesExist(Object.values(this.paths));
+    const countryCode = await this.countryCode();
     const runtimeDirectory = await mkdtemp(path.join(tmpdir(), "bpd-network-plugin-"));
     try {
       const events = await collectNativeEvents(
-        this.spawn("discover", ["--config-dir", runtimeDirectory, "--timeout-ms", String(timeoutMs)]),
+        this.spawn(
+          "discover",
+          ["--config-dir", runtimeDirectory, "--timeout-ms", String(timeoutMs)],
+          {},
+          countryCode
+        ),
         timeoutMs + DEFAULT_BRIDGE_START_TIMEOUT_MS
       );
       return events
@@ -324,6 +381,7 @@ class NativeBambuNetworkPluginRuntime implements BambuNetworkPluginBridgeRuntime
     handlers: BambuNetworkPluginMonitorHandlers
   ): Promise<BambuNetworkPluginMonitor> {
     await assertFilesExist(Object.values(this.paths));
+    const countryCode = await this.countryCode();
     const runtimeDirectory = await mkdtemp(path.join(tmpdir(), "bpd-network-plugin-"));
     const child = this.spawn(
       "monitor",
@@ -333,12 +391,41 @@ class NativeBambuNetworkPluginRuntime implements BambuNetworkPluginBridgeRuntime
         BPD_BRIDGE_HOST: config.host,
         BPD_BRIDGE_USERNAME: config.username,
         BPD_BRIDGE_ACCESS_CODE: config.accessCode
-      }
+      },
+      countryCode
     );
     return new NativeMonitor(child, runtimeDirectory, handlers, this.now);
   }
 
-  private spawn(command: "probe" | "discover" | "monitor", extraArguments: string[] = [], privateEnv: NodeJS.ProcessEnv = {}) {
+  private countryCode(): Promise<string> {
+    this.countryCodePromise ??= resolveBambuNetworkPluginCountryCode({
+      env: this.env,
+      windowsCountryCodeResolver: this.windowsCountryCodeResolver
+    });
+    return this.countryCodePromise;
+  }
+
+  private async resolveWindowsCountryCode(): Promise<string | undefined> {
+    await assertFilesExist([this.paths.bridgeExecutablePath]);
+    const events = await collectNativeEvents(this.spawnCountryResolver(), DEFAULT_BRIDGE_START_TIMEOUT_MS);
+    const country = events.find((event) => event.type === "country");
+    return country?.type === "country" ? stringValue(country.countryCode) : undefined;
+  }
+
+  private spawnCountryResolver(): ChildProcessWithoutNullStreams {
+    return spawn(this.paths.bridgeExecutablePath, ["country"], {
+      env: minimalChildEnvironment(this.env),
+      windowsHide: true,
+      stdio: ["pipe", "pipe", "pipe"]
+    });
+  }
+
+  private spawn(
+    command: "probe" | "discover" | "monitor",
+    extraArguments: string[] = [],
+    privateEnv: NodeJS.ProcessEnv = {},
+    countryCode?: string
+  ): ChildProcessWithoutNullStreams {
     const args = [
       command,
       "--plugin",
@@ -350,8 +437,11 @@ class NativeBambuNetworkPluginRuntime implements BambuNetworkPluginBridgeRuntime
     if (command !== "probe") {
       args.push("--cert-file", this.paths.certificateFilePath);
     }
+    if (countryCode) {
+      args.push("--country-code", countryCode);
+    }
     return spawn(this.paths.bridgeExecutablePath, args, {
-      env: { ...minimalChildEnvironment(process.env), ...privateEnv },
+      env: { ...minimalChildEnvironment(this.env), ...privateEnv },
       windowsHide: true,
       stdio: ["pipe", "pipe", "pipe"]
     });
@@ -470,6 +560,7 @@ interface NativePayloadEvent extends Record<string, unknown> {
 
 type NativeEvent =
   | ({ type: "probe"; available?: unknown; pluginVersion?: unknown; abiPrefix?: unknown } & Record<string, unknown>)
+  | ({ type: "country"; countryCode?: unknown } & Record<string, unknown>)
   | ({ type: "state"; state?: unknown } & Record<string, unknown>)
   | ({ type: "ready" | "complete" | "error" } & Record<string, unknown>)
   | NativePayloadEvent;
@@ -526,6 +617,38 @@ async function assertFilesExist(paths: string[]): Promise<void> {
   } catch {
     throw Object.assign(new Error("Required official component is absent."), { code: "COMPONENT_ABSENT" });
   }
+}
+
+function createNativeRuntime(options: BambuNetworkPluginBridgeOptions): BambuNetworkPluginBridgeRuntime {
+  return new NativeBambuNetworkPluginRuntime(
+    resolveBambuNetworkPluginRuntimePaths(options),
+    options.env ?? process.env,
+    options.now,
+    options.windowsCountryCodeResolver
+  );
+}
+
+function normalizeCountryCode(value: string | undefined, source: "override" | "local"): string {
+  const normalized = value?.trim().toUpperCase();
+  if (!normalized || !/^[A-Z]{2}$/.test(normalized) || !ISO_3166_1_ALPHA_2_CODES.has(normalized)) {
+    throw countryCodeError(source);
+  }
+  return normalized;
+}
+
+function countryCodeError(source: "override" | "local"): Error & { code: "COUNTRY_CODE_UNAVAILABLE" } {
+  const message =
+    source === "override"
+      ? `${COUNTRY_CODE_ENVIRONMENT_VARIABLE} must contain a valid ISO 3166-1 alpha-2 country/region code.`
+      : `Windows did not provide a valid ISO 3166-1 alpha-2 country/region code. Set ${COUNTRY_CODE_ENVIRONMENT_VARIABLE} to your country/region code and retry.`;
+  return Object.assign(new Error(message), { code: "COUNTRY_CODE_UNAVAILABLE" as const });
+}
+
+/** Identifies the bridge's sanitized, actionable country/region resolution failure. */
+export function isBambuNetworkPluginCountryCodeError(
+  error: unknown
+): error is Error & { code: "COUNTRY_CODE_UNAVAILABLE" } {
+  return error instanceof Error && "code" in error && error.code === "COUNTRY_CODE_UNAVAILABLE";
 }
 
 function minimalChildEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {

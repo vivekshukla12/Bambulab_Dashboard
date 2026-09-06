@@ -9,6 +9,7 @@ import {
   discoverBambuPrintersWithNetworkPlugin,
   parseBambuNetworkPluginDiscoveryPayload,
   probeBambuNetworkPlugin,
+  resolveBambuNetworkPluginCountryCode,
   type BambuNetworkPluginBridgeRuntime,
   type BambuNetworkPluginMonitor,
   type BambuNetworkPluginMonitorHandlers,
@@ -53,6 +54,76 @@ class MockBridgeRuntime implements BambuNetworkPluginBridgeRuntime {
 }
 
 describe("Bambu Network Plugin bridge", () => {
+  it("uses a valid explicit country-code override without consulting Windows", async () => {
+    let localeLookups = 0;
+
+    await expect(
+      resolveBambuNetworkPluginCountryCode({
+        env: { BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE: "DE" },
+        windowsCountryCodeResolver: async () => {
+          localeLookups += 1;
+          return "US";
+        }
+      })
+    ).resolves.toBe("DE");
+    expect(localeLookups).toBe(0);
+  });
+
+  it("normalizes a lowercase explicit country-code override", async () => {
+    await expect(
+      resolveBambuNetworkPluginCountryCode({
+        env: { BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE: " de " }
+      })
+    ).resolves.toBe("DE");
+  });
+
+  it("rejects an invalid explicit override without exposing its value", async () => {
+    const invalidValue = "PRIVATE_INVALID_VALUE";
+    let error: unknown;
+    try {
+      await resolveBambuNetworkPluginCountryCode({
+        env: { BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE: invalidValue },
+        windowsCountryCodeResolver: async () => "DE"
+      });
+    } catch (caught) {
+      error = caught;
+    }
+
+    expect(error).toMatchObject({ code: "COUNTRY_CODE_UNAVAILABLE" });
+    expect(String(error)).toContain("BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE");
+    expect(String(error)).not.toContain(invalidValue);
+  });
+
+  it("derives and normalizes the code through the mockable Windows geographic-region boundary", async () => {
+    let localeLookups = 0;
+
+    await expect(
+      resolveBambuNetworkPluginCountryCode({
+        env: {},
+        windowsCountryCodeResolver: async () => {
+          localeLookups += 1;
+          return "gb";
+        }
+      })
+    ).resolves.toBe("GB");
+    expect(localeLookups).toBe(1);
+  });
+
+  it.each([undefined, "", "ZZ", "USA", "D1"])(
+    "fails closed when the local geographic-region boundary returns %j",
+    async (localValue) => {
+      await expect(
+        resolveBambuNetworkPluginCountryCode({
+          env: {},
+          windowsCountryCodeResolver: async () => localValue
+        })
+      ).rejects.toMatchObject({
+        code: "COUNTRY_CODE_UNAVAILABLE",
+        message: expect.stringContaining("BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE")
+      });
+    }
+  );
+
   it("fails cleanly when the optional official component is absent", async () => {
     const runtime: BambuNetworkPluginBridgeRuntime = {
       probe: async () => {
@@ -167,5 +238,8 @@ describe("Bambu Network Plugin bridge", () => {
       "utf8"
     );
     expect(nativeSource).not.toMatch(/bambu_network_(?:send|bind|unbind|start_print|get_camera|install_device_cert)/);
+    expect(nativeSource).toContain("GetUserDefaultGeoName");
+    expect(nativeSource).toContain("set_country_code(runtime.agent, country_code)");
+    expect(nativeSource).not.toContain('set_country_code(runtime.agent, "US")');
   });
 });
