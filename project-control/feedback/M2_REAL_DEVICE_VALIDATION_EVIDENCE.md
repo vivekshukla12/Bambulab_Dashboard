@@ -46,29 +46,29 @@ Validated in the Codex environment on 2026-09-05 after SSDP discovery remediatio
 
 | Capability | Classification | Notes |
 |---|---|---|
-| Device reachable / online status | proven-live | Manual host fallback connected through local MQTTS under the local TLS profile. |
+| Device reachable / online status | proven-live | Manual MQTTS previously connected; the clean official Network Plugin retest also discovered and connected the A1 Mini. |
 | Printer lifecycle / active state | not-tested | Requires Product Owner LAN validation. |
 | Printing vs idle | not-tested | Requires Product Owner LAN validation. |
 | Print progress | not-tested | Requires a real active print where practical. |
 | Nozzle temperature | proven-live | Live nozzle telemetry was observed in the browser/API through the read-only path. |
-| Bed temperature | not-tested | Requires Product Owner LAN validation. |
+| Bed temperature | proven-live | Live bed telemetry was observed through the official Network Plugin bridge. |
 | Stale/offline/reconnect | not-tested | Requires controlled local interruption/recovery validation. |
 
 ## X2D Capability Matrix
 
 | Capability | Classification | Notes |
 |---|---|---|
-| Device reachable / online status | not-tested | Requires Product Owner LAN validation. |
-| Printer lifecycle / active state | not-tested | Requires Product Owner LAN validation; mocked active-print startup path now preserves early live status frames. |
-| Printing vs idle | not-tested | Product Owner reported a current prototype connection failure while X2D was actively printing; root cause still requires sanitized real retest. |
-| Print progress | not-tested | Requires a real active print where practical; mocked X2D-shaped active-print progress is covered offline only. |
-| Nozzle temperature | not-tested | Requires Product Owner LAN validation. |
-| Bed temperature | not-tested | Requires Product Owner LAN validation. |
+| Device reachable / online status | proven-live | The clean official Network Plugin retest discovered and connected the X2D. |
+| Printer lifecycle / active state | proven-live | The X2D reported a live `Printing` state during an active print. |
+| Printing vs idle | proven-live | Active printing was proven live; idle behavior was not separately observed. |
+| Print progress | proven-live | Live progress was observed at `82%` during the Product Owner retest. |
+| Nozzle temperature | proven-live | Live nozzle telemetry was observed through the official Network Plugin bridge. |
+| Bed temperature | proven-live | Live bed telemetry was observed through the official Network Plugin bridge. |
 | Stale/offline/reconnect | not-tested | Requires controlled local interruption/recovery validation. |
 
 ## Simultaneous Dual-Device Evidence
 
-Not tested yet. Run `npm run m2:validate:real -- secrets/m2-printers.local.json` with both printers configured and paste only sanitized aggregate results here.
+Proven live through the clean official Network Plugin retest. The fleet showed two configured devices, two live, zero stale and zero unavailable while the A1 Mini was connected and the X2D was actively printing at `82%`.
 
 ## Product Owner Hands-On Feedback — 2026-08-25
 
@@ -79,7 +79,7 @@ Not tested yet. Run `npm run m2:validate:real -- secrets/m2-printers.local.json`
 
 ## Gate Recommendation
 
-Pending. No GO / CONDITIONAL GO / NO-GO recommendation can be made until real A1 Mini and X2D validation evidence is collected under the approved local-only process.
+Product Owner decision required. The clean official Network Plugin retest now supplies real A1 Mini and X2D evidence, including simultaneous live operation and the X2D active-print case. Remaining evidence gaps and proprietary runtime constraints must be considered in the final M2 GO / CONDITIONAL GO / NO-GO and architecture/dependency/licensing decision.
 
 ## Official Network Plugin feasibility spike — 2026-09-06
 
@@ -119,4 +119,16 @@ Sanitized validation evidence for implementation commit `9cf1d4d542c6ca7ed0fd76e
 - `git diff --check` — passed.
 - GitHub Actions run `34035325621` passed Fresh checkout validation and Docker Compose validation for the implementation commit.
 
-Coverage includes valid and lowercase explicit overrides, invalid override rejection without value disclosure, a mocked Windows locale-derived path, unresolved/invalid local values with no fallback, and the existing bridge redaction/read-only/security invariants. No real printer discovery or monitor test was performed as part of this remediation. The A1 Mini/X2D capability rows remain unchanged pending the Product Owner's clean standalone retest with Bambu Studio fully exited.
+Coverage includes valid and lowercase explicit overrides, invalid override rejection without value disclosure, a mocked Windows locale-derived path, unresolved/invalid local values with no fallback, and the existing bridge redaction/read-only/security invariants. No real printer discovery or monitor test was performed by Codex as part of the remediation; the capability rows were updated only after the subsequent Product Owner clean retest recorded below.
+
+## Product Owner clean Network Plugin retest — 2026-09-06
+
+The Product Owner completed the requested standalone browser retest after the country/region remediation:
+
+- An explicit Rescan discovered two sanitized official Network Plugin candidates without manual host entry.
+- The X2D connected during an active print and reported live printing state, `82%` progress, nozzle and bed temperatures, Wi-Fi and AMS telemetry.
+- The A1 Mini connected and reported live nozzle and bed temperatures plus Wi-Fi telemetry. Printer lifecycle/progress remained unobserved in its idle sparse reports and are not reclassified.
+- The fleet simultaneously showed two configured devices, two live, zero stale and zero unavailable.
+- The supplied screenshots exposed no printer host, serial, LAN Access Code or raw plugin payload.
+
+This passes the specific corrected clean-retest scenario required by the country/region remediation gate and resolves the previously observed X2D active-print connection failure for this workstation/test session. It does not by itself authorize permanent adoption of the proprietary plugin, merge PR #3 or begin M3. Controlled stale/offline/reconnect behavior and A1 Mini lifecycle/progress remain evidence gaps for the Product Owner's final M2 GO/CONDITIONAL GO/NO-GO and architecture/dependency/licensing decision.

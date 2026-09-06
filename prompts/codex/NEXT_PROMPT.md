@@ -2,7 +2,7 @@
 
 ## Status
 
-HOLD — READY FOR PRODUCT OWNER CLEAN NETWORK PLUGIN RETEST.
+HOLD — CLEAN NETWORK PLUGIN RETEST PASSED; PRODUCT OWNER M2 DECISION REQUIRED.
 
 ## Milestone
 
@@ -23,22 +23,18 @@ Validation passed:
 - `git diff --check`
 - GitHub Actions run `34035325621` — Fresh checkout validation and Docker Compose validation passed
 
-No real printer test was performed during the remediation.
+No real printer test was performed by Codex during the remediation.
 
-## Product Owner clean retest
+## Product Owner clean retest result — 2026-09-06
 
-This is a Product Owner hands-on gate, not an authorized Codex implementation task:
+The Product Owner completed the requested standalone browser retest and supplied sanitized evidence:
 
-1. Fully exit Bambu Studio, including any background instance, while leaving the official Network Plugin installed.
-2. From the repository root, run `npm run m2:network-plugin:build`.
-3. Run `npm run m2:network-plugin:probe`.
-4. Run `npm run m2:network-plugin:discover`.
-5. If Windows geography is missing or incorrect, set `BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE` to the Product Owner's ISO 3166-1 alpha-2 code and repeat steps 3-4.
-6. Set `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1` and launch `npm run dev:server`.
-7. In a separate terminal, launch `npm run dev:web -- --host 127.0.0.1`.
-8. Enter Access Codes only through the local memory-only dashboard flow. Do not place printer hosts, serials or Access Codes in commands, chat, logs or Git.
-9. Verify A1 Mini and X2D automatic enumeration and useful read-only status, including X2D while actively printing, and record only sanitized outcomes.
+- Explicit Rescan discovered two official Network Plugin candidates without manual host entry.
+- The A1 Mini connected with live nozzle/bed/Wi-Fi telemetry.
+- The X2D connected while actively printing with live printing state, `82%` progress and nozzle/bed/Wi-Fi/AMS telemetry.
+- Both printers were live simultaneously; fleet summary showed two live, zero stale and zero unavailable.
+- No host, serial, Access Code or raw plugin payload appeared in the evidence.
 
-If the corrected clean retest fails, do not queue another workaround. Return for M2 NO-GO / project-termination review.
+This passes the specific corrected clean-retest scenario and resolves the prior X2D active-print failure for this workstation/test session. Remaining evidence gaps include A1 Mini lifecycle/progress and controlled stale/offline/reconnect behavior.
 
-PR #3 must remain draft and unmerged. Do not permanently adopt the proprietary Network Plugin or begin M3 without explicit Product Owner authorization.
+No Codex implementation task is queued. The Product Owner must now make an explicit M2 GO / CONDITIONAL GO / NO-GO decision and separately approve or reject permanent support for the optional user-installed proprietary Network Plugin. Until then, do not implement another workaround, merge PR #3, adopt the dependency or begin M3.

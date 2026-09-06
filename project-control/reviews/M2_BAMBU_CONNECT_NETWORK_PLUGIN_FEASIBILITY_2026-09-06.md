@@ -83,13 +83,15 @@ Local evidence:
 - native helper build and sanitized probe passed;
 - one bounded discovery run returned zero candidates while Bambu Studio was concurrently running and owned the plugin's discovery/listener ports.
 
-The concurrent zero-candidate run is not sufficient to classify real discovery as failed. The Product Owner must exit Bambu Studio and perform the documented standalone A1 Mini/X2D retest. Real device discovery, useful read-only callbacks and the X2D active-print case remain unproven, so this disposition is not M2 GO/acceptance and does not authorize permanent adoption.
+The original concurrent zero-candidate run was not sufficient to classify real discovery as failed. After the country/region remediation, the Product Owner completed the documented standalone retest with Bambu Studio exited: explicit Rescan discovered two sanitized candidates, both printers connected simultaneously, the A1 Mini exposed live temperature/Wi-Fi telemetry and the X2D exposed live printing state, `82%` progress, temperature/Wi-Fi/AMS telemetry during an active print. No private endpoint, serial, Access Code or raw payload was included in the supplied evidence.
+
+This clean retest passes the required discovery/useful-monitoring scenario and resolves the prior X2D active-print failure for this workstation/test session. It remains a feasibility result, not M2 acceptance or permanent dependency approval; A1 Mini lifecycle/progress and controlled stale/offline/reconnect behavior remain evidence gaps.
 
 Automated mocks prove component-absence failure, private/public endpoint filtering, candidate sanitization and deduplication, server-side serial/host resolution, callback normalization through the existing adapter, credential/browser redaction, no write/control export and synthetic/browser regressions.
 
 GitHub Actions run `34022565310` passed Fresh checkout validation (including browser E2E) and Docker Compose validation for implementation commit `0c0e5d5a17bdcfd16082d82efc1129497c769a3e`.
 
-Before permanent adoption, Product Owner review is required for the proprietary dependency, no-redistribution constraint, Windows-only spike scope, ABI/version maintenance, Bambu Studio coexistence and Docker/public-CI limitations. A failed clean A1 Mini/X2D retest should produce an M2 NO-GO / project termination recommendation, not another workaround.
+Before permanent adoption, Product Owner review is still required for the proprietary dependency, no-redistribution constraint, Windows-only spike scope, ABI/version maintenance, Bambu Studio coexistence and Docker/public-CI limitations. The Product Owner must make an explicit M2 GO / CONDITIONAL GO / NO-GO and architecture/dependency/licensing decision before merge or further milestone work.
 
 Public declarations used:
 

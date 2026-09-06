@@ -6,9 +6,9 @@ M2 — Real A1 Mini + X2D integration feasibility / GO-NO-GO
 
 ## State
 
-**HOLD — READY FOR PRODUCT OWNER CLEAN NETWORK PLUGIN RETEST.**
+**HOLD — CLEAN NETWORK PLUGIN RETEST PASSED; PRODUCT OWNER M2 DECISION REQUIRED.**
 
-The bounded no-outreach Bambu Connect / user-installed official Network Plugin spike authorized by DEC-018 remains technically feasible for Product Owner architecture review. The authorized country/region remediation is complete and the execution gate is back on HOLD pending the clean Windows real-device retest.
+The bounded no-outreach Bambu Connect / user-installed official Network Plugin spike authorized by DEC-018 remains technically feasible for Product Owner architecture review. The authorized country/region remediation and clean Windows Product Owner retest are complete. The execution gate remains on HOLD pending the Product Owner's M2 GO/CONDITIONAL GO/NO-GO and architecture/dependency/licensing decision.
 
 PR #3 remains open, draft and unmerged on `m2/real-device-readonly-prototype`. M3 remains blocked.
 
@@ -33,24 +33,22 @@ The optional Windows `@bpd/bambu-network-plugin-bridge` remains disabled unless 
 
 Current remediation evidence is recorded in `project-control/feedback/M2_REAL_DEVICE_VALIDATION_EVIDENCE.md`. No real printer test was performed during the country/region correction, so this is not M2 GO/acceptance or permanent dependency approval.
 
-## Product Owner clean retest gate
+## Product Owner clean retest result
 
-With the country/region remediation complete and `NEXT_PROMPT.md` on HOLD, the Product Owner should:
+The Product Owner completed the requested clean standalone retest:
 
-1. Exit Bambu Studio completely while leaving the official Network Plugin installed.
-2. Run the documented bridge build/probe/discovery commands.
-3. Enable `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1` and start the normal local server/web prototype.
-4. Verify automatic enumeration for A1 Mini and X2D.
-5. Enter Access Codes only through the local memory-only flow.
-6. Verify useful read-only status for both printers, including X2D while actively printing.
-7. Record only sanitized outcomes.
+1. Explicit Rescan discovered two sanitized official Network Plugin candidates without manual host entry.
+2. The A1 Mini connected with live nozzle/bed/Wi-Fi telemetry.
+3. The X2D connected while actively printing and exposed live printing state, `82%` progress, nozzle/bed/Wi-Fi/AMS telemetry.
+4. Both printers remained connected simultaneously; the fleet showed two live, zero stale and zero unavailable.
+5. Supplied screenshots exposed no host, serial, Access Code or raw plugin payload.
 
-If this corrected clean Product Owner retest fails to establish reliable discovery and useful read-only monitoring for both target printers, return for **M2 NO-GO / project-termination review** rather than implementing another workaround.
+This passes the specific corrected retest scenario and resolves the previously observed X2D active-print connection failure for this workstation/test session. Remaining evidence gaps include controlled stale/offline/reconnect behavior and A1 Mini lifecycle/progress. The successful retest does not authorize permanent proprietary dependency adoption, merge or M3.
 
 ## Authority
 
 - Current decision: `project-control/decisions/DEC-018_BAMBU_CONNECT_NETWORK_PLUGIN_FEASIBILITY.md`
-- Execution gate: `prompts/codex/NEXT_PROMPT.md` — HOLD pending Product Owner clean Network Plugin retest.
+- Execution gate: `prompts/codex/NEXT_PROMPT.md` — HOLD pending Product Owner M2 and dependency decision.
 - PR #3 remains draft/unmerged.
 
 Do not merge PR #3, permanently adopt the proprietary Network Plugin, or begin M3 without explicit Product Owner authorization.
