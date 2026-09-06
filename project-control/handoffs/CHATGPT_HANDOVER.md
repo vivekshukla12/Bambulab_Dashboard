@@ -30,7 +30,7 @@ M1 UI modernization remains deferred.
 
 M2 — Real A1 Mini + X2D integration feasibility / GO-NO-GO.
 
-**Current state: REMEDIATION AUTHORIZED — COUNTRY/REGION FIX QUEUED BEFORE PRODUCT OWNER RETEST.**
+**Current state: HOLD — READY FOR PRODUCT OWNER CLEAN NETWORK PLUGIN RETEST.**
 
 Draft PR #3 remains open/draft/unmerged on `m2/real-device-readonly-prototype`. M3 remains blocked. Merge is not authorized.
 
@@ -38,7 +38,7 @@ Authority:
 
 - `project-control/decisions/DEC-018_BAMBU_CONNECT_NETWORK_PLUGIN_FEASIBILITY.md`
 - `project-control/reviews/M2_BAMBU_CONNECT_NETWORK_PLUGIN_FEASIBILITY_2026-09-06.md`
-- `prompts/codex/NEXT_PROMPT.md` — QUEUED for the country/region remediation only.
+- `prompts/codex/NEXT_PROMPT.md` — HOLD pending the Product Owner's clean Network Plugin retest.
 
 ## Decision history
 
@@ -61,46 +61,42 @@ The helper:
 
 The bridge is used only when `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1`. Without that flag, the existing direct MQTTS/SSDP implementation remains active.
 
-## Country/region remediation authorization — 2026-09-06
+## Country/region remediation completed — 2026-09-06
 
-Independent review found that the native helper initializes the Network Plugin with a hard-coded `US` country code. The Product Owner explicitly authorized a narrow fix before the clean real-device test.
+Independent review found that the native helper initialized the Network Plugin with a hard-coded `US` country code. The Product Owner-authorized narrow fix is complete in implementation commit `9cf1d4d542c6ca7ed0fd76ed83c24c340f993b98`.
 
-Codex is authorized to:
+The bridge now:
 
-- remove the hard-coded `US` value;
-- support explicit `BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE` override;
-- otherwise derive a country code from a safe Windows local geographic-locale API;
-- normalize/validate it as ISO 3166-1 alpha-2;
-- fail closed with a sanitized actionable diagnostic if it cannot resolve a valid value;
-- add automated coverage and update the local runbook;
-- rerun build/probe/validation/E2E/CI;
-- return `NEXT_PROMPT.md` to HOLD when ready for the Product Owner clean retest.
+- gives `BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE` explicit priority;
+- otherwise reads only the current Windows user's geographic region through the documented `GetUserDefaultGeoName` API;
+- normalizes and validates the value against ISO 3166-1 alpha-2 before plugin initialization;
+- fails closed with a sanitized override instruction when the override or Windows value is invalid/unavailable;
+- has no arbitrary region fallback and does not read Bambu Studio account/cloud/profile data, Connect credentials, tokens, cookies or private IPC.
 
-Do not obtain the country/region from Bambu Studio account/cloud/profile data, Bambu Connect credentials, tokens, cookies or private IPC. Do not broaden the bridge or alter DEC-018 boundaries.
+All DEC-018 security, licensing and interface boundaries remain unchanged.
 
-## Prior evidence before remediation
+## Current remediation evidence
 
-On prior head `0b395628d04cc492e3b59ddf25f0b2758b0aff09`:
+On implementation head `9cf1d4d542c6ca7ed0fd76ed83c24c340f993b98`:
 
 - `npm run m2:network-plugin:build` — passed.
-- `npm run m2:network-plugin:probe` — passed; ABI prefix `02.08.02`.
-- `npm run m2:network-plugin:discover` — zero candidates while Bambu Studio was running and owned the plugin's discovery/listener ports; this is not a clean standalone failure.
-- `npm run validate` — passed with `43` Vitest tests.
+- `npm run m2:network-plugin:probe` — passed; ABI prefix `02.08.02`, Windows-derived country code `DE`.
+- `npm run validate` — passed with `52` Vitest tests plus TypeDoc and license validation.
 - `npm run test:e2e` — `15` passed across desktop, tablet and mobile.
-- GitHub Actions run `34022690041` passed Fresh checkout validation and Docker Compose validation.
+- `git diff --check` — passed.
+- GitHub Actions run `34035325621` passed Fresh checkout validation and Docker Compose validation.
 
-These results predate the country-code remediation and must not be treated as final validation of the new implementation.
+No real discovery or printer monitoring was run during this remediation. Real A1 Mini/X2D evidence remains pending.
 
 ## Required next sequence
 
-1. Codex executes only the queued country/region remediation and returns the gate to HOLD.
-2. Verify the resulting PR head and CI.
-3. Product Owner exits Bambu Studio but leaves the official Network Plugin installed.
-4. Product Owner runs documented build/probe/discovery commands.
-5. Product Owner enables `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1` and launches the prototype locally.
-6. Enter Access Codes only through the local memory-only flow; do not place secrets in chat/Git.
-7. Verify A1 Mini and X2D automatic enumeration and useful read-only status, including X2D while actively printing.
-8. Record only sanitized results.
+1. Product Owner exits Bambu Studio completely, including any background instance, but leaves the official Network Plugin installed.
+2. From the repository root, run `npm run m2:network-plugin:build`, `npm run m2:network-plugin:probe` and `npm run m2:network-plugin:discover`.
+3. If Windows geography is missing or incorrect, set `BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE` to the Product Owner's ISO 3166-1 alpha-2 code and repeat the probe/discovery commands.
+4. Set `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1`, then launch `npm run dev:server` and `npm run dev:web -- --host 127.0.0.1` in separate terminals.
+5. Enter Access Codes only through the local memory-only dashboard flow; do not place secrets in commands, chat, logs or Git.
+6. Verify A1 Mini and X2D automatic enumeration and useful read-only status, including X2D while actively printing.
+7. Record only sanitized results.
 
 If the corrected clean retest fails to provide reliable discovery and useful read-only monitoring for both printers, recommend M2 NO-GO / project termination. Do not add another workaround.
 

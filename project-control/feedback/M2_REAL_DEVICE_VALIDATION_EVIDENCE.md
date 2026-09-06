@@ -105,3 +105,18 @@ Sanitized local runtime evidence:
 - GitHub Actions run `34022565310` passed Fresh checkout validation (including browser E2E) and Docker Compose validation for implementation commit `0c0e5d5a17bdcfd16082d82efc1129497c769a3e`.
 
 Product Owner retest remains required with Bambu Studio exited. Do not change A1 Mini/X2D capability rows until standalone discovery and useful read-only callback behavior are actually observed and sanitized.
+
+## Network Plugin country/region remediation — 2026-09-06
+
+The authorized pre-retest remediation is complete. The native helper no longer hard-codes `US`. The bridge now gives an explicit `BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE` override priority and otherwise asks a project-authored native boundary for the current Windows user's geographic region through the documented `GetUserDefaultGeoName` API. Both paths normalize to uppercase and validate against the ISO 3166-1 alpha-2 set before plugin initialization. Invalid overrides, numeric/unassigned values and unavailable Windows geography fail closed with a sanitized instruction to set the override; no arbitrary default is used.
+
+Sanitized validation evidence for implementation commit `9cf1d4d542c6ca7ed0fd76ed83c24c340f993b98`:
+
+- `npm run m2:network-plugin:build` — passed.
+- `npm run m2:network-plugin:probe` — passed against the signed installed component and reported ABI prefix `02.08.02` plus Windows-derived country code `DE`.
+- `npm run validate` — passed: TypeScript/web build, Vitest `52` tests, TypeDoc and dependency-license inventory.
+- `npm run test:e2e` — passed: Playwright `15` tests across desktop, tablet and mobile.
+- `git diff --check` — passed.
+- GitHub Actions run `34035325621` passed Fresh checkout validation and Docker Compose validation for the implementation commit.
+
+Coverage includes valid and lowercase explicit overrides, invalid override rejection without value disclosure, a mocked Windows locale-derived path, unresolved/invalid local values with no fallback, and the existing bridge redaction/read-only/security invariants. No real printer discovery or monitor test was performed as part of this remediation. The A1 Mini/X2D capability rows remain unchanged pending the Product Owner's clean standalone retest with Bambu Studio fully exited.
