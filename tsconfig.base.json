@@ -21,6 +21,7 @@
       "@bpd/contracts": ["packages/contracts/src/index.ts"],
       "@bpd/adapter-api": ["packages/adapter-api/src/index.ts"],
       "@bpd/adapter-synthetic": ["packages/adapter-synthetic/src/index.ts"],
+      "@bpd/adapter-bambu-readonly": ["packages/adapter-bambu-readonly/src/index.ts"],
       "@bpd/device-core": ["packages/device-core/src/index.ts"],
       "@bpd/persistence": ["packages/persistence/src/index.ts"],
       "@bpd/telemetry": ["packages/telemetry/src/index.ts"],

@@ -96,6 +96,13 @@ export class DeviceStateService {
   }
 
   /**
+   * Removes a device from the current live registry without deleting durable normalized history.
+   */
+  removeDevice(deviceId: DeviceId): boolean {
+    return this.devices.delete(deviceId);
+  }
+
+  /**
    * Subscribes to server-owned normalized events.
    */
   subscribe(listener: DeviceCoreEventListener): () => void {

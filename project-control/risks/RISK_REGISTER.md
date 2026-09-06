@@ -45,12 +45,12 @@
 
 ## R-014 — Standard-mode read-only status path may vary by firmware/model or become less accessible
 
-- **Description:** Although Bambu publicly states that printer status pushes remain available to third-party monitoring, the exact field set, authentication behavior, cadence, reconnect behavior or firmware enforcement may differ between A1 Mini and X2D or change over time. A technically successful connection may still expose too little stable data for a useful product.
+- **Description:** Although Bambu publicly states that printer status pushes remain available to third-party monitoring, the exact field set, authentication behavior, cadence, reconnect behavior or firmware enforcement may differ between A1 Mini and X2D or change over time. A technically successful connection may still expose too little stable data for a useful product. On 2026-08-30 the Product Owner reported that the direct prototype could not connect to the X2D while it was actively printing. A later clean official Network Plugin retest after country/region remediation connected both target printers simultaneously and observed useful X2D active-print telemetry, resolving that specific failure for one workstation/test session without eliminating longer-term compatibility and reliability risk.
 - **Likelihood:** High
 - **Impact:** Critical
-- **Mitigation:** Treat M2 as a hard dual-device GO/NO-GO gate; test the Product Owner's current firmware on both devices; record a sanitized capability matrix and timing/reliability evidence; isolate the transport behind `adapter-bambu-readonly`; retain synthetic regression; stop before M3 if either device cannot meet the usefulness threshold without prohibited mechanisms.
+- **Mitigation:** Keep M2 on HOLD for explicit Product Owner acceptance; use only approved standard-mode local read-only paths; maintain sanitized/mock regression tests; preserve the capability matrix and collect controlled stale/offline/reconnect evidence; isolate transports behind `adapter-bambu-readonly`; retain synthetic regression internally; stop before M3 if either device cannot meet the usefulness threshold without prohibited mechanisms. The official Network Plugin bridge must remain optional, version-pinned, signed-component-only and subject to R-017 plus Product Owner architecture/dependency/licensing approval.
 - **Owner:** Architecture / Product owner
-- **Status:** Open — primary M2 feasibility risk
+- **Status:** Open — clean dual-printer/active-X2D retest passed; longer-term field/cadence/reconnect/firmware risk remains
 - **Related milestone:** M2
 
 ## R-015 — Real LAN Access Code or private device evidence could leak during M2 debugging
@@ -72,3 +72,13 @@
 - **Owner:** Product owner / Architecture
 - **Status:** Open
 - **Related milestone:** M2
+
+## R-017 — Optional official Network Plugin bridge creates a proprietary runtime and platform dependency
+
+- **Description:** The bounded spike can invoke the user-installed official Bambu Network Plugin through public Bambu Studio ABI declarations, but the component is proprietary, separately distributed, currently proven only on Windows ABI prefix `02.08.02`, and cannot be bundled in this MPL repository. Version drift, signer changes, installation layout changes or concurrent Bambu Studio ownership of local plugin listeners may make discovery or monitoring unavailable. Docker/public CI cannot exercise the proprietary runtime.
+- **Likelihood:** High
+- **Impact:** Critical
+- **Mitigation:** Keep the bridge opt-in and isolated; require a normal official Bambu Studio/plugin installation; verify Authenticode and require the plugin signer certificate to match the Studio executable; pin and report the compatible ABI prefix; resolve only the approved discovery/local-connect/local-message entry points; fail closed when absent or incompatible; never redistribute the plugin; preserve direct MQTTS/SSDP and synthetic paths; require Product Owner architecture/dependency/licensing review before permanent adoption. The clean A1 Mini/X2D retest passed on one workstation/test session but does not remove version, coexistence, platform or CI limitations.
+- **Owner:** Product owner / Architecture / Security
+- **Status:** Open — clean dual-printer retest passed; permanent adoption and broader reliability remain unapproved
+- **Related milestone:** M2 / PR #3

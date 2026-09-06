@@ -8,6 +8,7 @@ Owns server-side live device state, adapter subscription lifecycle, freshness re
 
 - Start/stop read-only adapters.
 - Maintain the current normalized device registry and state map.
+- Remove a device from the live registry when an active runtime configuration is deleted without deleting normalized history.
 - Fan out normalized events to API/SSE consumers.
 - Persist device registry, current state and raw telemetry samples.
 

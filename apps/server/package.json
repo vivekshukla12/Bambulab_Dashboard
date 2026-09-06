@@ -10,7 +10,9 @@
     "start": "node dist/main.js"
   },
   "dependencies": {
+    "@bpd/adapter-bambu-readonly": "0.1.0-m1",
     "@bpd/adapter-synthetic": "0.1.0-m1",
+    "@bpd/bambu-network-plugin-bridge": "0.1.0-m2-spike",
     "@bpd/contracts": "0.1.0-m1",
     "@bpd/device-core": "0.1.0-m1",
     "@bpd/discovery": "0.1.0-m1",

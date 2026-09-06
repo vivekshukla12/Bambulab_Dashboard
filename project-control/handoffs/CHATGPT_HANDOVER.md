@@ -1,167 +1,110 @@
 # Bambu Printer Dashboard ChatGPT Handover
 
-## Product purpose
-Local-first responsive browser/PWA operational dashboard for monitoring compatible Bambu Lab printers and related devices, with multi-device visibility, real read-only telemetry, history, filament/maintenance workflows, notifications, audit/history, and a documented local API/event layer. Privileged printer controls are conditional/future rather than a current V1 promise.
+## Repository authority
 
-## Repository / licensing
-Public repository: `vivekshukla12/Bambulab_Dashboard`.
-Source code license: MPL-2.0.
-New original source files use the MPL source-file notice policy in `CONTRIBUTING.md` (normally `SPDX-License-Identifier: MPL-2.0`). Preserve third-party license/provenance. `TRADEMARKS.md` and `NOTICE` define the independent/unofficial relationship and third-party trademark/IP posture.
+GitHub is authoritative: `vivekshukla12/Bambulab_Dashboard`.
 
-All production/core technologies and dependencies must be open source, free for commercial use and compatible with MPL-2.0 distribution.
+At the start of a new project/milestone chat, reconcile:
 
-## Delivery model
-M0 and M1 are complete. Every major milestone from M1 onward must deliver a runnable/testable prototype with automated tests plus Product Owner hands-on validation. Feedback is captured under `project-control/feedback/`, triaged, and reconciled before the next milestone is authorized.
-
-M2 is a hard real-device GO/NO-GO gate: useful, stable read-only monitoring must be proven on both A1 Mini and X2D without Developer Mode or Fleet Hub before substantial downstream feature investment.
-
-## Current V1 direction
-The PRD remains the requirement-ID baseline. `project-control/specs/V1_FEATURE_SCOPE.md` is the authoritative current V1 feasibility overlay.
-
-V1 centers on real local read-only monitoring, explicit freshness semantics, observed telemetry/history, customizable fleet/device dashboards, local operational domains, notifications/search/audit, and later documented local integrations. Current V1 does not require or promise Developer Mode, Fleet Hub, Bambu partner/private authorization, cloud-client impersonation, broad direct printer controls, or unvalidated camera/printer-storage functionality.
-
-## Approved architecture baseline from M1
-Authoritative specification: `project-control/specs/M1_ARCHITECTURE.md`.
-
-Approved baseline:
-- Node.js 24 LTS + TypeScript;
-- React + Vite frontend;
-- Fastify backend;
-- SQLite + `better-sqlite3` + Kysely;
-- npm workspaces + TypeScript project references;
-- strict modular monorepo/package boundaries;
-- Vitest + Playwright;
-- TypeDoc + structured source documentation;
-- REST + Server-Sent Events initially;
-- direct local development + Docker/Docker Compose packaging;
-- permanent deterministic synthetic adapter;
-- server-owned live state/freshness/persistence;
-- read-only adapter contract separated from any future control interface;
-- no interactive dashboard login for read-only V1;
-- LAN-accessible default with optional binding restriction;
-- HTTP permitted initially for read-only LAN use; HTTPS + strong authentication mandatory before future write/control capability;
-- future server-side printer discovery + LAN Access Code onboarding with manual fallback;
-- per-printer remembered encrypted or process-memory-only Access Code policy;
-- durable history plus 30-day default raw telemetry configurable 1–365 days.
-
-See DEC-014 through DEC-016.
-
-## Documentation/modularity rule
-DEC-010 remains mandatory. Significant modules have focused local README/context documentation; public/extension-facing contracts use structured source docs/generated reference support; `docs/architecture/MODULE_MAP.md` is the concise navigation map. Codex tasks must direct agents to minimum module-local context rather than whole-repository rereading.
-
-## Security boundaries
-- LAN-only V1 production access.
-- Read-only V1 dashboard has no interactive application login; LAN reachability equals read access.
-- Any future printer write/control or comparable sensitive feature requires HTTPS + strong authentication and a new Product Owner-approved security decision.
-- Printer Access Codes are sensitive device credentials.
-- Never log/commit credentials or expose them through browser storage/normal API/diagnostics.
-- Stale/offline state is not live.
-- Do not circumvent vendor/device security or access controls.
-
-## Bambu Lab / interface posture
-Independent third-party interoperability project; no affiliation, sponsorship, authorization, certification, maintenance relationship, or endorsement by Bambu Lab is claimed.
-
-Approved constraints:
-- no printer Developer Mode;
-- no Fleet Hub dependency/extra hardware path for current V1;
-- no Bambu developer-partner/private authorization at this stage;
-- no reverse-engineered cloud-client impersonation;
-- publicly available read-only printer status paths explicitly left available by Bambu may be evaluated under DEC-006/DEC-012;
-- discovering a technical write/control path does not authorize using it.
-
-M2 is authorized to evaluate/implement only the reviewed standard-mode local MQTTS read-only status path. If a usable client requires security bypass, signature circumvention, private authorization, proprietary implementation copying or write/control traffic, stop and return for Product Owner review.
-
-## Completed milestones
-
-### M0 — Repository and governance foundation
-- Product Owner approved 2026-08-22.
-- PR #1 merged 2026-08-22.
-- Merge commit: `bad179a0f847f9a478e2c167e62dd94760baa105`.
-
-### M1 — Architecture foundation + synthetic prototype + real-read feasibility design
-- Architecture approved by Product Owner.
-- Synthetic prototype implemented on PR #2.
-- Technical-lead reproducibility blocker remediated.
-- Fresh-checkout CI, unit/integration tests, Playwright E2E, TypeDoc/license checks, and Docker/Compose validation passed.
-- Product Owner performed hands-on testing and accepted M1 on 2026-08-24.
-- PR #2 merged into `main` on 2026-08-24.
-- Verified merge commit: `42821596cc0bf80a302b12287063b3ee17f58f3a`.
-
-Product Owner M1 UX feedback:
-- UI functionally acceptable for M1 but visually basic/not modern enough for final product quality;
-- no frontend redesign authorized now;
-- visual modernization deferred, potentially later milestone or small V1.1 UI/UX refresh.
-
-## Current milestone
-M2 — Real A1 Mini + X2D read-only GO/NO-GO prototype — **IMPLEMENTATION AUTHORIZED / QUEUED**.
-
-The Product Owner explicitly started M2 on 2026-08-24. `prompts/codex/NEXT_PROMPT.md` is the executable QUEUED contract. At queue time, no M2 branch or PR exists yet; Codex is authorized to create a dedicated M2 branch from current `main` and open a draft PR before substantial implementation.
-
-M2 implementation authorization is not milestone acceptance and does not authorize merge or M3.
-
-## M2 authoritative package
-- `project-control/specs/M2_REAL_DEVICE_VALIDATION.md`
-- `project-control/reviews/M2_PLANNING_REVIEW.md`
-- `prompts/codex/M2_IMPLEMENTATION_PROPOSAL.md`
-- executable gate: `prompts/codex/NEXT_PROMPT.md`
-
-## M2 implementation boundary
-Implement/evaluate only the standard-mode local **MQTTS read-only status path** through a dedicated `adapter-bambu-readonly` package.
-
-Do not use:
-- Developer Mode;
-- Fleet Hub;
-- private/partner Bambu credentials or authorization;
-- cloud-client impersonation;
-- write/control commands;
-- weakened TLS/security;
-- authorization/signature bypass;
-- copied proprietary Bambu network-plugin implementation.
-
-The adapter must preserve the existing normalized read-only contract, synthetic regression path, server-owned freshness/persistence model and capability-driven product layers.
-
-## M2 credential/evidence policy
-For M2 feasibility:
-- real LAN Access Codes default to process-memory-only/non-persisted handling;
-- real-device tests run only locally on the Product Owner LAN, not public/shared CI;
-- credentials, serial/MAC/IP/account identifiers, raw private payloads, packet captures, private printer media and unsanitized logs are not committed;
-- repository evidence is sanitized capability/timing/pass-fail summaries or project-authored synthetic fixtures;
-- persistent real credential storage is not required to pass M2 and requires separate Product Owner request within the already-approved SecretStore boundary.
-
-## M2 hard gate
-Both A1 Mini and X2D must demonstrate a genuinely useful core read-only monitoring product. Required value includes availability, current operating/print state, useful progress during real printing, meaningful temperature/status telemetry, safe stale/offline/reconnect behavior, simultaneous dual-device monitoring and compatibility with the existing normalized architecture.
-
-Synthetic evidence cannot pass M2.
-
-Possible outcomes:
-- **GO** — both devices satisfy useful stable monitoring under approved constraints;
-- **CONDITIONAL GO** — only non-core/model-specific gaps remain and Product Owner explicitly accepts reduced claims;
-- **NO-GO / reassessment** — either device lacks useful stable monitoring or required data depends on a prohibited mechanism.
-
-No M3 implementation may begin until the Product Owner decides the M2 gate.
-
-## Current risks
-See `project-control/risks/RISK_REGISTER.md`, especially:
-- R-013 read-only viable direction / controls unavailable;
-- R-014 firmware/model variability may undermine useful monitoring;
-- R-015 credential/private evidence leakage during real-device debugging;
-- R-016 low-level read transport assumptions may depend on unofficial implementation details.
-
-## Next authorized action
-Codex may resume from GitHub and execute `prompts/codex/NEXT_PROMPT.md`: create the M2 branch/draft PR, implement the dedicated read-only adapter and minimum onboarding, preserve synthetic regression, and prepare sanitized local-only validation for the Product Owner's A1 Mini and X2D. Stop on any prohibited interface/security boundary. Do not merge and do not start M3.
-
-## Files to read first
 1. `project-control/status/CURRENT_STATUS.md`
 2. `project-control/handoffs/CHATGPT_HANDOVER.md`
 3. `prompts/codex/NEXT_PROMPT.md`
-4. `project-control/specs/M2_REAL_DEVICE_VALIDATION.md`
-5. `project-control/reviews/M2_PLANNING_REVIEW.md`
-6. `prompts/codex/M2_IMPLEMENTATION_PROPOSAL.md`
-7. `project-control/specs/OPERATING_MODEL.md`
-8. `project-control/specs/MILESTONE_PLAN.md`
-9. `project-control/specs/M1_ARCHITECTURE.md`
-10. `project-control/specs/V1_FEATURE_SCOPE.md`
-11. `project-control/specs/SECURITY_PRIVACY_GUARDRAILS.md`
-12. `project-control/decisions/DECISION_LOG.md`
-13. `project-control/risks/RISK_REGISTER.md`
-14. affected module-local README/contracts/tests as needed.
+4. `project-control/specs/OPERATING_MODEL.md`
+5. relevant milestone/spec files
+6. `project-control/decisions/DECISION_LOG.md` plus current dedicated decision records
+7. `project-control/risks/RISK_REGISTER.md`
+8. actual branch/PR/merge/commit/CI state
+
+## Product/governance baseline
+
+Bambu Printer Dashboard is an independent, open-source, local-first/read-only-first monitoring dashboard for compatible Bambu Lab printers. The Product Owner controls scope, architecture, dependencies, security/privacy boundaries, milestone acceptance and merges. The repository license is MPL-2.0.
+
+Completed:
+
+- M0 merged: `bad179a0f847f9a478e2c167e62dd94760baa105`
+- M1 merged: `42821596cc0bf80a302b12287063b3ee17f58f3a`
+
+M1 UI modernization remains deferred.
+
+## Current milestone / gate
+
+M2 — Real A1 Mini + X2D integration feasibility / GO-NO-GO.
+
+**Current state: HOLD — CLEAN NETWORK PLUGIN RETEST PASSED; PRODUCT OWNER M2 DECISION REQUIRED.**
+
+Draft PR #3 remains open/draft/unmerged on `m2/real-device-readonly-prototype`. M3 remains blocked. Merge is not authorized.
+
+Authority:
+
+- `project-control/decisions/DEC-018_BAMBU_CONNECT_NETWORK_PLUGIN_FEASIBILITY.md`
+- `project-control/reviews/M2_BAMBU_CONNECT_NETWORK_PLUGIN_FEASIBILITY_2026-09-06.md`
+- `prompts/codex/NEXT_PROMPT.md` — HOLD pending the Product Owner's M2 and architecture/dependency/licensing decision.
+
+## Decision history
+
+DEC-018 restores DEC-011's no-outreach policy and supersedes DEC-017 only where DEC-017 required contacting Bambu Lab or pursuing partner authorization. Do not contact Bambu Lab. The restrictions on Developer Mode, unsupported/private Bambu Cloud access, official-client impersonation, credential/token extraction, proprietary binary reverse engineering/redistribution, write/control operations and security weakening remain in force.
+
+## Bounded spike result
+
+The branch adds an isolated optional `@bpd/bambu-network-plugin-bridge` package and project-authored Windows native helper based only on public Bambu Studio declarations. It does not contain Bambu source headers, implementation code, binaries or proprietary fixtures.
+
+The helper:
+
+- locates only a normal user-installed Bambu Studio/Network Plugin or explicit local override;
+- verifies both files with Authenticode and requires matching signer certificates;
+- pins ABI prefix `02.08.02`;
+- resolves only compatibility/version, discovery, local connect/disconnect and local message callback functions;
+- sends host, serial and Access Code to the child only through its private environment and removes those variables immediately;
+- uses an isolated temporary config/log directory and deletes it after use;
+- emits private payloads only over child IPC for server-side parsing;
+- exposes no arbitrary send, bind/unbind, cloud login, printing, motion, calibration, camera or file-transfer function.
+
+The bridge is used only when `BPD_BAMBU_NETWORK_PLUGIN_BRIDGE=1`. Without that flag, the existing direct MQTTS/SSDP implementation remains active.
+
+## Country/region remediation completed — 2026-09-06
+
+Independent review found that the native helper initialized the Network Plugin with a hard-coded `US` country code. The Product Owner-authorized narrow fix is complete in implementation commit `9cf1d4d542c6ca7ed0fd76ed83c24c340f993b98`.
+
+The bridge now:
+
+- gives `BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE` explicit priority;
+- otherwise reads only the current Windows user's geographic region through the documented `GetUserDefaultGeoName` API;
+- normalizes and validates the value against ISO 3166-1 alpha-2 before plugin initialization;
+- fails closed with a sanitized override instruction when the override or Windows value is invalid/unavailable;
+- has no arbitrary region fallback and does not read Bambu Studio account/cloud/profile data, Connect credentials, tokens, cookies or private IPC.
+
+All DEC-018 security, licensing and interface boundaries remain unchanged.
+
+## Current remediation evidence
+
+On implementation head `9cf1d4d542c6ca7ed0fd76ed83c24c340f993b98`:
+
+- `npm run m2:network-plugin:build` — passed.
+- `npm run m2:network-plugin:probe` — passed; ABI prefix `02.08.02`, Windows-derived country code `DE`.
+- `npm run validate` — passed with `52` Vitest tests plus TypeDoc and license validation.
+- `npm run test:e2e` — `15` passed across desktop, tablet and mobile.
+- `git diff --check` — passed.
+- GitHub Actions run `34035325621` passed Fresh checkout validation and Docker Compose validation.
+
+No real discovery or printer monitoring was run by Codex during the remediation. Subsequent Product Owner evidence is recorded below.
+
+## Product Owner clean retest evidence — 2026-09-06
+
+The Product Owner subsequently completed the requested standalone browser retest and supplied sanitized screenshots:
+
+- Explicit Rescan discovered two official Network Plugin candidates without manual host entry.
+- The A1 Mini connected with live nozzle/bed/Wi-Fi telemetry; lifecycle/progress remained unobserved in idle sparse reports.
+- The X2D connected while actively printing and reported live printing state, `82%` progress and nozzle/bed/Wi-Fi/AMS telemetry.
+- Both printers were configured and live simultaneously; fleet summary showed two live, zero stale and zero unavailable.
+- No host, serial, Access Code or raw plugin payload appeared in the evidence.
+
+The clean country-corrected retest therefore passes its required discovery/useful-monitoring scenario and resolves the prior X2D active-print failure for this workstation/test session. It remains a feasibility result, not permanent proprietary dependency approval, M2 acceptance, merge authorization or M3 authorization.
+
+## Required next sequence
+
+1. Product Owner reviews the clean real-device evidence and remaining A1 Mini lifecycle/progress plus controlled stale/offline/reconnect gaps.
+2. Product Owner makes the explicit M2 GO / CONDITIONAL GO / NO-GO decision.
+3. If proceeding, Product Owner separately decides whether the user-installed proprietary Network Plugin may become a supported optional dependency under DEC-018 constraints.
+4. Only after explicit approval may project-control queue any follow-up, merge PR #3 or authorize M3.
+
+Never merge PR #3, adopt the proprietary plugin permanently or begin M3 without explicit Product Owner authorization.
