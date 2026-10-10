@@ -41,7 +41,7 @@ Status: **M1 baseline reconciled to read-only-first V1**
 
 - LAN service discovery may be used for dashboard-server discovery and future printer discovery only within approved local-network boundaries.
 - Browser clients must not perform arbitrary LAN scanning; printer discovery belongs on the server side.
-- Manual server IP/port and printer connection details remain diagnostics/fallback mechanisms, not the default user experience.
+- Manual printer IP/hostname and required local connection details are an approved normal V1 onboarding path. Automatic printer discovery is optional convenience and must not be required for secure operation.
 
 ## Camera privacy
 
@@ -74,6 +74,13 @@ Do not commit customer/production-derived sensitive data, real identifiers, cred
 Use deterministic synthetic fixtures under `test-fixtures/synthetic/` by default.
 
 M1 implementation and tests must not access real printers unless separately authorized.
+
+## Vendor/runtime boundary
+
+- V1 must not depend on Bambu Network Plugin, Bambu Studio, Bambu Connect, Bambu Cloud/private APIs, Developer Mode, Fleet Hub, paid vendor services, or vendor outreach.
+- The production printer adapter may consume only the approved direct local read-only status path.
+- Do not bundle, download, mount, invoke, or require proprietary Bambu desktop/runtime components as part of V1 deployment.
+- A printer/model that cannot provide useful monitoring through the approved direct path may be unsupported rather than triggering a new proprietary compatibility layer.
 
 ## Production gate
 
