@@ -2,53 +2,65 @@
 
 ## Current milestone
 
-M2 — Real A1 Mini + X2D integration feasibility / GO-NO-GO
+M2 — Direct plugin-free local printer monitoring / supported-model gate
 
 ## State
 
-**HOLD — CLEAN NETWORK PLUGIN RETEST PASSED; PRODUCT OWNER M2 DECISION REQUIRED.**
+**SCOPE RESET APPROVED — DIRECT-ONLY V1 CLEANUP QUEUED.**
 
-The bounded no-outreach Bambu Connect / user-installed official Network Plugin spike authorized by DEC-018 remains technically feasible for Product Owner architecture review. The authorized country/region remediation and clean Windows Product Owner retest are complete. The execution gate remains on HOLD pending the Product Owner's M2 GO/CONDITIONAL GO/NO-GO and architecture/dependency/licensing decision.
+On 10 October 2026 the Product Owner approved DEC-019 and replaced the prior Network Plugin production direction with a smaller V1: Docker-native, local-first, plugin-free, cloud-free and read-only.
 
-PR #3 remains open, draft and unmerged on `m2/real-device-readonly-prototype`. M3 remains blocked.
+The original full-scope PRD remains unchanged at `project-control/specs/PRODUCT_REQUIREMENTS.md`. The authoritative current V1 requirements are now `project-control/specs/V1_PRODUCT_REQUIREMENTS.md`.
 
-## Completed remediation — 2026-09-06
+PR #3 remains open, draft and unmerged on `m2/real-device-readonly-prototype`. M3 remains blocked until the M2 scope reset is implemented and validated.
 
-Independent review found that the project-authored native Network Plugin helper hard-coded the plugin country code to `US` during agent initialization. Implementation commit `9cf1d4d542c6ca7ed0fd76ed83c24c340f993b98` removes that assumption.
+## Current V1 architecture
 
-The bridge now:
+Production V1 may use only:
 
-- gives explicit local override `BPD_BAMBU_NETWORK_PLUGIN_COUNTRY_CODE` priority;
-- otherwise reads only the current Windows user's geographic region through the documented `GetUserDefaultGeoName` API;
-- normalizes and validates against ISO 3166-1 alpha-2 before plugin initialization;
-- fails closed with a sanitized override instruction when no valid code can be resolved;
-- preserves all existing DEC-018 security, licensing and interface boundaries;
-- never reads Bambu account/cloud/profile configuration, Connect credentials, tokens, cookies or private IPC for country/region.
+`supported printer -> direct local encrypted read-only status -> normalized server/domain -> browser/history/integrations`
 
-Local validation passed native build/probe, `52` Vitest tests, TypeDoc/license validation, `15` Playwright E2E tests and `git diff --check`. The sanitized probe derived `DE` from Windows. GitHub Actions run `34035325621` passed Fresh checkout validation and Docker Compose validation for the implementation commit.
+V1 explicitly excludes:
 
-## Existing spike outcome
+- Bambu Network Plugin;
+- Bambu Studio runtime dependency;
+- Bambu Connect;
+- Bambu Cloud/private APIs;
+- Developer Mode;
+- Fleet Hub;
+- paid vendor connectivity services;
+- vendor outreach/partner authorization;
+- printer write/control operations.
 
-The optional Windows `@bpd/bambu-network-plugin-bridge` remains disabled unless explicitly enabled and uses only an official Network Plugin already installed by the user through Bambu Studio. It verifies official signed runtime compatibility, resolves only discovery/local-connect/local-message functions, keeps private device/credential data server-side, exposes no write/control API, and preserves direct MQTTS/SSDP plus synthetic regression paths.
+Manual printer onboarding is an approved normal workflow. SSDP discovery may remain only as best-effort convenience.
 
-Current remediation evidence is recorded in `project-control/feedback/M2_REAL_DEVICE_VALIDATION_EVIDENCE.md`. No real printer test was performed during the country/region correction, so this is not M2 GO/acceptance or permanent dependency approval.
+## Prior evidence retained
 
-## Product Owner clean retest result
+- M0 and M1 are complete/merged.
+- Direct local A1 Mini monitoring previously produced live printer telemetry.
+- The official Network Plugin spike proved that Bambu telemetry can be useful on A1 Mini/X2D, but under DEC-019 that spike is historical evidence only and is no longer a production architecture candidate.
+- X2D still requires a clean **direct plugin-free** M2 retest before it can be claimed supported.
+- Existing synthetic regression infrastructure remains required.
 
-The Product Owner completed the requested clean standalone retest:
+## Current M2 objective
 
-1. Explicit Rescan discovered two sanitized official Network Plugin candidates without manual host entry.
-2. The A1 Mini connected with live nozzle/bed/Wi-Fi telemetry.
-3. The X2D connected while actively printing and exposed live printing state, `82%` progress, nozzle/bed/Wi-Fi/AMS telemetry.
-4. Both printers remained connected simultaneously; the fleet showed two live, zero stale and zero unavailable.
-5. Supplied screenshots exposed no host, serial, Access Code or raw plugin payload.
+1. Remove the Network Plugin bridge/package/runtime path from active V1 code/docs/tests while preserving historical decision/research records.
+2. Keep and harden the direct local read-only MQTTS adapter.
+3. Make manual onboarding first-class and sufficient.
+4. Retain SSDP only as optional convenience.
+5. Validate direct A1 Mini monitoring.
+6. Retest X2D directly without Network Plugin/Bambu software.
+7. Record supported/experimental/unsupported model status.
+8. Validate stale/offline/reconnect and concurrent operation for the supported set.
+9. Keep all credentials/private device evidence out of Git/CI.
 
-This passes the specific corrected retest scenario and resolves the previously observed X2D active-print connection failure for this workstation/test session. Remaining evidence gaps include controlled stale/offline/reconnect behavior and A1 Mini lifecycle/progress. The successful retest does not authorize permanent proprietary dependency adoption, merge or M3.
+If X2D cannot meet the direct-path support threshold, do not add another proprietary workaround. Return to the Product Owner to accept X2D as experimental/unsupported or stop/re-scope.
 
 ## Authority
 
-- Current decision: `project-control/decisions/DEC-018_BAMBU_CONNECT_NETWORK_PLUGIN_FEASIBILITY.md`
-- Execution gate: `prompts/codex/NEXT_PROMPT.md` — HOLD pending Product Owner M2 and dependency decision.
-- PR #3 remains draft/unmerged.
+- Current V1 requirements: `project-control/specs/V1_PRODUCT_REQUIREMENTS.md`
+- Current decision: `project-control/decisions/DEC-019_SIMPLIFIED_PLUGIN_FREE_V1.md`
+- Roadmap: `project-control/specs/MILESTONE_PLAN.md`
+- Execution gate: `prompts/codex/NEXT_PROMPT.md` — QUEUED for direct-only V1 cleanup and M2 reset.
 
-Do not merge PR #3, permanently adopt the proprietary Network Plugin, or begin M3 without explicit Product Owner authorization.
+Do not merge PR #3 or begin M3 without explicit Product Owner approval.
