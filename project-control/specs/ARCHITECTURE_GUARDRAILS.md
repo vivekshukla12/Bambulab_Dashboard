@@ -46,7 +46,7 @@ Vendor-specific payloads and protocol details stop at adapter boundaries. React,
 - **Staging/test:** separate deployment; synthetic data by default; no real-printer access unless separately authorized.
 - **Production V1:** always-on local LAN server/mini PC; Docker/Docker Compose is the recommended packaging path, while direct service execution remains architecturally valid.
 - **Network access:** LAN-accessible read-only dashboard may run without application login under the approved V1 model; a local-only/interface-restricted binding option must be available where feasible.
-- **Discovery:** production packaging should support a stable LAN-local service name via mDNS or equivalent so manual server IP/port entry is not the normal user experience.
+- **Printer onboarding:** manual printer IP/hostname plus required local identity/LAN credential is an accepted normal V1 workflow. Server-side discovery may be retained as best-effort convenience but must not be required for a supported deployment.
 - **HTTP/HTTPS:** initial read-only LAN deployment may use HTTP; architecture remains HTTPS-capable; HTTPS plus strong authentication is mandatory before any write/control or comparable sensitive capability.
 
 ## Persistence baseline
@@ -57,19 +57,21 @@ Raw/high-frequency telemetry defaults to 30-day retention and is user-configurab
 
 ## Printer integration baseline
 
-- M1: deterministic synthetic adapter only.
-- M2 target: separately authorized real Bambu read-only adapter for both A1 Mini and X2D.
-- Developer Mode is excluded.
-- Fleet Hub dependency is excluded from the current consumer path.
-- Bambu cloud-client impersonation is prohibited.
-- Future real onboarding direction is LAN discovery plus user-supplied LAN Access Code with manual fallback.
+- M1: deterministic synthetic adapter foundation.
+- Current V1 production path under DEC-019: direct local encrypted read-only printer status only.
+- Manual onboarding with user-supplied local connection details is a first-class supported workflow.
+- Server-side SSDP discovery is optional best-effort convenience, not a product dependency or release gate.
+- Bambu Network Plugin, Bambu Studio, Bambu Connect and Bambu Cloud/private APIs are excluded from V1 production architecture.
+- Developer Mode and Fleet Hub are excluded.
+- Bambu cloud-client impersonation and printer write/control operations are prohibited.
+- Printer/model support is capability/evidence based; a difficult model must not force proprietary runtime complexity into the architecture.
 
 ## Deliberately deferred beyond the approved M1 baseline
 
-- Real Bambu protocol implementation and real printer access (M2 authorization required).
-- Camera transport/recording strategy.
-- Home Assistant/Alexa/Google Home/Daisy implementation.
+- Camera transport/recording strategy (deferred beyond V1 unless separately approved).
+- Alexa/Google Home direct integrations; Home Assistant is the preferred V1 smart-home bridge.
 - Printer controls/write operations.
+- Proprietary Bambu runtime/plugin integrations.
 - Full backup key hierarchy and machine-independent secret recovery.
 - Update signing/rollback implementation.
 - Mandatory production TLS/certificate distribution strategy for any future sensitive/write-enabled release.
