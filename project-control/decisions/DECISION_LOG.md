@@ -198,3 +198,15 @@
 - **Approved by:** Product Owner direction on 2026-09-06.
 - **Related milestone / PR:** M2 / PR #3.
 - **Full record:** `project-control/decisions/DEC-018_BAMBU_CONNECT_NETWORK_PLUGIN_FEASIBILITY.md`.
+
+
+## DEC-019 — Adopt simplified plugin-free, cloud-free, read-only V1
+
+- **Date:** 2026-10-10
+- **Status:** Approved / current V1 product and architecture direction
+- **Decision:** Current V1 is reduced to a Docker-native, local-first, read-only dashboard using only direct local printer status. Bambu Network Plugin, Bambu Studio, Bambu Connect, Bambu Cloud/private APIs, Developer Mode, Fleet Hub, paid vendor services and vendor outreach are excluded from the V1 production path. Manual printer onboarding is an approved normal workflow; automatic discovery is optional convenience.
+- **Rationale:** Product Owner prefers a smaller, easier-to-build/deploy/maintain product over proprietary compatibility layers. Public Bambu guidance supports local monitoring as a distinct class from restricted control, while proprietary/cloud paths add deployment and interface risk.
+- **Consequences:** `V1_PRODUCT_REQUIREMENTS.md` becomes the current V1 authority. The original `PRODUCT_REQUIREMENTS.md` remains unchanged for future scope. The Network Plugin spike becomes historical evidence only. M2 is reset to direct plugin-free support validation and cleanup; supported model claims depend on direct-path evidence.
+- **Approved by:** Product Owner on 2026-10-10.
+- **Related milestone / PR:** M2 scope reset / PR #3.
+- **Full record:** `project-control/decisions/DEC-019_SIMPLIFIED_PLUGIN_FREE_V1.md`.
