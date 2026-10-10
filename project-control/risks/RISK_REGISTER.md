@@ -80,5 +80,16 @@
 - **Impact:** Critical
 - **Mitigation:** Keep the bridge opt-in and isolated; require a normal official Bambu Studio/plugin installation; verify Authenticode and require the plugin signer certificate to match the Studio executable; pin and report the compatible ABI prefix; resolve only the approved discovery/local-connect/local-message entry points; fail closed when absent or incompatible; never redistribute the plugin; preserve direct MQTTS/SSDP and synthetic paths; require Product Owner architecture/dependency/licensing review before permanent adoption. The clean A1 Mini/X2D retest passed on one workstation/test session but does not remove version, coexistence, platform or CI limitations.
 - **Owner:** Product owner / Architecture / Security
-- **Status:** Open — clean dual-printer retest passed; permanent adoption and broader reliability remain unapproved
+- **Status:** Closed for V1 production direction — DEC-019 excludes the Network Plugin from V1; historical spike evidence remains preserved until cleanup.
 - **Related milestone:** M2 / PR #3
+
+
+## R-018 — Direct plugin-free support may exclude some printer models
+
+- **Description:** DEC-019 removes the proprietary Network Plugin compatibility layer. A printer model or firmware may therefore fail to expose sufficiently useful/stable direct local read-only status under the approved path even if it worked through Bambu software.
+- **Likelihood:** High
+- **Impact:** High
+- **Mitigation:** Validate each supported model/firmware through the direct adapter; publish a supported/experimental/unsupported matrix; keep manual onboarding; preserve capability-driven degradation; do not add proprietary/cloud/Developer Mode workarounds merely to increase model coverage. Product Owner may release V1 with a subset of initially targeted models.
+- **Owner:** Product owner / Architecture
+- **Status:** Open — X2D direct plugin-free retest required; A1 Mini has prior direct evidence.
+- **Related milestone:** M2 onward
