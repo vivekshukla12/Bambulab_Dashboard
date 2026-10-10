@@ -1,3 +1,17 @@
+# V1 Feature Scope — Archived Planning Overlay
+
+**Status:** Superseded for current V1 by `V1_PRODUCT_REQUIREMENTS.md` under DEC-019 on 10 October 2026.
+
+This file is intentionally preserved as historical planning context. It reflects the earlier read-only-first scope before the Product Owner simplified V1 further to remove Bambu Network Plugin/Bambu software dependencies, make manual onboarding acceptable as the normal path, and limit production integration to direct local read-only printer status.
+
+For current implementation and release decisions, use:
+
+1. `project-control/specs/V1_PRODUCT_REQUIREMENTS.md`
+2. `project-control/specs/MILESTONE_PLAN.md`
+3. `project-control/decisions/DEC-019_SIMPLIFIED_PLUGIN_FREE_V1.md`
+
+---
+
 # V1 Feature Scope — Read-Only-First Bambu Printer Dashboard
 
 **Status:** Product-owner approved planning baseline; implementation remains milestone-gated.

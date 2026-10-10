@@ -1,180 +1,174 @@
-# Milestone Plan
+# Milestone Plan — Simplified Plugin-Free V1
 
-**Status:** Revised read-only-first iterative plan approved for planning; implementation remains milestone-gated.
+**Status:** Product Owner approved planning baseline under DEC-019.  
+**Current V1 authority:** `project-control/specs/V1_PRODUCT_REQUIREMENTS.md`
 
-M0 is the governance bootstrap. Every **major product milestone M1+** must end with a runnable/testable prototype, automated validation, hands-on Product Owner feedback, and project-control reconciliation before the next milestone is authorized.
+The original full-scope PRD remains preserved unchanged in `PRODUCT_REQUIREMENTS.md`. This roadmap schedules only the smaller V1 that can be built today without Bambu Network Plugin, Bambu Studio, Bambu Connect, Bambu Cloud/private APIs, Developer Mode, Fleet Hub, paid services, or vendor outreach.
 
-The PRD remains the requirement-ID baseline. `V1_FEATURE_SCOPE.md` defines the currently promised V1 boundary under approved feasibility constraints.
+Every M1+ milestone must leave a runnable/testable prototype and reconcile feedback before the next milestone is authorized.
 
 ## M0 — Repository and governance foundation
 
-**Objective:** Establish GitHub governance, requirements, legal/IP posture, security/privacy guardrails, milestone controls, and Codex queueing before feature development.
+**Status:** Complete and merged.
 
-**Prototype:** Not applicable — M0 is the one-time governance foundation.
+**Outcome:** GitHub governance, licensing, security/privacy guardrails, project-control model, decision/risk tracking and Codex execution gate.
+
+---
+
+## M1 — Application architecture + synthetic prototype
 
 **Status:** Complete and merged.
 
+**Outcome:** Node.js/TypeScript monorepo, React/Vite frontend, Fastify server, SQLite/Kysely persistence, REST/SSE contracts, synthetic adapter, tests, TypeDoc, Docker packaging and documented read-only architecture.
+
 ---
 
-## M1 — Architecture foundation + synthetic prototype + real-read feasibility design
+## M2 — Direct local printer monitoring + support gate
 
-**Objective:** Make the critical architecture/feasibility choices, prove the application architecture with a runnable synthetic prototype, and define the constrained read-only real-printer path that M2 must validate.
+**Objective:** Establish the production printer path with **no proprietary Bambu software dependency**.
 
-**Prototype outcome:** A locally runnable authenticated dashboard/PWA shell backed by an always-on service, showing a deterministic synthetic fleet with connectivity/status/telemetry, health diagnostics, and explicit stale/offline/unavailable semantics.
+**Prototype outcome:** Docker/local server can manually configure and monitor the Product Owner-approved supported printers through the direct local encrypted read-only path. Best-effort discovery may exist but manual onboarding is fully sufficient.
 
 **Required work:**
-- application/backend/frontend technology decision;
-- datastore and explicit migration strategy;
-- development/staging/production topology and packaging;
-- local TLS approach;
-- local application authentication/session architecture;
-- configuration, secret/key and backup-recovery boundary;
-- initial threat model;
-- strong module/package boundaries and token-efficient repository structure;
-- selected stack's structured source-documentation/IDE/reference-doc toolchain under DEC-010;
-- normalized capability/domain model;
-- explicit read-versus-control capability semantics;
-- vendor/device adapter contract with no model-name coupling in product-domain/UI layers;
-- deterministic simulator/scenario framework using the same normalized contracts expected from real adapters;
-- read-only Bambu feasibility specification for M2, including credentials/configuration boundaries, security/legal constraints, expected status fields, freshness and test evidence requirements;
-- responsive navigation/dashboard/fleet shell;
-- service lifecycle and health endpoints.
+- remove the Network Plugin bridge/package/runtime path from the active V1 implementation and docs while preserving historical decisions/research;
+- keep direct local MQTTS read-only adapter only;
+- preserve safe TLS validation and credential handling;
+- make manual onboarding a first-class normal workflow;
+- keep SSDP discovery only as optional best-effort convenience;
+- validate A1 Mini direct monitoring;
+- retest X2D using only the direct plugin-free path;
+- establish the supported/experimental/unsupported model matrix;
+- verify live/stale/offline/reconnect semantics;
+- verify simultaneous monitoring for the supported printer set;
+- persist normalized observations without raw private payloads.
 
-**Explicit non-goals:**
-- no real-printer implementation unless separately authorized inside M1;
-- no printer Developer Mode;
-- no Fleet Hub dependency;
-- no Bambu partnership/private authorization;
-- no cloud-client impersonation;
-- no printer write/control features.
+**Acceptance rule:** A printer model enters supported V1 only if useful direct local monitoring is proven. Failure of X2D direct monitoring does not force another integration layer; it may be marked experimental/unsupported with Product Owner approval.
 
-**Feedback focus:** install/run experience, information architecture, basic dashboard UX, resource footprint, architecture/module boundaries, documentation discoverability, capability model, security friction, and readiness for M2 real-device validation.
+**Non-goals:** Network Plugin, Bambu Studio/Connect/cloud, Developer Mode, printer commands, cameras, printer files/media.
 
 ---
 
-## M2 — A1 Mini + X2D real read-only monitoring / GO-NO-GO prototype
+## M3 — Fleet dashboard + device pages + observed history
 
-**Objective:** Prove that the project can deliver a genuinely useful real dashboard on both initial target printers under the approved constraints.
+**Objective:** Turn proven direct telemetry into the core daily monitoring experience.
 
-**Prototype outcome:** The dashboard connects read-only to an A1 Mini and X2D without Developer Mode or Fleet Hub, displays validated real status/telemetry through the normalized adapter contract, persists observed state/history, clearly handles stale/offline/reconnect behavior, and retains complete synthetic mode for deterministic testing.
+**Prototype outcome:** A useful multi-printer fleet/home dashboard and capability-driven printer detail pages backed by durable normalized history.
 
-**Minimum real-device validation targets:**
-- printer availability/connectivity;
-- active printer/print state;
-- print progress where exposed;
-- temperatures and other reliably exposed read telemetry;
-- timestamps/freshness/quality semantics;
-- print-session transition observation sufficient for useful local history;
-- multi-device simultaneous operation;
-- reconnect/recovery after printer/network interruption;
-- capability differences between A1 Mini and X2D.
+**Required work:**
+- fleet cards with status, progress and key telemetry;
+- capability-driven device pages;
+- stale/offline/reconnecting UX;
+- observed print-session/history model;
+- search/filter for devices and observed jobs/history;
+- simple tags/groups/locations;
+- useful diagnostics without private identifiers;
+- retain synthetic mode for regression tests.
 
-AMS, HMS, remaining time, layers, fans, thumbnails, camera, filament/RFID and other fields are added to the validated capability matrix only when demonstrated reliably on real devices.
-
-**Hard guardrail:** Read-only only. Discovery of a technical write command is not authorization to implement or execute it.
-
-**GO/NO-GO gate:** M2 cannot be accepted on synthetic evidence alone. If both initial devices cannot provide sufficiently useful and stable real monitoring without violating project constraints, stop substantial downstream implementation and require an explicit Product Owner continue/re-scope/stop decision.
-
-**Feedback focus:** connection/onboarding, data usefulness, update latency, reliability, firmware/model variance, credentials/security handling, errors/recovery, and whether the real product is valuable enough to continue.
+**Feedback focus:** daily usefulness, telemetry clarity, navigation, multi-printer density, unsupported-state UX and history quality.
 
 ---
 
-## M3 — Real multi-device fleet + widgets/presets
+## M4 — Filament/AMS read-only + maintenance + alerts
 
-**Objective:** Turn proven real telemetry into the product's central multi-device customizable experience.
+**Objective:** Add operational value that depends only on local observed data or dashboard-owned records.
 
-**Prototype outcome:** A1 Mini/X2D plus synthetic test devices appear in real fleet/home views; users can drill into capability-driven device pages; cards/widgets can be added, reordered, resized, hidden/shown, configured, duplicated, and saved as presets across responsive desktop/tablet/mobile layouts.
+**Prototype outcome:** Read-only AMS/filament information where available, local spool catalog, maintenance tracking/reminders and useful local alerts.
 
-**Scope rule:** Widgets expose only capabilities proven by M2 or provided by dashboard-local domains. Unsupported fields are absent or explicitly unavailable; no fabricated real data.
+**Required work:**
+- read-only AMS/slot/filament state only when passively reported;
+- manual filament/spool catalog and associations;
+- maintenance task catalog and service history;
+- manual/time-based and observed-usage reminders;
+- ICS/calendar export;
+- in-app Alerts Center;
+- browser notifications where supported;
+- completion/offline/stale/recovered/error notifications derived from observed state.
 
-**Feedback focus:** density/readability, useful default dashboard, grouping/filtering, responsive behavior, customization ergonomics, persistence and real-device state clarity.
-
----
-
-## M4 — Observed jobs + filament + validated AMS/read telemetry
-
-**Objective:** Build operational context around real observed printing without becoming a scheduler or requiring printer writes.
-
-**Prototype outcome:** Cross-printer observed job/session history and correlation, search/filter/notes, universal local filament/spool library, manual associations/corrections, and any AMS/slot/filament read telemetry that M2/M4 real-device evidence proves reliable.
-
-**Explicit non-goals:** No AMS physical control, load/unload/drying commands, print scheduling, automatic printer assignment, or unvalidated RFID claims.
-
-**Feedback focus:** usefulness/accuracy of observed job history, filament workflow, AMS read mapping where available, manual correction model and provenance of inferred versus vendor-reported data.
+**Non-goals:** AMS control, vendor account sync, paid notification services.
 
 ---
 
-## M5 — Maintenance + notifications + search + audit/history
+## M5 — Local integration API + Home Assistant
 
-**Objective:** Turn real monitoring into an operational management tool.
+**Objective:** Make the dashboard a clean local data source for smart-home and automation systems without becoming an automation engine.
 
-**Prototype outcome:** Maintenance catalog/history/appointments/ICS export, usage-derived reminders where reliable telemetry supports them, browser + in-app notifications, global categorized search/command palette, and structured searchable/exportable audit/history.
+**Prototype outcome:** Documented normalized read-only integration API/events plus a working Home Assistant integration for supported printer entities/events.
 
-**Real-printer notifications:** Include only reliably inferable events such as completion/offline/stale and other validated read-only conditions. Notification logic must preserve source/freshness semantics.
+**Required work:**
+- separately authenticated machine-to-machine identity boundary;
+- typed/schema-documented read-only API;
+- local event delivery;
+- Home Assistant entities for availability, lifecycle, progress, temperatures and other validated telemetry;
+- Home Assistant events for completion/offline/stale/recovered where reliable;
+- optional local webhooks/scripts/MCP consumers within the same read-only boundary;
+- no printer command/control endpoint.
 
-**Feedback focus:** alert noise, maintenance usefulness, search discoverability, audit detail/privacy, retention and diagnostics.
-
----
-
-## M6 — Local API + Home Assistant + integration platform
-
-**Objective:** Expose the normalized dashboard state through a secure, documented integration surface.
-
-**Prototype outcome:** Strongly authenticated local API for approved reads and dashboard-local operations, capability discovery, typed/machine-readable schemas, generated/reference documentation, event delivery/webhooks with retry/history, safe admin test tooling, and a Home Assistant integration prototype consuming real normalized printer telemetry.
-
-**Smart-home direction:** Home Assistant is the preferred bridge for Alexa and Google Home experimentation rather than building separate voice-assistant integrations initially. Exact exposed entities/voice behavior must be validated against Home Assistant/Alexa/Google capabilities before product claims.
-
-**Other integrations:** MCP/scripts/AI clients are supported through the same normalized contracts. Daisy is a future first-party integration target through documented local API/events but Bambu Dashboard must not depend on Daisy's architecture or release schedule.
-
-**Feedback focus:** API ergonomics, auth/scoping, entity/event semantics, Home Assistant usefulness, integration identity/audit, documentation/IDE experience.
+**Non-goal:** first-party Alexa/Google automation; Home Assistant may bridge those ecosystems.
 
 ---
 
-## M7 — Files/media owned by dashboard + conditional read-only printer media research
+## M6 — Production operations + backup/restore + portability
 
-**Objective:** Build a useful local files/media domain without assuming printer-storage or camera privileges.
+**Objective:** Make the Dockerized application dependable on an always-on Ubuntu mini PC.
 
-**Prototype outcome:** Dashboard-local catalog/storage for prepared files and owned/generated media/exports, metadata/tags/search/download/upload/organization, with any real printer thumbnails/snapshots/file enumeration included only if a supported read-only path has been separately validated and approved.
+**Prototype outcome:** Repeatable Docker deployment with persistent data, backup/restore, health/diagnostics and documented recovery.
 
-**Conditional/future only:** live camera streams, printer recordings/timelapses, arbitrary printer-storage operations, prepared-file print initiation, and destructive printer file operations remain outside V1 promises unless a supported authorized path is later approved.
+**Required work:**
+- production Docker/Docker Compose path;
+- Ubuntu mini-PC deployment documentation;
+- persistent SQLite/data volume strategy;
+- service health and startup/recovery checks;
+- backup and restore of dashboard-owned data;
+- approved handling of remembered secrets if enabled;
+- migration between supported Docker hosts;
+- upgrade procedure and rollback/recovery strategy;
+- resource-footprint validation.
 
-**Feedback focus:** local media usefulness, metadata/navigation, storage footprint, privacy and explicit unavailable-state UX for unsupported printer-side capabilities.
+**Non-goals:** Bambu desktop software, proprietary runtime mounts, paid hosted services, remote Internet access.
 
 ---
 
-## M8 — Backup/restore + update/rollback + migration + offline
+## M7 — V1 release candidate
 
-**Objective:** Prove operational resilience and portability.
+**Objective:** Harden the simplified product into a release-quality local monitoring dashboard.
 
-**Prototype outcome:** Encrypted backup/restore with approved machine-independent secret recovery, restore/migration diagnostics, backup-gated update workflow with health verification/rollback, documented recovery drills, and strictly read-only PWA offline access to approved cached content.
+**Prototype outcome:** Deployable V1 release candidate with a documented supported-printer matrix and complete installation/operations guidance.
 
-**Feedback focus:** disaster recovery, key recovery, update confidence, migration portability, offline expectations and browser/LAN certificate limitations.
+**Required work:**
+- regression and real-device reliability pass for supported models;
+- security/privacy review of the actual V1 surface;
+- license/dependency/provenance review;
+- backup/restore drill;
+- Home Assistant validation;
+- responsive/PWA quality pass;
+- documentation and onboarding polish;
+- branding/trademark review;
+- explicit unsupported/deferred capability documentation;
+- clean repository with obsolete spike runtime code removed from active product paths.
 
----
+**Release rule:** V1 claims only direct plugin-free capabilities proven on supported printers and fully local dashboard-owned features defined by `V1_PRODUCT_REQUIREMENTS.md`.
 
-## M9 — V1 release candidate
+## Deferred future-project backlog
 
-**Objective:** Harden the validated read-only-first product into a deployable release candidate.
+Preserved in the original `PRODUCT_REQUIREMENTS.md` but intentionally unscheduled for V1:
 
-**Prototype outcome:** A deployable V1 candidate on the target always-on LAN server with documented install/upgrade/recovery paths, staging, tested A1 Mini/X2D capability matrix, deterministic synthetic regression suite, threat-model remediation, operational diagnostics, accessibility/localization readiness checks, dependency/license review, generated developer/API documentation, branding/trademark review, and complete release evidence.
-
-**Release rule:** V1 claims only capabilities demonstrated by real-device evidence or fully local product functionality in `V1_FEATURE_SCOPE.md`. Conditional printer controls/camera/storage features are not release blockers unless separately promoted into V1 by an explicit Product Owner decision.
-
-**Feedback focus:** complete workflow usability, real monitoring reliability, installation/upgrade experience, supportability, integration usefulness, documentation quality, final scope gaps and release blockers.
-
-## Future capability track — not scheduled into V1
-
-The following may be evaluated after V1 or when a suitable supported interface becomes available:
-- Bambu Connect user-mediated workflows;
-- authorized printer controls;
+- printer control/write operations;
+- camera/live view/recordings/timelapses;
 - printer-side files/media operations;
-- camera/live-view capabilities;
-- broader AMS controls;
-- Fleet Hub as an optional enterprise adapter only if hardware/authorization constraints later become acceptable;
-- new official Bambu APIs;
-- richer Daisy integration after Daisy's own architecture matures.
+- Bambu Cloud/account integration;
+- Bambu Connect workflows;
+- Bambu Network Plugin or other proprietary Bambu runtime integration;
+- Developer Mode;
+- Fleet Hub/partner interfaces;
+- remote Internet access;
+- native mobile app;
+- multi-user/RBAC;
+- full analytics;
+- general rules/automation engine;
+- slicing/print-farm scheduling.
 
-No future capability automatically enters implementation because it becomes technically reachable. DEC-006 and Product Owner approval continue to apply.
+Any deferred capability requires a new Product Owner decision and feasibility/security/interface review before entering an implementation milestone.
 
 ## Roadmap rule
 
-The sequence above is a planning baseline, not an automatic implementation queue. At the end of every prototype milestone, validated feedback may change the next milestone's priorities or boundaries through explicit Product Owner decisions while preserving stable PRD requirement IDs and governance controls.
+This plan is not an automatic queue. At every milestone boundary, GitHub state, hands-on evidence and Product Owner feedback determine whether the next milestone is authorized.

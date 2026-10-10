@@ -2,7 +2,7 @@
 
 A local-first browser dashboard for monitoring and managing compatible Bambu Lab printers and related devices across a LAN.
 
-> **Project status:** M0 is complete. M1 — architecture foundation + synthetic dashboard prototype is implemented on draft PR #2 for review; merge is not authorized.
+> **Project status:** M0 and M1 are complete. V1 scope was simplified under DEC-019 on 10 October 2026. M2 is being reset to direct plugin-free local read-only printer monitoring on draft PR #3; merge is not authorized.
 
 ## Unofficial project / trademark notice
 
@@ -16,9 +16,9 @@ See [`TRADEMARKS.md`](TRADEMARKS.md) and [`NOTICE`](NOTICE) for the full project
 
 ## Product intent
 
-V1 targets multi-device monitoring, print/job visibility, AMS and filament state, camera/media access where supported, maintenance, notifications, audit/history, a secure local API/event layer, backup/restore/update controls, and an installable PWA.
+V1 targets simple local multi-device read-only monitoring, observed print/history visibility, passively reported AMS/filament state, maintenance, notifications, a normalized local API/Home Assistant integration, backup/restore, Docker portability, and a responsive/PWA-capable UI. V1 intentionally excludes Bambu proprietary runtime dependencies and printer control.
 
-V1 is explicitly **not** a slicer, automatic printer/job scheduler, general automation/rules engine, remote-access product, multi-user/RBAC system, native mobile app, or full analytics suite.
+V1 is explicitly **not** a slicer, printer-control client, camera/media client, automatic printer/job scheduler, general automation/rules engine, Bambu Cloud/Connect/Network Plugin client, remote-access product, multi-user/RBAC system, native mobile app, or full analytics suite.
 
 ## Iterative development model
 
@@ -37,7 +37,7 @@ GitHub is the authoritative project state. Read these files first when continuin
 
 Authoritative requirements and guardrails live under `project-control/specs/`. Prototype feedback is captured under `project-control/feedback/`.
 
-## M1 Prototype Run Path
+## Prototype Run Path
 
 Requirements:
 
@@ -53,6 +53,12 @@ npm run dev:web -- --host 127.0.0.1
 ```
 
 Open `http://127.0.0.1:5173`. The Vite web app proxies read-only REST/SSE traffic to the Fastify server on `http://127.0.0.1:3001`.
+
+M2 real-printer onboarding uses the direct local read-only path. Manual IP/hostname plus the minimum required printer identity and LAN Access Code is an approved normal workflow. Server-side SSDP may remain as optional best-effort discovery, but discovery failure must never block manual onboarding.
+
+The production V1 architecture does **not** require Bambu Studio, Bambu Connect, Bambu Network Plugin, Bambu Cloud, Developer Mode, Fleet Hub, paid vendor services, or vendor outreach. Real LAN Access Codes remain process-memory-only by default and must not enter Git, logs, browser storage, diagnostics, or public CI.
+
+The normal Fleet view is real-printer focused and hides deterministic synthetic printer cards by default. Open `http://127.0.0.1:5173/?synthetic=1` when you need the explicit synthetic regression view.
 
 Production-like local run:
 
@@ -78,6 +84,16 @@ Validation:
 npm run validate
 npm run test:e2e
 ```
+
+M2 local-only real-device validation:
+
+```bash
+npm run m2:validate:real -- secrets/m2-printers.local.json
+```
+
+For local hands-on entry without writing a config file, run `npm run m2:validate:real -- --interactive`; serial and Access Code prompts are hidden. See `docs/development/M2_REAL_DEVICE_VALIDATION.md`. The `secrets/` directory is ignored by Git and must contain no committed material.
+
+Current product requirements: `project-control/specs/V1_PRODUCT_REQUIREMENTS.md`. The original full-scope PRD remains preserved unchanged in `project-control/specs/PRODUCT_REQUIREMENTS.md`.
 
 ## Repository layout
 

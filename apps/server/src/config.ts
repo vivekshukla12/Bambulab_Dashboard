@@ -14,6 +14,7 @@ export interface ServerConfig {
   databasePath: string;
   webDistPath?: string;
   syntheticIntervalMs: number;
+  bambuNetworkPluginBridgeEnabled: boolean;
   startedAt: string;
 }
 
@@ -26,6 +27,7 @@ export function loadServerConfig(env: NodeJS.ProcessEnv = process.env): ServerCo
     port: parseInteger(env.BPD_PORT, 3001),
     databasePath: path.resolve(env.BPD_DATABASE_PATH ?? path.join(repoRoot, ".data", "dashboard.sqlite")),
     syntheticIntervalMs: parseInteger(env.BPD_SYNTHETIC_INTERVAL_MS, 750),
+    bambuNetworkPluginBridgeEnabled: env.BPD_BAMBU_NETWORK_PLUGIN_BRIDGE === "1",
     startedAt: new Date().toISOString()
   };
   config.webDistPath = path.resolve(env.BPD_WEB_DIST ?? path.join(repoRoot, "apps", "web", "dist"));

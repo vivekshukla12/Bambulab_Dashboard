@@ -1,0 +1,25 @@
+{
+  "name": "@bpd/bambu-network-plugin-bridge",
+  "version": "0.1.0-m2-spike",
+  "private": true,
+  "type": "module",
+  "license": "MPL-2.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:native:windows": "node scripts/build-windows.mjs",
+    "probe": "tsx --conditions=development src/cli.ts probe",
+    "discover": "tsx --conditions=development src/cli.ts discover"
+  },
+  "dependencies": {
+    "@bpd/adapter-bambu-readonly": "0.1.0-m1"
+  }
+}

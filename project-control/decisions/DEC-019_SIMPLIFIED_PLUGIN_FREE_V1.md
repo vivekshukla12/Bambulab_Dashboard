@@ -1,0 +1,15 @@
+# DEC-019 — Adopt simplified plugin-free, cloud-free, read-only V1
+
+- **Date:** 2026-10-10
+- **Status:** Approved / current V1 product and architecture direction
+- **Decision:** V1 will be a simple Docker-native, local-first, read-only monitoring and operations dashboard using only the direct local printer status path that can be implemented without Bambu Network Plugin, Bambu Studio, Bambu Connect, Bambu Cloud/private APIs, Developer Mode, Fleet Hub, paid vendor services, or vendor outreach. Manual printer onboarding is an accepted primary workflow; automatic discovery is optional convenience and is not a V1 acceptance gate.
+- **Product Owner intent:** Prefer a smaller product that is easy to build, deploy, operate and maintain over a broader product that depends on proprietary Bambu software or fragile vendor-specific runtime integration.
+- **Supported-printer policy:** A model/firmware combination is supported only after useful direct plugin-free local read-only monitoring is proven. Initial validation targets remain A1 Mini and X2D, but a model may be unsupported/experimental rather than forcing additional proprietary integration complexity.
+- **Architecture consequence:** The production V1 path is direct local encrypted read-only status -> normalized server/domain -> browser/history/integrations. The Network Plugin feasibility spike is historical evidence only and must not become a production dependency. Future cleanup should remove its package/runtime path from the V1 branch while preserving relevant research and decision history.
+- **Scope consequence:** Printer controls, camera, printer-side file/media operations, vendor cloud/account integration and proprietary Bambu runtime dependencies are removed from V1. Home Assistant remains the preferred smart-home integration target through the dashboard's normalized read-only API/events.
+- **Requirements preservation:** `project-control/specs/PRODUCT_REQUIREMENTS.md` remains unchanged as the original full-scope PRD for future projects/releases. `project-control/specs/V1_PRODUCT_REQUIREMENTS.md` is the authoritative current V1 scope.
+- **Alternatives considered:** Permanent official Network Plugin dependency; Bambu Studio installation on the server; Bambu Connect/cloud integration; Developer Mode; vendor outreach; paid service dependency. Rejected for V1 because they increase complexity, deployment friction, contractual/interface uncertainty, or violate explicit Product Owner constraints.
+- **Security/legal posture:** Do not bypass vendor authentication/security controls, impersonate official cloud clients, redistribute proprietary Bambu software, or execute printer write/control commands. This decision is an interoperability/product-risk posture, not a legal opinion.
+- **Milestone consequence:** Regenerate the roadmap around direct local monitoring, fleet/history, maintenance/notifications, local integrations/Home Assistant, operations/resilience, and release hardening.
+- **Approved by:** Product Owner on 2026-10-10.
+- **Related milestone / PR:** M2 scope reset / draft PR #3.
